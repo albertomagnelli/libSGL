@@ -415,7 +415,7 @@ public:
     void destroy();
 
 private:
-    NSWindow* m_window = nil;
+    SglWindow* m_window = nil;
     SglView* m_view = nil;
     NSOpenGLContext* m_context = nil;
     NSOpenGLPixelFormat* m_pixelFormat = nil;
@@ -601,8 +601,8 @@ public:
         }
         const CFIndex count = CFArrayGetCount(allModes);
         for (CFIndex i = 0; i < count; ++i) {
-            const auto* mode = static_cast<const CGDisplayMode*>(
-                CFArrayGetValueAtIndex(allModes, i));
+            auto* mode = static_cast<CGDisplayModeRef>(
+                const_cast<void*>(CFArrayGetValueAtIndex(allModes, i)));
             VideoMode videoMode;
             videoMode.size = ivec2(static_cast<i32>(CGDisplayModeGetWidth(mode)),
                                    static_cast<i32>(CGDisplayModeGetHeight(mode)));
@@ -651,8 +651,9 @@ public:
         std::array<CGGammaValue, 256> red{};
         std::array<CGGammaValue, 256> green{};
         std::array<CGGammaValue, 256> blue{};
-        if (CGGetDisplayTransferByTable(display, 256, red.data(), green.data(), blue.data()) ==
-            kCGErrorSuccess) {
+        uint32_t sampleCount = 0;
+        if (CGGetDisplayTransferByTable(display, 256, red.data(), green.data(), blue.data(),
+                                        &sampleCount) == kCGErrorSuccess) {
             for (std::size_t i = 0; i < 256; ++i) {
                 result.red[i] = static_cast<u16>(std::lround(red[i] * 65535.0));
                 result.green[i] = static_cast<u16>(std::lround(green[i] * 65535.0));
@@ -819,7 +820,7 @@ bool OpenJoystick(IOHIDDeviceRef device, JoystickDevice& joystick) {
     joystick.vendor = CfProperty<u64>(device, CFSTR(kIOHIDVendorIDKey));
     joystick.product = CfProperty<u64>(device, CFSTR(kIOHIDProductIDKey));
     joystick.version = CfProperty<u64>(device, CFSTR(kIOHIDVersionNumberKey));
-    joystick.guid = makeCocoaGamepadGuid(joystick.vendor, joystick.product,
+    joystick.guid = MakeCocoaGamepadGuid(joystick.vendor, joystick.product,
                                          joystick.version, joystick.name);
 
     if (IOHIDDeviceOpen(device, kIOHIDOptionsTypeNone) != kIOReturnSuccess) {
@@ -1043,22 +1044,22 @@ using namespace sgl::detail::cocoa;
 }
 
 - (void)mouseDown:(NSEvent*)event {
-    if (_backend) _backend->handleMouse(event, MouseButton::Left, true);
+    if (_backend) _backend->handleMouse(event, sgl::MouseButton::Left, true);
 }
 - (void)mouseUp:(NSEvent*)event {
-    if (_backend) _backend->handleMouse(event, MouseButton::Left, false);
+    if (_backend) _backend->handleMouse(event, sgl::MouseButton::Left, false);
 }
 - (void)rightMouseDown:(NSEvent*)event {
-    if (_backend) _backend->handleMouse(event, MouseButton::Right, true);
+    if (_backend) _backend->handleMouse(event, sgl::MouseButton::Right, true);
 }
 - (void)rightMouseUp:(NSEvent*)event {
-    if (_backend) _backend->handleMouse(event, MouseButton::Right, false);
+    if (_backend) _backend->handleMouse(event, sgl::MouseButton::Right, false);
 }
 - (void)otherMouseDown:(NSEvent*)event {
-    if (_backend) _backend->handleMouse(event, MouseButton::Middle, true);
+    if (_backend) _backend->handleMouse(event, sgl::MouseButton::Middle, true);
 }
 - (void)otherMouseUp:(NSEvent*)event {
-    if (_backend) _backend->handleMouse(event, MouseButton::Middle, false);
+    if (_backend) _backend->handleMouse(event, sgl::MouseButton::Middle, false);
 }
 - (void)mouseMoved:(NSEvent*)event {
     if (_backend) _backend->handleCursorMove(event);

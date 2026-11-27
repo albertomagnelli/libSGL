@@ -38,6 +38,12 @@ if(SGL_SANITIZE)
     add_link_options(-fsanitize=${SGL_SANITIZE})
 endif()
 
+if(MSVC)
+    # Quelltext und String-Literale sind UTF-8; ohne /utf-8 interpretiert
+    # MSVC sie in der lokalen Codepage (C2015 bei U'Ä' o. ä.).
+    add_compile_options(/utf-8 /Zc:__cplusplus)
+endif()
+
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/sgl")
 configure_file(cmake/Version.hpp.in
                "${CMAKE_CURRENT_BINARY_DIR}/generated/sgl/Version.hpp" @ONLY)
