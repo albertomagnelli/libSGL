@@ -24,7 +24,7 @@ lädt einen OpenGL-4.6-Core-Kontext.
   Gamepad-Mapping auf Basis der eingebetteten SDL_GameControllerDB
   (Linux evdev, Windows XInput, macOS IOKit HID)
  - Bildverarbeitung: PNG/JPG/BMP/TGA laden und speichern, Spiegeln, Drehen,
-  Skalieren, Formatkonvertierung (`sgl::Image`)
+  Skalieren, Formatkonvertierung (`sgl::Image`); Datei-I/O über `sgl::ImageIO`
 - Schriften: Bitmap-/SDF-Glyphenatlas, eingebettete DejaVu-Standardschrift,
   UTF-8, Kerning und Textvermessung (`sgl::Font`)
 - Mesh-Schriften: 2D- und 3D-Glyphennetze aus TrueType-Dateien (`sgl::Font2d`,

@@ -495,8 +495,8 @@ void Swap(Image &first, Image &second) noexcept { first.swap(second); }
 
 // ─── Laden und Speichern ────────────────────────────────────────────────────
 
-Image Image::load(const std::filesystem::path &file,
-                  const LoadOptions &options) {
+Image ImageIO::load(const std::filesystem::path &file,
+                     const LoadOptions &options) {
   std::ifstream input(file, std::ios::binary);
   if (!input) {
     throw ImageError("Bilddatei konnte nicht geöffnet werden: " +
@@ -507,11 +507,11 @@ Image Image::load(const std::filesystem::path &file,
   if (bytes.empty()) {
     throw ImageError("Bilddatei ist leer: " + file.string());
   }
-  return loadFromMemory(bytes, options);
+  return ImageIO::loadFromMemory(bytes, options);
 }
 
-Image Image::loadFromMemory(std::span<const u8> data,
-                            const LoadOptions &options) {
+Image ImageIO::loadFromMemory(std::span<const u8> data,
+                               const LoadOptions &options) {
   if (data.empty()) {
     throw ImageError("loadFromMemory: keine Daten übergeben");
   }
@@ -529,16 +529,15 @@ Image Image::loadFromMemory(std::span<const u8> data,
     throw ImageError("Bild konnte nicht dekodiert werden: " + FailureReason());
   }
 
+  const ImageFormat format =
+      options.forceFormat.value_or(FormatFromChannels(sourceChannels));
+  const std::size_t size =
+      static_cast<std::size_t>(width) * static_cast<std::size_t>(height) *
+      static_cast<std::size_t>(sgl::ChannelCount(format));
+
   Image image;
   try {
-    image.m_width = width;
-    image.m_height = height;
-    image.m_format =
-        options.forceFormat.value_or(FormatFromChannels(sourceChannels));
-    const std::size_t size =
-        static_cast<std::size_t>(width) * static_cast<std::size_t>(height) *
-        static_cast<std::size_t>(sgl::ChannelCount(image.m_format));
-    image.m_pixels.assign(decoded, decoded + size);
+    image = Image(width, height, format, std::span<const u8>(decoded, size));
   } catch (...) {
     stbi_image_free(decoded);
     throw;
@@ -548,17 +547,17 @@ Image Image::loadFromMemory(std::span<const u8> data,
   if (options.flipVertically) {
     image.flipVertically();
   }
-  SLOGD << "Bild geladen: " << image.m_width << "x" << image.m_height << " "
-       << ToString(image.m_format);
+  SLOGD << "Bild geladen: " << image.width() << "x" << image.height() << " "
+       << ToString(image.format());
   return image;
 }
 
-std::vector<u8> Image::encode(const ImageFileFormat format,
-                              const SaveOptions &options) const {
-  if (isEmpty()) {
+std::vector<u8> ImageIO::encode(const Image &source, const ImageFileFormat format,
+                                 const SaveOptions &options) {
+  if (source.isEmpty()) {
     throw ImageError("encode: Bild ist leer");
   }
-  const Image prepared = PrepareForEncoding(*this, format);
+  const Image prepared = PrepareForEncoding(source, format);
   const i32 components = prepared.channelCount();
   std::vector<u8> bytes;
   bytes.reserve(prepared.byteSize() / 2 + 64);
@@ -567,23 +566,23 @@ std::vector<u8> Image::encode(const ImageFileFormat format,
   switch (format) {
   case ImageFileFormat::Png:
     written = stbi_write_png_to_func(
-        AppendToVector, &bytes, prepared.m_width, prepared.m_height, components,
+        AppendToVector, &bytes, prepared.width(), prepared.height(), components,
         prepared.data(), static_cast<i32>(prepared.rowStride()));
     break;
   case ImageFileFormat::Jpeg:
     written = stbi_write_jpg_to_func(
-        AppendToVector, &bytes, prepared.m_width, prepared.m_height, components,
+        AppendToVector, &bytes, prepared.width(), prepared.height(), components,
         prepared.data(), std::clamp(options.jpegQuality, 1, 100));
     break;
   case ImageFileFormat::Bmp:
     written =
-        stbi_write_bmp_to_func(AppendToVector, &bytes, prepared.m_width,
-                               prepared.m_height, components, prepared.data());
+        stbi_write_bmp_to_func(AppendToVector, &bytes, prepared.width(),
+                               prepared.height(), components, prepared.data());
     break;
   case ImageFileFormat::Tga:
     written =
-        stbi_write_tga_to_func(AppendToVector, &bytes, prepared.m_width,
-                               prepared.m_height, components, prepared.data());
+        stbi_write_tga_to_func(AppendToVector, &bytes, prepared.width(),
+                               prepared.height(), components, prepared.data());
     break;
   }
   if (written == 0 || bytes.empty()) {
@@ -593,13 +592,13 @@ std::vector<u8> Image::encode(const ImageFileFormat format,
   return bytes;
 }
 
-void Image::save(const std::filesystem::path &file,
-                 const SaveOptions &options) const {
-  if (isEmpty()) {
+void ImageIO::save(const Image &image, const std::filesystem::path &file,
+                   const SaveOptions &options) {
+  if (image.isEmpty()) {
     throw ImageError("Speichern: Bild ist leer");
   }
   const ImageFileFormat format = FileFormatFromPath(file);
-  const std::vector<u8> bytes = encode(format, options);
+  const std::vector<u8> bytes = ImageIO::encode(image, format, options);
 
   const std::filesystem::path parent = file.parent_path();
   if (!parent.empty()) {

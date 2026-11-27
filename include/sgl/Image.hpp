@@ -1,24 +1,19 @@
 #pragma once
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Dokumentation mit Beispielen und Screenshots: docs/image.md
-//
-// Bildpuffer mit Datei-Ein- und -Ausgabe und Transformationen. Öffentliche Schnittstelle dieses Headers:
+// Bildpuffer mit Transformationen sowie separater Datei-Ein-/-Ausgabe.
 //
 //   ImageError, ChannelCount, HasAlpha, ToString, FileExtension
-//   FileFormatFromPath, Image, load, loadFromMemory, save
-//   encode, scanline, at, setAt, pixelAt
-//   fill, flippedHorizontally, flippedVertically, flipHorizontally, flipVertically
-//   rotated, rotate90Clockwise, rotate180, rotate270Clockwise, scaled
-//   scaledToFit, resize, cropped, converted, convertTo
-//   swap, mutablePixel, pixel, Swap
+//   FileFormatFromPath, Image, ImageIO
+//   Image: scanline, at, setAt, pixelAt, fill, flip..., rotate..., scale...
+//   ImageIO: load, loadFromMemory, save, encode, saveToMemory
 //
 // Beispiel:
 //
-//   Image img = Image::load("pfad.png");
+//   Image img = ImageIO::load("pfad.png");
 //   img.convertTo(ImageFormat::Rgba);
 //   Image half = img.scaled(0.5, Interpolation::Bilinear);
-//   img.save("out.png");
+//   ImageIO::save(img, "out.png");
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -45,8 +40,8 @@
 //
 // Beispiel:
 //
-//   sgl::Image image = sgl::Image::load("assets/tex/dirt.png");
-//   image.save("out/dirt_klein.png");
+//   sgl::Image image = sgl::ImageIO::load("assets/tex/dirt.png");
+//   sgl::ImageIO::save(image, "out/dirt_klein.png");
 //
 //   const sgl::Image klein   = image.scaled(256, 256, sgl::Interpolation::Bicubic);
 //   const sgl::Image gedreht = image.rotated(90);                 // exakt
@@ -149,19 +144,6 @@ public:
     // Übernimmt eine Kopie der Pixel; die Puffergröße muss exakt passen.
     Image(i32 width, i32 height, ImageFormat format, std::span<const u8> pixels);
 
-    // ── Laden / Speichern ────────────────────────────────────────────────────
-    [[nodiscard]] static Image load(const std::filesystem::path& file, const LoadOptions& options = {});
-    [[nodiscard]] static Image loadFromMemory(std::span<const u8> data,
-                                const LoadOptions& options = {});
-    // Zielformat/Elternverzeichnisse werden bei Bedarf angelegt.
-    void save(const std::filesystem::path& file, const SaveOptions& options = {}) const;
-    [[nodiscard]] std::vector<u8> encode(ImageFileFormat format, const SaveOptions& options = {}) const;
-    // Wie encode(), nur als sprechender Name für das Kodieren in den Speicher
-    [[nodiscard]] std::vector<u8> saveToMemory(ImageFileFormat format,
-                                               const SaveOptions& options = {}) const {
-        return encode(format, options);
-    }
-
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isEmpty() const noexcept { return m_pixels.empty(); }
     [[nodiscard]] bool isPowerOfTwo() const noexcept;
@@ -231,6 +213,30 @@ private:
     i32 m_height{0};
     ImageFormat m_format{ImageFormat::Rgba};
     std::vector<u8> m_pixels{};
+};
+
+// ─── Datei-Ein- und -Ausgabe ────────────────────────────────────────────────
+
+class ImageIO {
+public:
+    /// Lädt ein Bild aus einer Datei.
+    [[nodiscard]] static Image load(const std::filesystem::path& file,
+                                    const LoadOptions& options = {});
+    /// Dekodiert ein Bild aus einem Speicherpuffer.
+    [[nodiscard]] static Image loadFromMemory(std::span<const u8> data,
+                                              const LoadOptions& options = {});
+    /// Speichert ein Bild; Zielformat und Elternverzeichnisse werden abgeleitet
+    /// bzw. angelegt.
+    static void save(const Image& image, const std::filesystem::path& file,
+                     const SaveOptions& options = {});
+    /// Kodiert ein Bild in einen Speicherpuffer.
+    [[nodiscard]] static std::vector<u8> encode(const Image& image, ImageFileFormat format,
+                                                const SaveOptions& options = {});
+    /// Wie encode(), nur als sprechender Name für das Kodieren in den Speicher.
+    [[nodiscard]] static std::vector<u8> saveToMemory(const Image& image, ImageFileFormat format,
+                                                      const SaveOptions& options = {}) {
+        return encode(image, format, options);
+    }
 };
 
 void Swap(Image& first, Image& second) noexcept;

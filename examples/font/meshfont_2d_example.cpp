@@ -411,7 +411,7 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
     Image image(renderWidth, renderHeight, ImageFormat::Rgba);
     std::memcpy(image.data(), pixels.data(), pixels.size());
     image.flipVertically();
-    image.scaled(0.5, Interpolation::Bilinear).save(file);
+    ImageIO::save(image.scaled(0.5, Interpolation::Bilinear), file);
 
     glDeleteRenderbuffers(1, &colour);
     glDeleteFramebuffers(1, &framebuffer);

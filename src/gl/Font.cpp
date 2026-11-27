@@ -184,7 +184,7 @@ void Font::save(const std::filesystem::path &file) const {
   atlasName += ".png";
   const std::filesystem::path atlasPath =
       file.parent_path().empty() ? atlasName : file.parent_path() / atlasName;
-  m_atlas.save(atlasPath);
+  ImageIO::save(m_atlas, atlasPath);
 
   std::ofstream output(file, std::ios::trunc);
   if (!output) {
@@ -327,7 +327,7 @@ Font Font::load(const std::filesystem::path &file) {
                                               ? std::filesystem::path(atlasName)
                                               : file.parent_path() / atlasName;
   try {
-    font.m_atlas = Image::load(atlasPath);
+    font.m_atlas = ImageIO::load(atlasPath);
   } catch (const ImageError &error) {
     throw FontError(std::string("Atlas konnte nicht geladen werden: ") +
                     error.what());

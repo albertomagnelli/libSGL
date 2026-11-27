@@ -53,12 +53,12 @@
 //
 // Beispiel:
 //
-//   const Image bild = Image::load("assets/tex/dirt.png");
+//   const Image bild = ImageIO::load("assets/tex/dirt.png");
 //   Texture2d boden = Texture2d::fromImage(bild, TextureOptions{.mipmaps = MipmapMode::Linear});
 //   boden.use(0);                       // an Einheit 0 binden
 //   shader.setTexture("uAlbedo", boden.id(), 0);
 //
-//   const CubeMap himmel = CubeMap::fromCrossLayout(Image::load("sky_cross.png"));
+//   const CubeMap himmel = CubeMap::fromCrossLayout(ImageIO::load("sky_cross.png"));
 //   {
 //       const CubeMap::ScopedBind bind(himmel, 3);   // stellt danach alles zurück
 //       ...
