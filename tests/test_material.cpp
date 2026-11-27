@@ -32,6 +32,31 @@ TEST_CASE("Material hat PBR-Standardwerte als 1x1-Bilder", "[material]") {
     REQUIRE(material.getAlbedoMap().pixelAt(0, 0) == std::array<u8, 4>{255, 255, 255, 0});
     REQUIRE(material.getNormalMap().pixelAt(0, 0) == std::array<u8, 4>{128, 128, 255, 0});
     REQUIRE(material.getEmissiveMap().pixelAt(0, 0) == std::array<u8, 4>{0, 0, 0, 0});
+
+    REQUIRE(material.getAlphaMode() == MaterialAlphaMode::Opaque);
+    REQUIRE(material.getAlphaCutoff() == Catch::Approx(0.5f));
+    REQUIRE_FALSE(material.isDoubleSided());
+    REQUIRE(material.getNormalScale() == Catch::Approx(1.0f));
+    REQUIRE(material.getOcclusionStrength() == Catch::Approx(1.0f));
+    REQUIRE(material.getEmissiveStrength() == Catch::Approx(1.0f));
+}
+
+TEST_CASE("Material traegt glTF-Renderparameter", "[material]") {
+    Material material;
+
+    material.setAlphaMode(MaterialAlphaMode::Mask);
+    material.setAlphaCutoff(0.35f);
+    material.setDoubleSided(true);
+    material.setNormalScale(0.75f);
+    material.setOcclusionStrength(0.5f);
+    material.setEmissiveStrength(2.0f);
+
+    REQUIRE(material.getAlphaMode() == MaterialAlphaMode::Mask);
+    REQUIRE(material.getAlphaCutoff() == Catch::Approx(0.35f));
+    REQUIRE(material.isDoubleSided());
+    REQUIRE(material.getNormalScale() == Catch::Approx(0.75f));
+    REQUIRE(material.getOcclusionStrength() == Catch::Approx(0.5f));
+    REQUIRE(material.getEmissiveStrength() == Catch::Approx(2.0f));
 }
 
 TEST_CASE("Material erzeugt fuer Einzelwerte 1x1-Bilder", "[material]") {

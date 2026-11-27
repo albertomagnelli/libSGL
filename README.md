@@ -48,6 +48,8 @@ lädt einen OpenGL-4.6-Core-Kontext.
 - Geometrie: `sgl::Rectangle` mit Kollision, Schnittmengen und Rotation
 - PBR-Materialien: Albedo, Metallic, Roughness, AO, Normal, Height und Emissive
   als `sgl::Image`-Maps, inkl. 1x1-Bildern für konstante Werte (`sgl::Material`)
+- Modelle: glTF/GLB laden mit Meshes, Materialien, Nodes, Skins und Animationen
+  ohne OpenGL-Bindung (`sgl::Model`, `sgl::ModelIO`, `sgl::ModelAnimationIO`)
 - Noise: Perlin-/Simplex-Rauschtexturen per Compute-Shader, 1D/2D/3D
   (`sgl::Noise`)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
@@ -72,6 +74,7 @@ lädt einen OpenGL-4.6-Core-Kontext.
 | stb_vorbis 1.24 | Ogg-Vorbis für miniaudio | unter `third_party/audio` vendort (Public Domain), direkt in `sgl` kompiliert |
 | qoa.h | QOA-Decoder/Encoder | unter `third_party/audio` vendort (MIT), direkt in `sgl` kompiliert |
 | jar_xm.h | XM-Modul-Player | unter `third_party/audio` vendort (WTFPL v2), direkt in `sgl` kompiliert |
+| cgltf 1.15 | glTF-/GLB-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
 | DejaVu Sans (Teilmenge) | eingebettete Standardschrift | Daten in `src/gl/DefaultFont.cpp` |
 
 ## Bauen

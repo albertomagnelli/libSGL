@@ -48,6 +48,7 @@ set(SGL_SOURCES
     src/gl/Geometry.cpp
     src/gl/Material.cpp
     src/gl/MeshVertex.cpp
+    src/gl/Model.cpp
     src/gl/Noise.cpp
     src/gl/Shader.cpp
     src/gl/Texture.cpp
@@ -63,6 +64,7 @@ set(SGL_SOURCES
     third_party/audio/stb_vorbis.c
     third_party/audio/qoa_impl.c
     third_party/audio/jar_xm_impl.c
+    third_party/model/cgltf_impl.c
 )
 
 set(SGL_DEFINITIONS "")
@@ -70,6 +72,7 @@ set(SGL_PUBLIC_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(SGL_PRIVATE_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/audio"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/model"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ttf2mesh"
 )
@@ -238,6 +241,7 @@ set(SGL_THIRD_PARTY_C_SOURCES
     third_party/audio/stb_vorbis.c
     third_party/audio/qoa_impl.c
     third_party/audio/jar_xm_impl.c
+    third_party/model/cgltf_impl.c
 )
 
 if(MSVC)

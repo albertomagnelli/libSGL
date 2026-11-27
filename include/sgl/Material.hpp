@@ -49,6 +49,12 @@ public:
     explicit MaterialError(const std::string& message) : std::runtime_error(message) {}
 };
 
+enum class MaterialAlphaMode : u8 {
+    Opaque,
+    Mask,
+    Blend
+};
+
 class Material {
 public:
     // Legt alle Maps als 1x1-Bilder mit sinnvollen PBR-Standardwerten an:
@@ -95,6 +101,25 @@ public:
     [[nodiscard]] f32 getAmbientOcclusionValue() const noexcept;
     [[nodiscard]] bool isAmbientOcclusionConstant() const noexcept;
 
+    // ── Weitere glTF-/Renderparameter ────────────────────────────────────────
+    [[nodiscard]] MaterialAlphaMode getAlphaMode() const noexcept { return m_alphaMode; }
+    void setAlphaMode(MaterialAlphaMode mode) noexcept { m_alphaMode = mode; }
+
+    [[nodiscard]] f32 getAlphaCutoff() const noexcept { return m_alphaCutoff; }
+    void setAlphaCutoff(f32 value) noexcept { m_alphaCutoff = value; }
+
+    [[nodiscard]] bool isDoubleSided() const noexcept { return m_doubleSided; }
+    void setDoubleSided(bool value) noexcept { m_doubleSided = value; }
+
+    [[nodiscard]] f32 getNormalScale() const noexcept { return m_normalScale; }
+    void setNormalScale(f32 value) noexcept { m_normalScale = value; }
+
+    [[nodiscard]] f32 getOcclusionStrength() const noexcept { return m_occlusionStrength; }
+    void setOcclusionStrength(f32 value) noexcept { m_occlusionStrength = value; }
+
+    [[nodiscard]] f32 getEmissiveStrength() const noexcept { return m_emissiveStrength; }
+    void setEmissiveStrength(f32 value) noexcept { m_emissiveStrength = value; }
+
     // ── Normale ──────────────────────────────────────────────────────────────
     // Erwartet eine Tangent-Space-Normalenmap im 0..1-kodierten RGB-Format.
     void setNormal(const Image& image);
@@ -127,6 +152,13 @@ private:
     Image m_normalMap;
     Image m_heightMap;
     Image m_emissiveMap;
+
+    MaterialAlphaMode m_alphaMode{MaterialAlphaMode::Opaque};
+    f32 m_alphaCutoff{0.5f};
+    bool m_doubleSided{false};
+    f32 m_normalScale{1.0f};
+    f32 m_occlusionStrength{1.0f};
+    f32 m_emissiveStrength{1.0f};
 
     i32 m_width{1};
     i32 m_height{1};

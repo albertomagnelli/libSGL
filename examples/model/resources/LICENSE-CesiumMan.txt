@@ -1,0 +1,14 @@
+CesiumMan.glb
+=============
+
+Source: Khronos glTF-Sample-Assets — Models/CesiumMan
+https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMan
+
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Attribution: CesiumMan model by Cesium (https://cesium.com/), provided via the
+Khronos Group glTF-Sample-Assets repository.
+
+The file is redistributed unmodified as assets/models/character.glb and is used
+by SkeletalTesting only as a test asset for skeletal animation playback.
