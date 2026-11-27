@@ -133,7 +133,7 @@ Mesh BuildFloor(f32 halfSize, f32 y) {
 
 const char* const kTextShader = R"(
 #pragma stage vertex
-#version 460 core
+#version 330 core
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aColor;
@@ -154,7 +154,7 @@ void main() {
     gl_Position = uMvp * vec4(aPosition, 1.0);
 }
 #pragma stage fragment
-#version 460 core
+#version 330 core
 in vec3 vWorld;
 in vec3 vNormal;
 in vec3 vColor;
@@ -191,7 +191,7 @@ void main() {
 
 const char* const kFloorShader = R"(
 #pragma stage vertex
-#version 460 core
+#version 330 core
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec3 aColor;
@@ -204,7 +204,7 @@ void main() {
     gl_Position = uMvp * vec4(aPosition, 1.0);
 }
 #pragma stage fragment
-#version 460 core
+#version 330 core
 in vec3 vWorld;
 out vec4 fragColor;
 

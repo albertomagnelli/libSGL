@@ -38,6 +38,14 @@ inline std::unique_ptr<sgl::Window> CreateWindow(int width, int height, std::str
 
     auto result = sgl::Window::Create(hints);
     if (!result) {
+        // Software-Rendering (llvmpipe) und aeltere Treiber bieten oft nur
+        // OpenGL 3.3; die Beispiel-Shader sind auf GLSL 3.30 ausgelegt.
+        sgl::WindowHints fallback = hints;
+        fallback.contextVersionMajor = 3;
+        fallback.contextVersionMinor = 3;
+        result = sgl::Window::Create(fallback);
+    }
+    if (!result) {
         SLOGE("Fenster konnte nicht erzeugt werden: %s", result.error().message.c_str());
         return nullptr;
     }

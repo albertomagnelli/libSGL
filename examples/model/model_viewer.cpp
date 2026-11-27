@@ -75,7 +75,7 @@ void main() {
     vec3 localTangent = aTangent.xyz;
 
     if (uSkinned != 0) {
-        const mat4 skin =
+        mat4 skin =
             uBones[aBoneIds.x] * aBoneWeights.x +
             uBones[aBoneIds.y] * aBoneWeights.y +
             uBones[aBoneIds.z] * aBoneWeights.z +
@@ -86,8 +86,8 @@ void main() {
         localTangent = mat3(skin) * localTangent;
     }
 
-    const vec4 world = uModel * localPosition;
-    const mat3 normalMatrix = mat3(transpose(inverse(uModel)));
+    vec4 world = uModel * localPosition;
+    mat3 normalMatrix = mat3(transpose(inverse(uModel)));
 
     vWorldPos = world.xyz;
     vNormal = normalize(normalMatrix * localNormal);
@@ -127,17 +127,17 @@ out vec4 fragColor;
 const float PI = 3.14159265359;
 
 float distributionGGX(const vec3 N, const vec3 H, const float roughness) {
-    const float a = roughness * roughness;
-    const float a2 = a * a;
-    const float nDotH = max(dot(N, H), 0.0);
-    const float nDotH2 = nDotH * nDotH;
-    const float denominator = (nDotH2 * (a2 - 1.0) + 1.0);
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float nDotH = max(dot(N, H), 0.0);
+    float nDotH2 = nDotH * nDotH;
+    float denominator = (nDotH2 * (a2 - 1.0) + 1.0);
     return a2 / max(PI * denominator * denominator, 0.0001);
 }
 
 float geometrySchlickGGX(const float nDotV, const float roughness) {
-    const float r = roughness + 1.0;
-    const float k = (r * r) / 8.0;
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
     return nDotV / max(nDotV * (1.0 - k) + k, 0.0001);
 }
 
@@ -151,46 +151,46 @@ vec3 fresnelSchlick(const float cosTheta, const vec3 F0) {
 }
 
 void main() {
-    const vec4 albedoSample = texture(uAlbedo, vUv);
+    vec4 albedoSample = texture(uAlbedo, vUv);
     if (uAlphaMode == 1 && albedoSample.a < uAlphaCutoff) {
         discard;
     }
 
-    const vec3 albedo = albedoSample.rgb;
-    const float metallic = texture(uMetallic, vUv).r;
-    const float roughness = clamp(texture(uRoughness, vUv).r, 0.04, 1.0);
-    const float ao = texture(uAO, vUv).r;
+    vec3 albedo = albedoSample.rgb;
+    float metallic = texture(uMetallic, vUv).r;
+    float roughness = clamp(texture(uRoughness, vUv).r, 0.04, 1.0);
+    float ao = texture(uAO, vUv).r;
 
     vec3 N = normalize(vNormal);
     vec3 T = normalize(vTangent - N * dot(N, vTangent));
     if (length(T) < 0.0001) {
         T = normalize(cross(N, vec3(0.0, 1.0, 0.0)));
     }
-    const vec3 B = cross(N, T) * vHandedness;
+    vec3 B = cross(N, T) * vHandedness;
 
     vec3 normalSample = texture(uNormal, vUv).rgb * 2.0 - 1.0;
     normalSample.xy *= uNormalScale;
     N = normalize(mat3(T, B, N) * normalSample);
 
-    const vec3 V = normalize(uViewPos - vWorldPos);
-    const vec3 L = normalize(-uLightDir);
-    const float nDotL = max(dot(N, L), 0.0);
-    const vec3 H = normalize(V + L);
+    vec3 V = normalize(uViewPos - vWorldPos);
+    vec3 L = normalize(-uLightDir);
+    float nDotL = max(dot(N, L), 0.0);
+    vec3 H = normalize(V + L);
 
-    const vec3 F0 = mix(vec3(0.04), albedo, metallic);
-    const float NDF = distributionGGX(N, H, roughness);
-    const float G = geometrySmith(N, V, L, roughness);
-    const vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+    float NDF = distributionGGX(N, H, roughness);
+    float G = geometrySmith(N, V, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    const vec3 numerator = NDF * G * F;
-    const float denominator = 4.0 * max(dot(N, V), 0.0) * nDotL + 0.0001;
-    const vec3 specular = numerator / denominator;
-    const vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * nDotL + 0.0001;
+    vec3 specular = numerator / denominator;
+    vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
 
-    const vec3 radiance = uLightColor;
+    vec3 radiance = uLightColor;
     vec3 color = (kD * albedo / PI + specular) * radiance * nDotL;
 
-    const float occlusion = mix(1.0, ao, clamp(uOcclusionStrength, 0.0, 1.0));
+    float occlusion = mix(1.0, ao, clamp(uOcclusionStrength, 0.0, 1.0));
     color += albedo * occlusion * 0.14;
     color += texture(uEmissive, vUv).rgb * uEmissiveStrength;
 
@@ -198,7 +198,7 @@ void main() {
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
 
-    const float alpha = (uAlphaMode == 2) ? albedoSample.a : 1.0;
+    float alpha = (uAlphaMode == 2) ? albedoSample.a : 1.0;
     fragColor = vec4(color, alpha);
 }
 )";
@@ -728,7 +728,9 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Shader shader = Shader::FromSource(kModelShader);
+    ShaderSourceOptions shaderOptions;
+    shaderOptions.version = 330;
+    Shader shader = Shader::FromSource(kModelShader, shaderOptions);
     if (!shader.isValid()) {
         SLOGE("Modelshader: %s\n", shader.lastError().c_str());
         window.reset();

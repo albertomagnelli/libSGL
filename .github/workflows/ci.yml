@@ -16,6 +16,7 @@ jobs:
   linux:
     name: Linux (X11 + Wayland, -Werror)
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +44,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: >
           xvfb-run -a -s "-screen 0 1280x720x24"
-          ctest --test-dir build --output-on-failure
+          ctest --test-dir build --output-on-failure --timeout 300
 
       - name: Installation und find_package prüfen
         run: |
@@ -57,6 +58,7 @@ jobs:
   wayland-only:
     name: Linux (nur Wayland)
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -81,6 +83,7 @@ jobs:
   sanitizers:
     name: Linux (ASan + UBSan)
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -111,11 +114,12 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: >
           xvfb-run -a -s "-screen 0 1280x720x24"
-          ctest --test-dir build --output-on-failure
+          ctest --test-dir build --output-on-failure --timeout 300
 
   clang-tidy:
     name: clang-tidy (Namenskonventionen)
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -150,6 +154,7 @@ jobs:
   windows:
     name: Windows (beratend)
     runs-on: windows-2022
+    timeout-minutes: 45
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -167,11 +172,12 @@ jobs:
         run: cmake --build build --config Release
 
       - name: Tests
-        run: ctest --test-dir build -C Release --output-on-failure
+        run: ctest --test-dir build -C Release --output-on-failure --timeout 300
 
   macos:
     name: macOS (beratend)
     runs-on: macos-14
+    timeout-minutes: 45
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -188,4 +194,4 @@ jobs:
         run: cmake --build build
 
       - name: Tests
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir build --output-on-failure --timeout 300

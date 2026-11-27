@@ -164,7 +164,7 @@ TextGeometry BuildText(const Font2d& font, const std::vector<std::string>& lines
 
 const char* const kTextShader = R"(
 #pragma stage vertex
-#version 460 core
+#version 330 core
 layout(location = 0) in vec2 aPosition;
 layout(location = 1) in vec2 aLocal;
 layout(location = 2) in vec4 aColor;
@@ -190,7 +190,7 @@ void main() {
     gl_Position = uProjection * vec4(position, 0.0, 1.0);
 }
 #pragma stage fragment
-#version 460 core
+#version 330 core
 in vec2 vLocal;
 in vec4 vColor;
 out vec4 fragColor;
@@ -221,7 +221,7 @@ void main() {
 
 const char* const kBackdropShader = R"(
 #pragma stage vertex
-#version 460 core
+#version 330 core
 out vec2 vUv;
 void main() {
     vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
@@ -229,7 +229,7 @@ void main() {
     gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
 }
 #pragma stage fragment
-#version 460 core
+#version 330 core
 in vec2 vUv;
 out vec4 fragColor;
 uniform float uTime;

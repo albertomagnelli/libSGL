@@ -34,5 +34,7 @@ Fallback akzeptiert.
 ## Headless
 
 `--frame <datei> [breite höhe]` erzeugt ein verstecktes `sgl`-Fenster mit
-OpenGL-4.6-Core-Kontext, rendert in ein FBO und schreibt das Ergebnis als PNG.
-Dafür wird ein funktionierender GL-Kontext benötigt (unter Linux z. B. X11).
+OpenGL-4.6-Core-Kontext und Fallback auf 3.3 (die Shader nutzen GLSL 3.30),
+rendert in ein FBO und schreibt das Ergebnis als PNG. Dafür wird ein
+funktionierender GL-Kontext benötigt (unter Linux z. B. X11); mit Mesa
+llvmpipe funktioniert es auch ohne echte GPU.
