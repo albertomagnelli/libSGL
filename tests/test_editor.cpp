@@ -333,8 +333,10 @@ TEST_CASE("Editor: Tiled-Template (.tj) wird aufgelöst und erhalten", "[editor]
     std::ifstream input(exported);
     std::ostringstream buffer;
     buffer << input.rdbuf();
+    input.close();
     REQUIRE(buffer.str().find("../templates/enemy.tj") != std::string::npos);
-    fs::remove_all(directory);
+    std::error_code ec;
+    fs::remove_all(directory, ec);
 }
 
 TEST_CASE("Editor: Tiled-Template (.tx) per TMX", "[editor][tiled][template]") {
@@ -400,9 +402,11 @@ TEST_CASE("Editor: Wang-Metadaten bleiben im TMJ erhalten", "[editor][tiled][wan
     std::ifstream input(exported);
     std::ostringstream buffer;
     buffer << input.rdbuf();
+    input.close();
     REQUIRE(buffer.str().find("\"wangsets\"") != std::string::npos);
     REQUIRE(buffer.str().find("\"Erde\"") != std::string::npos);
-    fs::remove_all(directory);
+    std::error_code ec;
+    fs::remove_all(directory, ec);
 }
 
 TEST_CASE("Editor: Wang-Metadaten werden zwischen TMX und JSON übersetzt", "[editor][tiled][wang]") {
@@ -438,9 +442,11 @@ TEST_CASE("Editor: Wang-Metadaten werden zwischen TMX und JSON übersetzt", "[ed
     std::ifstream input(exported);
     std::ostringstream buffer;
     buffer << input.rdbuf();
+    input.close();
     REQUIRE(buffer.str().find("<wangsets>") != std::string::npos);
     REQUIRE(buffer.str().find("Erde") != std::string::npos);
-    fs::remove_all(directory);
+    std::error_code ec;
+    fs::remove_all(directory, ec);
 }
 
 TEST_CASE("Editor: Projektformat erhält Wang- und Animationsmetadaten", "[editor][io][metadata]") {
