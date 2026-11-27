@@ -30,6 +30,8 @@ public:
     void value(bool flag);
     void color(const sgl::Color& value);
     void null();
+    // Fügt bereits serialisiertes JSON ein (z. B. unveränderte Tiled-Metadaten).
+    void raw(std::string_view json);
 
 private:
     void prefix();

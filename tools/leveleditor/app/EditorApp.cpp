@@ -8,6 +8,8 @@
 #include <sgl/Log.hpp>
 #include <sgl/Time.hpp>
 
+#include "common/Json.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -154,7 +156,9 @@ int EditorApp::run(const Options &options) {
     } else if (options.demo) {
         newProject(fs::temp_directory_path() / "sgl-editor-demo", "Demo");
     }
-    if (options.tab >= 0) m_leftTab = std::clamp(options.tab, 0, 2);
+    if (options.play) togglePlaytest();
+    if (options.tab >= 0 && !m_leftPanels.empty())
+        m_leftActive = std::clamp(options.tab, 0, static_cast<int>(m_leftPanels.size()) - 1);
     if (!options.level.empty()) {
         for (std::size_t i = 0; i < m_documents.size(); ++i) {
             if (m_documents[i].title == options.level) {
@@ -175,6 +179,7 @@ int EditorApp::run(const Options &options) {
         sgl::PollEvents();
         const f64 now = sgl::GetTime();
         const f32 dt = static_cast<f32>(std::max(now - m_lastTime, 0.0));
+        m_deltaTime = dt;
         m_lastTime = now;
         m_frameAccumulator += dt;
         ++m_frameCount;
@@ -189,6 +194,7 @@ int EditorApp::run(const Options &options) {
         m_window->swapBuffers();
     }
     if (m_projectDirty) saveProject();
+    if (!m_project.root.empty()) saveLayout();
     return 0;
 }
 
@@ -202,6 +208,11 @@ void EditorApp::frame() {
     m_renderer.beginFrame(framebuffer.x, framebuffer.y, scale, static_cast<f32>(size.x),
                           static_cast<f32>(size.y));
     m_renderer.clear(m_theme.window);
+    if (m_playMode) {
+        drawPlaytest();
+        m_renderer.endFrame();
+        return;
+    }
     m_ui.beginFrame(m_input, m_renderer, m_theme,
                     ui::Rect{0.0f, 0.0f, static_cast<f32>(size.x), static_cast<f32>(size.y)});
 
@@ -235,38 +246,16 @@ void EditorApp::frame() {
     drawToolbar(toolbarRect);
     drawStatusBar({0.0f, height - kStatusHeight, width, kStatusHeight});
 
-    // Linkes Panel mit Tabs.
-    m_renderer.rect(leftRect, m_theme.panel);
-    m_renderer.rectOutline(leftRect, m_theme.border, 1.0f);
-    const f32 tabWidth = leftRect.w / 3.0f;
-    ui::Rect tabRect{leftRect.x, leftRect.y, tabWidth, 26.0f};
-    if (m_ui.tab(tabRect, "Projekt", m_leftTab == 0)) m_leftTab = 0;
-    if (m_ui.tab({tabRect.x + tabWidth, tabRect.y, tabWidth, 26.0f}, "Kacheln", m_leftTab == 1))
-        m_leftTab = 1;
-    if (m_ui.tab({tabRect.x + tabWidth * 2.0f, tabRect.y, tabWidth, 26.0f}, "Entities",
-                 m_leftTab == 2))
-        m_leftTab = 2;
-    const ui::Rect leftContent{leftRect.x, leftRect.y + 26.0f, leftRect.w, leftRect.h - 26.0f};
-    if (m_leftTab == 0) drawProjectPanel(leftContent);
-    else if (m_leftTab == 1) drawPalettePanel(leftContent);
-    else drawEntityPanel(leftContent);
-
-    // Rechtes Panel.
-    m_renderer.rect(rightRect, m_theme.panel);
-    m_renderer.rectOutline(rightRect, m_theme.border, 1.0f);
-    drawInspector({rightRect.x, rightRect.y + 26.0f, rightRect.w, rightRect.h - 26.0f});
-
-    // Unteres Panel.
-    m_renderer.rect(bottomRect, m_theme.panel);
-    m_renderer.rectOutline(bottomRect, m_theme.border, 1.0f);
-    const char *bottomLabels[] = {"Ebenen", "Konsole", "Assets"};
-    for (int i = 0; i < 3; ++i) {
-        if (m_ui.tab({bottomRect.x + i * 90.0f, bottomRect.y, 90.0f, 24.0f}, bottomLabels[i],
-                     m_bottomTab == i)) {
-            m_bottomTab = i;
-        }
+    drawDock(leftRect, m_leftPanels, m_leftActive, 0);
+    drawDock(rightRect, m_rightPanels, m_rightActive, 1);
+    drawDock(bottomRect, m_bottomPanels, m_bottomActive, 2);
+    handleDockDrop();
+    if (m_draggingPanel && m_dragPanel.has_value()) {
+        const ui::Rect ghost{m_input.mouse.x + 10.0f, m_input.mouse.y + 10.0f, 112.0f, 26.0f};
+        m_renderer.rect(ghost, m_theme.panelAlt);
+        m_renderer.rectOutline(ghost, m_theme.accentHover, 1.0f);
+        m_renderer.textRect(ghost, PanelName(*m_dragPanel), m_theme.fontNormal, m_theme.text, 1);
     }
-    drawBottomPanel({bottomRect.x, bottomRect.y + 24.0f, bottomRect.w, bottomRect.h - 24.0f});
 
     // Mitte: Level-Tabs + Viewport.
     drawLevelTabs({centerRect.x, centerRect.y, centerRect.w, kTabsHeight});
@@ -315,6 +304,110 @@ void EditorApp::frame() {
     m_renderer.endFrame();
 }
 
+void EditorApp::togglePlaytest() {
+    if (m_playMode) {
+        m_playMode = false;
+        return;
+    }
+    if (Level *level = activeLevel()) {
+        m_playtest.reset(*level);
+        m_playMode = true;
+    }
+}
+
+void EditorApp::drawPlaytest() {
+    Level *level = activeLevel();
+    if (level == nullptr) {
+        m_playMode = false;
+        return;
+    }
+    if (m_input.keyPressed(sgl::Key::Escape) || m_input.keyPressed(sgl::Key::F5)) {
+        m_playMode = false;
+        return;
+    }
+    const f32 move = (m_window->isKeyPressed(sgl::Key::A) || m_window->isKeyPressed(sgl::Key::Left)
+                          ? -1.0f
+                          : 0.0f) +
+                     (m_window->isKeyPressed(sgl::Key::D) || m_window->isKeyPressed(sgl::Key::Right)
+                          ? 1.0f
+                          : 0.0f);
+    const bool jump = m_window->isKeyPressed(sgl::Key::Space) ||
+                      m_window->isKeyPressed(sgl::Key::W) ||
+                      m_window->isKeyPressed(sgl::Key::Up);
+    m_playtest.step(*level, m_deltaTime, move, jump);
+
+    const vec2 screenSize{static_cast<f32>(m_windowSize.x), static_cast<f32>(m_windowSize.y)};
+    const f32 zoom = 2.0f;
+    const vec2 player = m_playtest.position();
+    const vec2 playerSize = m_playtest.size();
+    const vec2 camera{player.x + playerSize.x * 0.5f,
+                      player.y + playerSize.y * 0.5f - 80.0f};
+    const auto screenFromWorld = [&](const vec2 &world) {
+        return vec2{screenSize.x * 0.5f + (world.x - camera.x) * zoom,
+                    screenSize.y * 0.5f + (world.y - camera.y) * zoom};
+    };
+    const vec2 topLeft = {-screenSize.x * 0.5f / zoom + camera.x,
+                          -screenSize.y * 0.5f / zoom + camera.y};
+    const vec2 bottomRight = {screenSize.x * 0.5f / zoom + camera.x,
+                              screenSize.y * 0.5f / zoom + camera.y};
+    const int x0 = std::max(static_cast<int>(std::floor(topLeft.x / level->tileW)) - 2, 0);
+    const int y0 = std::max(static_cast<int>(std::floor(topLeft.y / level->tileH)) - 2, 0);
+    const int x1 = std::min(static_cast<int>(std::ceil(bottomRight.x / level->tileW)) + 2,
+                            level->width);
+    const int y1 = std::min(static_cast<int>(std::ceil(bottomRight.y / level->tileH)) + 2,
+                            level->height);
+    for (const TileLayer &layer : level->tileLayers) {
+        if (!layer.visible) continue;
+        for (int ty = y0; ty < y1; ++ty) {
+            for (int tx = x0; tx < x1; ++tx) {
+                u32 gid = level->tileAt(layer, tx, ty);
+                if (gid == 0) continue;
+                gid = AnimatedTile(*level, gid, static_cast<f32>(sgl::GetTime()));
+                const TileSet *tileset = FindTileSetForGid(*level, gid);
+                if (tileset == nullptr) continue;
+                ensureTileTexture(*tileset);
+                const auto found = m_textures.find(tileset->image);
+                if (found == m_textures.end() || !found->second.texture.isValid()) continue;
+                const int columns = std::max(found->second.columns, 1);
+                const int local = static_cast<int>(gid) - tileset->firstGid;
+                const int sx = tileset->margin + (local % columns) * (tileset->tileW + tileset->spacing);
+                const int sy = tileset->margin + (local / columns) * (tileset->tileH + tileset->spacing);
+                const vec2 screen = screenFromWorld(
+                    {static_cast<f32>(tx) * level->tileW, static_cast<f32>(ty) * level->tileH});
+                m_renderer.imageSub({screen.x, screen.y, level->tileW * zoom, level->tileH * zoom},
+                                    found->second.texture, sx, sy, tileset->tileW,
+                                    tileset->tileH);
+            }
+        }
+    }
+    for (const ObjectLayer &layer : level->objectLayers) {
+        if (!layer.visible) continue;
+        for (const Entity &entity : layer.entities) {
+            const vec2 screen = screenFromWorld({entity.x, entity.y});
+            ui::Color color{120, 150, 190, 255};
+            if (const EntityDef *def = FindEntityDef(m_project, entity.def)) color = def->color;
+            m_renderer.rect({screen.x, screen.y, entity.w * zoom, entity.h * zoom},
+                            ui::Color{color.r, color.g, color.b, 90});
+            m_renderer.rectOutline({screen.x, screen.y, entity.w * zoom, entity.h * zoom}, color,
+                                   1.5f);
+        }
+    }
+    const vec2 playerScreen = screenFromWorld(player);
+    m_renderer.rect({playerScreen.x, playerScreen.y, playerSize.x * zoom, playerSize.y * zoom},
+                    ui::Color{80, 200, 120, 220});
+    m_renderer.rectOutline({playerScreen.x, playerScreen.y, playerSize.x * zoom,
+                            playerSize.y * zoom},
+                           ui::Color{210, 255, 225, 255}, 2.0f);
+
+    const ui::Rect hint{16.0f, static_cast<f32>(m_windowSize.y) - 58.0f,
+                        static_cast<f32>(m_windowSize.x) - 32.0f, 42.0f};
+    m_renderer.rect(hint, ui::Color{20, 22, 27, 210});
+    m_renderer.rectOutline(hint, m_theme.border, 1.0f);
+    m_renderer.textRect(hint, "Vorschau · A/D oder Pfeiltasten laufen · Leertaste/W springen · "
+                             "Esc beendet",
+                        m_theme.fontNormal, m_theme.text, 1);
+}
+
 bool EditorApp::saveScreenshot(const fs::path &file) {
     const ivec2 framebuffer = m_window->getFramebufferSize();
     if (framebuffer.x <= 0 || framebuffer.y <= 0) return false;
@@ -361,6 +454,7 @@ void EditorApp::handleShortcuts() {
     if (control && m_input.keyPressed(sgl::Key::I)) importDialog();
     if (control && m_input.keyPressed(sgl::Key::E)) exportDialog();
     if (control && m_input.keyPressed(sgl::Key::W)) closeDocument(m_active);
+    if (m_input.keyPressed(sgl::Key::F5)) togglePlaytest();
     if (m_ui.isAnyTextFocused()) return;
 
     if (m_input.keyPressed(sgl::Key::V)) m_tool = Tool::Select;
@@ -457,7 +551,11 @@ void EditorApp::drawMenuPopup() {
         items.push_back({"Minimap", [this] { m_showMinimap = !m_showMinimap; }, true, false,
                          m_showMinimap});
         items.push_back({"", {}, true, true});
+        items.push_back({"Vorschau (F5)", [this] { togglePlaytest(); }, hasDoc});
+        items.push_back({"", {}, true, true});
         items.push_back({"Zoom zurücksetzen", [this] { m_zoom = 1.0f; }, hasDoc});
+        items.push_back({"Layout zurücksetzen", [this] { resetLayout(); saveLayout(); }});
+        items.push_back({"", {}, true, true});
         items.push_back({"Ansicht einpassen", [this] {
                              Level *level = activeLevel();
                              if (level == nullptr) return;
@@ -579,6 +677,12 @@ void EditorApp::drawToolbar(const ui::Rect &rect) {
     if (m_ui.iconButton({x, y, button, button}, ui::Icon::ZoomIn, "Hineinzoomen (+)")) {
         m_zoom = std::min(m_zoom * 1.2f, 8.0f);
     }
+    x += button + 8.0f;
+    m_renderer.line({x, y}, {x, y + button}, 1.0f, m_theme.border);
+    x += 8.0f;
+    if (m_ui.iconButton({x, y, button, button}, ui::Icon::Play, "Vorschau (F5)")) {
+        togglePlaytest();
+    }
     if (Document *doc = activeDocument(); doc != nullptr) {
         m_renderer.textRect({rect.x + rect.w - 330.0f, y, 320.0f, button},
                             std::string(doc->title) + (doc->dirty ? " *" : ""),
@@ -695,7 +799,7 @@ void EditorApp::drawPalettePanel(const ui::Rect &rect) {
     TileSet &tileset = level->tilesets[static_cast<std::size_t>(m_activeTileset)];
     ensureTileTexture(tileset);
     const auto found = m_textures.find(tileset.image);
-    const ui::Rect gridRect{rect.x + 4.0f, y, rect.w - 8.0f, rect.h - (y - rect.y) - 64.0f};
+    const ui::Rect gridRect{rect.x + 4.0f, y, rect.w - 8.0f, rect.h - (y - rect.y) - 84.0f};
     const f32 cell = 40.0f;
     const int columns = std::max(tileset.columns, 1);
     const int count = std::max(tileset.tileCount, 0);
@@ -727,90 +831,109 @@ void EditorApp::drawPalettePanel(const ui::Rect &rect) {
         importTilesetDialog();
     }
     char info[96];
-    std::snprintf(info, sizeof(info), "GID %u · %d×%d", m_selectedTile, tileset.tileW,
-                  tileset.tileH);
+    std::snprintf(info, sizeof(info), "GID %u · %d×%d · %zu Animationen", m_selectedTile,
+                  tileset.tileW, tileset.tileH, tileset.animations.size());
     m_renderer.textRect({rect.x + 8.0f, rect.y + rect.h - 56.0f, rect.w - 16.0f, 18.0f}, info,
                         m_theme.fontSmall, m_theme.textDim);
+    if (!tileset.wangsets.empty()) {
+        const auto json = sgl::detail::Json::Parse(tileset.wangsets);
+        std::string names;
+        if (json.isValid() && json.isArray()) {
+            for (int i = 0; i < json.size() && i < 3; ++i) {
+                if (const auto *name = json.at(i).find("name"); name != nullptr && name->isString()) {
+                    if (!names.empty()) names += ", ";
+                    names += name->string();
+                }
+            }
+        }
+        m_renderer.textRect({rect.x + 8.0f, rect.y + rect.h - 76.0f, rect.w - 16.0f, 18.0f},
+                            "Wang: " + names, m_theme.fontSmall, m_theme.success);
+    }
 }
 
-void EditorApp::drawBottomPanel(const ui::Rect &rect) {
-    if (m_bottomTab == 0) {
-        Level *level = activeLevel();
-        if (level == nullptr) {
-            m_renderer.textRect(rect.inset(8.0f), "Kein Level geöffnet.", m_theme.fontSmall,
-                                m_theme.textDim);
-            return;
+void EditorApp::drawLayersPanel(const ui::Rect &rect) {
+    Level *level = activeLevel();
+    if (level == nullptr) {
+        m_renderer.textRect(rect.inset(8.0f), "Kein Level geöffnet.", m_theme.fontSmall,
+                            m_theme.textDim);
+        return;
+    }
+    const f32 rowHeight = 24.0f;
+    const ui::Rect content = m_ui.beginScroll(
+        rect.inset(4.0f),
+        static_cast<f32>(level->tileLayers.size() + level->objectLayers.size()) * rowHeight + 8.0f);
+    f32 y = content.y + 4.0f;
+    auto drawRow = [&](const std::string &name, bool object, int index, bool visible, bool locked) {
+        m_ui.pushId(name + (object ? "##o" : "##t"));
+        const bool selected = object ? (m_layerSelectionIsObject && m_activeObjectLayer == index)
+                                     : (!m_layerSelectionIsObject && m_activeTileLayer == index);
+        const ui::Rect row{content.x + 2.0f, y, content.w - 8.0f, rowHeight};
+        if (m_ui.selectable({row.x, row.y, row.w - 56.0f, row.h}, name, selected)) {
+            m_layerSelectionIsObject = object;
+            if (object) m_activeObjectLayer = index;
+            else m_activeTileLayer = index;
+            m_selectedEntityId = -1;
         }
-        const f32 rowHeight = 24.0f;
-        const ui::Rect content = m_ui.beginScroll(rect.inset(4.0f),
-                                                  static_cast<f32>(level->tileLayers.size() +
-                                                                   level->objectLayers.size()) *
-                                                          rowHeight + 8.0f);
-        f32 y = content.y + 4.0f;
-        auto drawRow = [&](const std::string &name, bool object, int index, bool visible,
-                           bool locked) {
-            m_ui.pushId(name + (object ? "##o" : "##t"));
-            const bool selected = object ? (m_layerSelectionIsObject && m_activeObjectLayer == index)
-                                         : (!m_layerSelectionIsObject && m_activeTileLayer == index);
-            const ui::Rect row{content.x + 2.0f, y, content.w - 8.0f, rowHeight};
-            if (m_ui.selectable({row.x, row.y, row.w - 56.0f, row.h}, name, selected)) {
-                m_layerSelectionIsObject = object;
-                if (object) m_activeObjectLayer = index;
-                else m_activeTileLayer = index;
-                m_selectedEntityId = -1;
-            }
-            if (m_ui.iconButton({row.x + row.w - 54.0f, row.y + 3.0f, 22.0f, 20.0f},
-                                visible ? ui::Icon::Eye : ui::Icon::EyeOff, "Sichtbarkeit")) {
-                if (object) level->objectLayers[static_cast<std::size_t>(index)].visible = !visible;
-                else level->tileLayers[static_cast<std::size_t>(index)].visible = !visible;
-                markDirty();
-                commitHistory();
-            }
-            if (m_ui.iconButton({row.x + row.w - 28.0f, row.y + 3.0f, 22.0f, 20.0f},
-                                locked ? ui::Icon::Lock : ui::Icon::Unlock, "Sperren")) {
-                if (object) level->objectLayers[static_cast<std::size_t>(index)].locked = !locked;
-                else level->tileLayers[static_cast<std::size_t>(index)].locked = !locked;
-                markDirty();
-                commitHistory();
-            }
-            m_ui.popId();
-            y += rowHeight;
-        };
-        for (std::size_t i = 0; i < level->tileLayers.size(); ++i) {
-            drawRow(level->tileLayers[i].name, false, static_cast<int>(i),
-                    level->tileLayers[i].visible, level->tileLayers[i].locked);
+        if (m_ui.iconButton({row.x + row.w - 54.0f, row.y + 3.0f, 22.0f, 20.0f},
+                            visible ? ui::Icon::Eye : ui::Icon::EyeOff, "Sichtbarkeit")) {
+            if (object) level->objectLayers[static_cast<std::size_t>(index)].visible = !visible;
+            else level->tileLayers[static_cast<std::size_t>(index)].visible = !visible;
+            markDirty();
+            commitHistory();
         }
-        for (std::size_t i = 0; i < level->objectLayers.size(); ++i) {
-            drawRow(level->objectLayers[i].name, true, static_cast<int>(i),
-                    level->objectLayers[i].visible, level->objectLayers[i].locked);
+        if (m_ui.iconButton({row.x + row.w - 28.0f, row.y + 3.0f, 22.0f, 20.0f},
+                            locked ? ui::Icon::Lock : ui::Icon::Unlock, "Sperren")) {
+            if (object) level->objectLayers[static_cast<std::size_t>(index)].locked = !locked;
+            else level->tileLayers[static_cast<std::size_t>(index)].locked = !locked;
+            markDirty();
+            commitHistory();
         }
-        m_ui.endScroll();
-    } else if (m_bottomTab == 1) {
-        const ui::Rect content = m_ui.beginScroll(rect.inset(4.0f),
-                                                  static_cast<f32>(m_log.size()) * 18.0f + 8.0f);
-        f32 y = content.y + 4.0f;
-        for (const auto &line : m_log) {
-            m_renderer.textRect({content.x + 6.0f, y, content.w - 12.0f, 18.0f}, line,
-                                m_theme.fontSmall, m_theme.textDim);
-            y += 18.0f;
-        }
-        m_ui.endScroll();
-    } else {
-        f32 y = rect.y + 6.0f;
-        m_renderer.textRect({rect.x + 8.0f, y, rect.w - 16.0f, 18.0f}, "Projekt-Assets",
+        m_ui.popId();
+        y += rowHeight;
+    };
+    for (std::size_t i = 0; i < level->tileLayers.size(); ++i) {
+        drawRow(level->tileLayers[i].name, false, static_cast<int>(i), level->tileLayers[i].visible,
+                level->tileLayers[i].locked);
+    }
+    for (std::size_t i = 0; i < level->objectLayers.size(); ++i) {
+        drawRow(level->objectLayers[i].name, true, static_cast<int>(i),
+                level->objectLayers[i].visible, level->objectLayers[i].locked);
+    }
+    m_ui.endScroll();
+}
+
+void EditorApp::drawConsolePanel(const ui::Rect &rect) {
+    const ui::Rect content = m_ui.beginScroll(
+        rect.inset(4.0f), static_cast<f32>(m_log.size()) * 18.0f + 8.0f);
+    f32 y = content.y + 4.0f;
+    for (const auto &line : m_log) {
+        m_renderer.textRect({content.x + 6.0f, y, content.w - 12.0f, 18.0f}, line,
                             m_theme.fontSmall, m_theme.textDim);
-        y += 22.0f;
-        m_renderer.textRect({rect.x + 8.0f, y, rect.w - 16.0f, 18.0f},
-                            std::to_string(m_project.tilesets.size()) + " Tilesets · " +
-                                std::to_string(m_project.entityDefs.size()) + " Entity-Definitionen",
-                            m_theme.fontSmall, m_theme.text);
-        y += 22.0f;
-        for (const auto &tileset : m_project.tilesets) {
-            m_renderer.textRect({rect.x + 14.0f, y, rect.w - 28.0f, 18.0f},
-                                "Tileset: " + tileset.name + "  (" + tileset.image + ")",
-                                m_theme.fontSmall, m_theme.textDim);
-            y += 18.0f;
-        }
+        y += 18.0f;
+    }
+    m_ui.endScroll();
+}
+
+void EditorApp::drawAssetsPanel(const ui::Rect &rect) {
+    f32 y = rect.y + 6.0f;
+    m_renderer.textRect({rect.x + 8.0f, y, rect.w - 16.0f, 18.0f}, "Projekt-Assets",
+                        m_theme.fontSmall, m_theme.textDim);
+    y += 22.0f;
+    m_renderer.textRect({rect.x + 8.0f, y, rect.w - 16.0f, 18.0f},
+                        std::to_string(m_project.tilesets.size()) + " Tilesets · " +
+                            std::to_string(m_project.entityDefs.size()) + " Entity-Definitionen",
+                        m_theme.fontSmall, m_theme.text);
+    y += 22.0f;
+    for (const auto &tileset : m_project.tilesets) {
+        m_renderer.textRect({rect.x + 14.0f, y, rect.w - 28.0f, 18.0f},
+                            "Tileset: " + tileset.name + "  (" + tileset.image + ")",
+                            m_theme.fontSmall, m_theme.textDim);
+        y += 18.0f;
+    }
+    for (const auto &layer : m_documents) {
+        m_renderer.textRect({rect.x + 14.0f, y, rect.w - 28.0f, 18.0f},
+                            "Level: " + layer.title, m_theme.fontSmall, m_theme.textDim);
+        y += 18.0f;
     }
 }
 

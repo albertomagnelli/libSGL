@@ -17,6 +17,8 @@ int main(int argc, char **argv) {
             options.tab = std::atoi(argv[++i]);
         } else if (argument == "--demo") {
             options.demo = true;
+        } else if (argument == "--play") {
+            options.play = true;
         }
     }
     editor::EditorApp app;

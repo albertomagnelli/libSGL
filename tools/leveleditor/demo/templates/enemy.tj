@@ -1,0 +1,20 @@
+{
+ "type": "template",
+ "object": {
+  "type": "Gegner",
+  "width": 48,
+  "height": 64,
+  "properties": [
+   {
+    "name": "Leben",
+    "type": "int",
+    "value": "30"
+   },
+   {
+    "name": "Tempo",
+    "type": "float",
+    "value": "1.0"
+   }
+  ]
+ }
+}

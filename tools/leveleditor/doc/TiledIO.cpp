@@ -114,7 +114,47 @@ bool DecompressZlib(const std::vector<u8> &input, std::size_t expected, std::vec
     return true;
 }
 
+bool DecompressGzip(const std::vector<u8> &input, std::size_t expected, std::vector<u8> &output) {
+    // Gzip = 10-Byte-Kopf, optionales Zusatzfeld/Name/Kommentar, roher Deflate-
+    // Strom und 8-Byte-Trailer. miniz' zlib-API erwartet einen zlib-Kopf,
+    // deshalb wird der Gzip-Kopf hier entfernt und roher Deflate entpackt.
+    if (input.size() < 18 || input[0] != 0x1f || input[1] != 0x8b || input[2] != 8) {
+        return false;
+    }
+    const u8 flags = input[3];
+    std::size_t pos = 10;
+    if ((flags & 0x04) != 0) {
+        if (pos + 2 > input.size()) return false;
+        const std::size_t extra = static_cast<std::size_t>(input[pos]) |
+                                  (static_cast<std::size_t>(input[pos + 1]) << 8);
+        pos += 2 + extra;
+    }
+    if ((flags & 0x08) != 0) {
+        while (pos < input.size() && input[pos] != 0) ++pos;
+        ++pos;
+    }
+    if ((flags & 0x10) != 0) {
+        while (pos < input.size() && input[pos] != 0) ++pos;
+        ++pos;
+    }
+    if ((flags & 0x02) != 0) pos += 2;
+    if (pos + 8 > input.size()) return false;
+    const std::size_t compressed = input.size() - pos - 8;
+    if (compressed == 0) return false;
+    output.assign(expected, 0);
+    const std::size_t written = tinfl_decompress_mem_to_mem(
+        output.data(), expected, input.data() + pos, compressed,
+        TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
+    if (written != expected) {
+        output.clear();
+        return false;
+    }
+    return true;
+}
+
 std::string JsonString(const Json *value, std::string_view fallback = {});
+std::string JsonText(const Json &value);
+std::string WangSetsFromXml(const tinyxml2::XMLElement *wangsets);
 
 bool DecodeLayerData(const Json &layer, int width, int height, std::vector<u32> &tiles,
                      std::string &error) {
@@ -147,6 +187,13 @@ bool DecodeLayerData(const Json &layer, int width, int height, std::vector<u32> 
         std::vector<u8> unpacked;
         if (!DecompressZlib(bytes, static_cast<std::size_t>(width) * height * 4, unpacked)) {
             error = "zlib-Daten konnten nicht entpackt werden.";
+            return false;
+        }
+        bytes = std::move(unpacked);
+    } else if (compression == "gzip") {
+        std::vector<u8> unpacked;
+        if (!DecompressGzip(bytes, static_cast<std::size_t>(width) * height * 4, unpacked)) {
+            error = "gzip-Daten konnten nicht entpackt werden.";
             return false;
         }
         bytes = std::move(unpacked);
@@ -218,6 +265,26 @@ void ReadTmjProperties(const Json *properties, std::map<std::string, std::string
 TileSet ReadTmjTileSet(const Json &json, int firstGid, const fs::path &baseDir,
                        const Project &project) {
     TileSet tileset;
+    if (const Json *tiles = json.find("tiles"); tiles != nullptr && tiles->isArray()) {
+        for (int i = 0; i < tiles->size(); ++i) {
+            const Json &tile = tiles->at(i);
+            const Json *animationJson = tile.find("animation");
+            if (animationJson == nullptr || !animationJson->isArray()) continue;
+            TileAnimation animation;
+            for (int f = 0; f < animationJson->size(); ++f) {
+                const Json &frame = animationJson->at(f);
+                TileAnimationFrame value;
+                value.tileId = frame.find("tileid") != nullptr ? frame.find("tileid")->intValue() : 0;
+                value.durationMs =
+                    frame.find("duration") != nullptr ? frame.find("duration")->intValue(100) : 100;
+                animation.frames.push_back(value);
+            }
+            if (!animation.frames.empty()) {
+                tileset.animations[tile.find("id") != nullptr ? tile.find("id")->intValue() : 0] =
+                    std::move(animation);
+            }
+        }
+    }
     tileset.name = JsonString(json.find("name"), "tileset");
     tileset.firstGid = firstGid;
     tileset.tileW = json.find("tilewidth") != nullptr ? json.find("tilewidth")->intValue(32) : 32;
@@ -229,6 +296,9 @@ TileSet ReadTmjTileSet(const Json &json, int firstGid, const fs::path &baseDir,
     const std::string image = JsonString(json.find("image"));
     if (!image.empty()) {
         tileset.image = MakeProjectRelative(project, baseDir / PathFromUtf8(image));
+    }
+    if (const Json *wangsets = json.find("wangsets"); wangsets != nullptr && wangsets->isArray()) {
+        tileset.wangsets = JsonText(*wangsets);
     }
     return tileset;
 }
@@ -277,7 +347,206 @@ bool ImportTsxTileSet(const fs::path &file, int firstGid, const Project &project
                                             file.parent_path() / PathFromUtf8(image->Attribute("source")));
         }
     }
+    out.wangsets = WangSetsFromXml(root->FirstChildElement("wangsets"));
+    for (const tinyxml2::XMLElement *tile = root->FirstChildElement("tile"); tile != nullptr;
+         tile = tile->NextSiblingElement("tile")) {
+        const tinyxml2::XMLElement *animation = tile->FirstChildElement("animation");
+        if (animation == nullptr) continue;
+        TileAnimation value;
+        for (const tinyxml2::XMLElement *frame = animation->FirstChildElement("frame");
+             frame != nullptr; frame = frame->NextSiblingElement("frame")) {
+            TileAnimationFrame entry;
+            entry.tileId = ParseInt(frame->Attribute("tileid"), 0);
+            entry.durationMs = ParseInt(frame->Attribute("duration"), 100);
+            value.frames.push_back(entry);
+        }
+        if (!value.frames.empty()) out.animations[ParseInt(tile->Attribute("id"), 0)] = std::move(value);
+    }
     return true;
+}
+
+void WriteJsonValue(JsonWriter &writer, const Json &value) {
+    switch (value.kind()) {
+    case Json::Type::Null: writer.null(); break;
+    case Json::Type::Bool: writer.value(value.boolValue()); break;
+    case Json::Type::Number: writer.value(value.number()); break;
+    case Json::Type::String: writer.value(value.string()); break;
+    case Json::Type::Array:
+        writer.beginArray();
+        for (int i = 0; i < value.size(); ++i) WriteJsonValue(writer, value.at(i));
+        writer.endArray();
+        break;
+    case Json::Type::Object:
+        writer.beginObject();
+        for (int i = 0; i < value.size(); ++i) {
+            const std::string &key = value.keyAt(i);
+            writer.key(key);
+            if (const Json *child = value.find(key); child != nullptr) WriteJsonValue(writer, *child);
+            else writer.null();
+        }
+        writer.endObject();
+        break;
+    }
+}
+
+std::string JsonText(const Json &value) {
+    JsonWriter writer;
+    WriteJsonValue(writer, value);
+    return writer.take();
+}
+
+std::string WangSetsFromXml(const tinyxml2::XMLElement *wangsets) {
+    if (wangsets == nullptr) return {};
+    JsonWriter writer;
+    writer.beginArray();
+    for (const tinyxml2::XMLElement *set = wangsets->FirstChildElement("wangset");
+         set != nullptr; set = set->NextSiblingElement("wangset")) {
+        writer.beginObject();
+        writer.key("name"); writer.value(set->Attribute("name") ? set->Attribute("name") : "");
+        writer.key("type"); writer.value(set->Attribute("type") ? set->Attribute("type") : "corner");
+        writer.key("tile"); writer.value(ParseInt(set->Attribute("tile"), -1));
+        writer.key("colors");
+        writer.beginArray();
+        for (const tinyxml2::XMLElement *color = set->FirstChildElement("wangcolor");
+             color != nullptr; color = color->NextSiblingElement("wangcolor")) {
+            writer.beginObject();
+            writer.key("name"); writer.value(color->Attribute("name") ? color->Attribute("name") : "");
+            writer.key("color"); writer.value(color->Attribute("color") ? color->Attribute("color") : "#ff0000");
+            writer.key("tile"); writer.value(ParseInt(color->Attribute("tile"), -1));
+            writer.key("probability"); writer.value(ParseFloat(color->Attribute("probability"), 1.0f));
+            writer.endObject();
+        }
+        writer.endArray();
+        writer.key("wangtiles");
+        writer.beginArray();
+        for (const tinyxml2::XMLElement *tile = set->FirstChildElement("wangtile");
+             tile != nullptr; tile = tile->NextSiblingElement("wangtile")) {
+            writer.beginObject();
+            writer.key("tileid"); writer.value(ParseInt(tile->Attribute("tileid"), 0));
+            writer.key("wangid");
+            writer.beginArray();
+            const std::string_view ids = tile->Attribute("wangid") ? tile->Attribute("wangid") : "";
+            std::size_t start = 0;
+            while (start <= ids.size()) {
+                const std::size_t comma = ids.find(',', start);
+                const std::string_view part =
+                    comma == std::string_view::npos ? ids.substr(start) : ids.substr(start, comma - start);
+                if (!part.empty()) writer.value(ParseInt(std::string(part).c_str(), 0));
+                if (comma == std::string_view::npos) break;
+                start = comma + 1;
+            }
+            writer.endArray();
+            writer.endObject();
+        }
+        writer.endArray();
+        writer.endObject();
+    }
+    writer.endArray();
+    return writer.take();
+}
+
+void WangSetsToXml(tinyxml2::XMLDocument &document, tinyxml2::XMLElement *tileset,
+                   const std::string &jsonText) {
+    if (jsonText.empty()) return;
+    const Json json = Json::Parse(jsonText);
+    if (!json.isValid() || !json.isArray()) return;
+    auto *wangsets = document.NewElement("wangsets");
+    for (int i = 0; i < json.size(); ++i) {
+        const Json &set = json.at(i);
+        auto *setElement = document.NewElement("wangset");
+        setElement->SetAttribute("name", JsonString(set.find("name")).c_str());
+        setElement->SetAttribute("type", JsonString(set.find("type"), "corner").c_str());
+        setElement->SetAttribute("tile", set.find("tile") ? set.find("tile")->intValue(-1) : -1);
+        if (const Json *colors = set.find("colors"); colors != nullptr && colors->isArray()) {
+            for (int c = 0; c < colors->size(); ++c) {
+                const Json &color = colors->at(c);
+                auto *colorElement = document.NewElement("wangcolor");
+                colorElement->SetAttribute("name", JsonString(color.find("name")).c_str());
+                colorElement->SetAttribute("color", JsonString(color.find("color"), "#ff0000").c_str());
+                colorElement->SetAttribute("tile", color.find("tile") ? color.find("tile")->intValue(-1) : -1);
+                colorElement->SetAttribute(
+                    "probability",
+                    color.find("probability") ? color.find("probability")->floatValue(1.0f) : 1.0f);
+                setElement->InsertEndChild(colorElement);
+            }
+        }
+        if (const Json *tiles = set.find("wangtiles"); tiles != nullptr && tiles->isArray()) {
+            for (int t = 0; t < tiles->size(); ++t) {
+                const Json &tile = tiles->at(t);
+                auto *tileElement = document.NewElement("wangtile");
+                tileElement->SetAttribute("tileid", tile.find("tileid") ? tile.find("tileid")->intValue(0) : 0);
+                std::string ids;
+                if (const Json *wangid = tile.find("wangid"); wangid != nullptr && wangid->isArray()) {
+                    for (int w = 0; w < wangid->size(); ++w) {
+                        if (!ids.empty()) ids += ',';
+                        ids += std::to_string(wangid->at(w).intValue());
+                    }
+                }
+                tileElement->SetAttribute("wangid", ids.c_str());
+                setElement->InsertEndChild(tileElement);
+            }
+        }
+        wangsets->InsertEndChild(setElement);
+    }
+    tileset->InsertEndChild(wangsets);
+}
+
+bool LoadTemplateXml(const fs::path &file, Entity &entity, Project &project) {
+    tinyxml2::XMLDocument document;
+    if (document.LoadFile(PathToUtf8(file).c_str()) != tinyxml2::XML_SUCCESS) return false;
+    const tinyxml2::XMLElement *root = document.FirstChildElement("template");
+    if (root == nullptr) return false;
+    const tinyxml2::XMLElement *object = root->FirstChildElement("object");
+    if (object == nullptr) return false;
+    entity = {};
+    entity.def = object->Attribute("type") ? object->Attribute("type")
+                 : object->Attribute("class") ? object->Attribute("class")
+                                               : "";
+    entity.w = ParseFloat(object->Attribute("width"), 0.0f);
+    entity.h = ParseFloat(object->Attribute("height"), 0.0f);
+    entity.rotation = ParseFloat(object->Attribute("rotation"), 0.0f);
+    const int gid = ParseInt(object->Attribute("gid"), 0);
+    if (gid != 0) entity.attrs["gid"] = std::to_string(gid & 0x1FFFFFFF);
+    if (const tinyxml2::XMLElement *properties = object->FirstChildElement("properties")) {
+        for (const tinyxml2::XMLElement *property = properties->FirstChildElement("property");
+             property != nullptr; property = property->NextSiblingElement("property")) {
+            const char *name = property->Attribute("name");
+            const char *value = property->Attribute("value");
+            if (name == nullptr) continue;
+            entity.attrs[name] = value != nullptr ? value : "";
+            AddPropertyDef(project, entity.def.empty() ? "Objekt" : entity.def, name,
+                           property->Attribute("type") ? property->Attribute("type") : "string");
+        }
+    }
+    return true;
+}
+
+bool LoadTemplateJson(const fs::path &file, Entity &entity, Project &project) {
+    const std::string text = ReadText(file);
+    if (text.empty()) return false;
+    const Json json = Json::Parse(text);
+    if (!json.isValid()) return false;
+    const Json *object = json.find("object");
+    if (object == nullptr) object = &json;
+    entity = {};
+    entity.def = JsonString(object->find("type"));
+    if (entity.def.empty()) entity.def = JsonString(object->find("class"));
+    entity.w = object->find("width") ? object->find("width")->floatValue(0.0f) : 0.0f;
+    entity.h = object->find("height") ? object->find("height")->floatValue(0.0f) : 0.0f;
+    entity.rotation = object->find("rotation") ? object->find("rotation")->floatValue(0.0f) : 0.0f;
+    if (object->find("gid") != nullptr) {
+        entity.attrs["gid"] = std::to_string(object->find("gid")->intValue() & 0x1FFFFFFF);
+    }
+    ReadTmjProperties(object->find("properties"), entity.attrs, project,
+                      entity.def.empty() ? "Objekt" : entity.def);
+    return true;
+}
+
+bool LoadTemplate(const fs::path &file, Entity &entity, Project &project) {
+    const std::string extension = PathToUtf8(file.extension());
+    if (extension == ".tx") return LoadTemplateXml(file, entity, project);
+    if (extension == ".tj" || extension == ".json") return LoadTemplateJson(file, entity, project);
+    return false;
 }
 
 bool ImportTmj(const fs::path &file, Level &level, Project &project, std::string &error) {
@@ -343,20 +612,43 @@ bool ImportTmj(const fs::path &file, Level &level, Project &project, std::string
                     for (int o = 0; o < objects->size(); ++o) {
                         const Json &object = objects->at(o);
                         Entity entity;
+                        bool hasTemplate = false;
+                        if (const Json *templateJson = object.find("template");
+                            templateJson != nullptr && templateJson->isString() &&
+                            !templateJson->string().empty()) {
+                            const fs::path templateFile =
+                                file.parent_path() / PathFromUtf8(templateJson->string());
+                            Entity base;
+                            if (LoadTemplate(templateFile, base, project)) {
+                                entity = std::move(base);
+                                entity.templatePath = MakeProjectRelative(project, templateFile);
+                                hasTemplate = true;
+                            }
+                        }
                         entity.id = object.find("id") ? object.find("id")->intValue(level.nextEntityId++)
                                                        : level.nextEntityId++;
                         std::string typeName = JsonString(object.find("type"));
                         if (typeName.empty()) typeName = JsonString(object.find("class"));
+                        if (typeName.empty()) typeName = entity.def;
                         const int gid = object.find("gid") ? object.find("gid")->intValue(0) : 0;
                         if (typeName.empty()) typeName = gid != 0 ? "Kachelobjekt" : "Objekt";
                         entity.def = typeName;
                         EnsureEntityDef(project, typeName);
                         entity.x = object.find("x") ? object.find("x")->floatValue(0.0f) : 0.0f;
                         entity.y = object.find("y") ? object.find("y")->floatValue(0.0f) : 0.0f;
-                        entity.w = object.find("width") ? object.find("width")->floatValue(32.0f) : 32.0f;
-                        entity.h = object.find("height") ? object.find("height")->floatValue(32.0f) : 32.0f;
-                        entity.rotation = object.find("rotation") ? object.find("rotation")->floatValue(0.0f)
-                                                                   : 0.0f;
+                        if (object.find("width") != nullptr) {
+                            entity.w = object.find("width")->floatValue(hasTemplate ? entity.w : 32.0f);
+                        } else if (!hasTemplate) {
+                            entity.w = 32.0f;
+                        }
+                        if (object.find("height") != nullptr) {
+                            entity.h = object.find("height")->floatValue(hasTemplate ? entity.h : 32.0f);
+                        } else if (!hasTemplate) {
+                            entity.h = 32.0f;
+                        }
+                        if (object.find("rotation") != nullptr) {
+                            entity.rotation = object.find("rotation")->floatValue(entity.rotation);
+                        }
                         if (const Json *name = object.find("name"); name != nullptr && name->isString() &&
                                                                        !name->string().empty()) {
                             entity.attrs["Name"] = name->string();
@@ -416,6 +708,22 @@ bool ImportTmx(const fs::path &file, Level &level, Project &project, std::string
                 if (image->Attribute("source") != nullptr) {
                     tileset.image = MakeProjectRelative(
                         project, file.parent_path() / PathFromUtf8(image->Attribute("source")));
+                }
+            }
+            tileset.wangsets = WangSetsFromXml(tilesetElement->FirstChildElement("wangsets"));
+            for (const tinyxml2::XMLElement *tile = tilesetElement->FirstChildElement("tile");
+                 tile != nullptr; tile = tile->NextSiblingElement("tile")) {
+                const tinyxml2::XMLElement *animation = tile->FirstChildElement("animation");
+                if (animation == nullptr) continue;
+                TileAnimation value;
+                for (const tinyxml2::XMLElement *frame = animation->FirstChildElement("frame");
+                     frame != nullptr; frame = frame->NextSiblingElement("frame")) {
+                    value.frames.push_back(TileAnimationFrame{
+                        ParseInt(frame->Attribute("tileid"), 0),
+                        ParseInt(frame->Attribute("duration"), 100)});
+                }
+                if (!value.frames.empty()) {
+                    tileset.animations[ParseInt(tile->Attribute("id"), 0)] = std::move(value);
                 }
             }
         }
@@ -481,6 +789,13 @@ bool ImportTmx(const fs::path &file, Level &level, Project &project, std::string
                     return false;
                 }
                 bytes = std::move(unpacked);
+            } else if (compression != nullptr && std::string_view(compression) == "gzip") {
+                std::vector<u8> unpacked;
+                if (!DecompressGzip(bytes, expected, unpacked)) {
+                    error = "gzip-Daten konnten nicht entpackt werden.";
+                    return false;
+                }
+                bytes = std::move(unpacked);
             } else if (compression != nullptr && std::string_view(compression) != "none" &&
                        *compression != '\0') {
                 error = std::string("Kompression '") + compression +
@@ -512,19 +827,42 @@ bool ImportTmx(const fs::path &file, Level &level, Project &project, std::string
         for (const tinyxml2::XMLElement *object = groupElement->FirstChildElement("object");
              object != nullptr; object = object->NextSiblingElement("object")) {
             Entity entity;
+            bool hasTemplate = false;
+            if (const char *templateAttribute = object->Attribute("template");
+                templateAttribute != nullptr && *templateAttribute != '\0') {
+                const fs::path templateFile =
+                    file.parent_path() / PathFromUtf8(templateAttribute);
+                Entity base;
+                if (LoadTemplate(templateFile, base, project)) {
+                    entity = std::move(base);
+                    entity.templatePath = MakeProjectRelative(project, templateFile);
+                    hasTemplate = true;
+                }
+            }
             entity.id = NewEntityId(level);
             std::string typeName = object->Attribute("type") ? object->Attribute("type")
                                   : object->Attribute("class") ? object->Attribute("class")
                                                                : "";
-            const int gid = ParseInt(object->Attribute("gid"), 0);
+            if (typeName.empty()) typeName = entity.def;
+            const int gid = object->Attribute("gid") != nullptr
+                                ? ParseInt(object->Attribute("gid"), 0)
+                                : (entity.attrs.count("gid") != 0
+                                       ? std::atoi(entity.attrs.at("gid").c_str())
+                                       : 0);
             if (typeName.empty()) typeName = gid != 0 ? "Kachelobjekt" : "Objekt";
             entity.def = typeName;
             EnsureEntityDef(project, typeName);
             entity.x = ParseFloat(object->Attribute("x"), 0.0f);
             entity.y = ParseFloat(object->Attribute("y"), 0.0f);
-            entity.w = ParseFloat(object->Attribute("width"), 32.0f);
-            entity.h = ParseFloat(object->Attribute("height"), 32.0f);
-            entity.rotation = ParseFloat(object->Attribute("rotation"), 0.0f);
+            entity.w = object->Attribute("width") != nullptr
+                           ? ParseFloat(object->Attribute("width"), entity.w)
+                           : (hasTemplate ? entity.w : 32.0f);
+            entity.h = object->Attribute("height") != nullptr
+                           ? ParseFloat(object->Attribute("height"), entity.h)
+                           : (hasTemplate ? entity.h : 32.0f);
+            if (object->Attribute("rotation") != nullptr) {
+                entity.rotation = ParseFloat(object->Attribute("rotation"), entity.rotation);
+            }
             if (const char *name = object->Attribute("name"); name != nullptr && *name != '\0') {
                 entity.attrs["Name"] = name;
             }
@@ -571,6 +909,29 @@ void WriteTmjTileSet(JsonWriter &writer, const TileSet &tileset, const std::stri
     writer.key("tilecount"); writer.value(tileset.tileCount);
     writer.key("margin"); writer.value(tileset.margin);
     writer.key("spacing"); writer.value(tileset.spacing);
+    if (!tileset.wangsets.empty()) {
+        writer.key("wangsets");
+        writer.raw(tileset.wangsets);
+    }
+    if (!tileset.animations.empty()) {
+        writer.key("tiles");
+        writer.beginArray();
+        for (const auto &[id, animation] : tileset.animations) {
+            writer.beginObject();
+            writer.key("id"); writer.value(id);
+            writer.key("animation");
+            writer.beginArray();
+            for (const auto &frame : animation.frames) {
+                writer.beginObject();
+                writer.key("tileid"); writer.value(frame.tileId);
+                writer.key("duration"); writer.value(frame.durationMs);
+                writer.endObject();
+            }
+            writer.endArray();
+            writer.endObject();
+        }
+        writer.endArray();
+    }
     writer.endObject();
 }
 
@@ -587,7 +948,18 @@ void WriteTmjLayer(JsonWriter &writer, const TileLayer &layer) {
     writer.endObject();
 }
 
-void WriteTmjObjectGroup(JsonWriter &writer, const ObjectLayer &layer) {
+std::string TiledTemplatePath(const Project &project, const std::string &stored,
+                              const fs::path &outputFile) {
+    const fs::path path = PathFromUtf8(stored);
+    if (project.root.empty() || path.is_absolute()) return stored;
+    std::error_code ec;
+    const fs::path relative = fs::relative(project.root / path, outputFile.parent_path(), ec);
+    if (!ec && !relative.empty()) return PathToUtf8(relative);
+    return stored;
+}
+
+void WriteTmjObjectGroup(JsonWriter &writer, const ObjectLayer &layer, const Project &project,
+                         const fs::path &outputFile) {
     writer.beginObject();
     writer.key("type"); writer.value("objectgroup");
     writer.key("name"); writer.value(layer.name);
@@ -609,6 +981,10 @@ void WriteTmjObjectGroup(JsonWriter &writer, const ObjectLayer &layer) {
         }
         if (entity.attrs.count("gid") != 0) {
             writer.key("gid"); writer.value(std::atoi(entity.attrs.at("gid").c_str()));
+        }
+        if (!entity.templatePath.empty()) {
+            writer.key("template");
+            writer.value(TiledTemplatePath(project, entity.templatePath, outputFile));
         }
         writer.key("properties");
         writer.beginArray();
@@ -650,7 +1026,7 @@ std::string ExportTmjText(const Level &level, const Project &project, const fs::
     writer.key("layers");
     writer.beginArray();
     for (const auto &layer : level.tileLayers) WriteTmjLayer(writer, layer);
-    for (const auto &layer : level.objectLayers) WriteTmjObjectGroup(writer, layer);
+    for (const auto &layer : level.objectLayers) WriteTmjObjectGroup(writer, layer, project, outputFile);
     writer.endArray();
     writer.endObject();
     return writer.take();
@@ -720,6 +1096,20 @@ bool ExportTiled(const fs::path &file, const Level &level, const Project &projec
             image->SetAttribute("source", imagePath.c_str());
             element->InsertEndChild(image);
         }
+        WangSetsToXml(document, element, tileset.wangsets);
+        for (const auto &[id, animation] : tileset.animations) {
+            auto *tileElement = document.NewElement("tile");
+            tileElement->SetAttribute("id", id);
+            auto *animationElement = document.NewElement("animation");
+            for (const auto &frame : animation.frames) {
+                auto *frameElement = document.NewElement("frame");
+                frameElement->SetAttribute("tileid", frame.tileId);
+                frameElement->SetAttribute("duration", frame.durationMs);
+                animationElement->InsertEndChild(frameElement);
+            }
+            tileElement->InsertEndChild(animationElement);
+            element->InsertEndChild(tileElement);
+        }
         map->InsertEndChild(element);
     }
 
@@ -765,6 +1155,11 @@ bool ExportTiled(const fs::path &file, const Level &level, const Project &projec
             if (entity.rotation != 0.0f) object->SetAttribute("rotation", entity.rotation);
             if (entity.attrs.count("gid") != 0) {
                 object->SetAttribute("gid", std::atoi(entity.attrs.at("gid").c_str()));
+            }
+            if (!entity.templatePath.empty()) {
+                const std::string templatePath =
+                    TiledTemplatePath(project, entity.templatePath, file);
+                object->SetAttribute("template", templatePath.c_str());
             }
             if (!entity.attrs.empty()) {
                 auto *properties = document.NewElement("properties");

@@ -127,6 +127,14 @@ void JsonWriter::null() {
     m_out += "null";
 }
 
+void JsonWriter::raw(std::string_view json) {
+    if (!m_afterKey) {
+        prefix();
+    }
+    m_afterKey = false;
+    m_out.append(json);
+}
+
 std::string JsonWriter::take() {
     while (!m_scopes.empty()) {
         if (m_scopes.back().object) {

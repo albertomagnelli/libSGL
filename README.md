@@ -73,9 +73,11 @@ behalten ihre Originalnamen.
 - Noise: Perlin-/Simplex-Rauschtexturen per Compute-Shader, 1D/2D/3D
   (`sgl::Noise`)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
-- Leveleditor: in-house GUI, Projektverwaltung, Kachel-/Objekt-Layer,
-  Entities mit Attributen, Undo/Redo, Tiled-Import/Export (TMJ/TMX)
-  (`tools/leveleditor`, siehe [Editor-README](tools/leveleditor/README.md))
+- Leveleditor: in-house GUI mit andockbaren Panels, Projektverwaltung,
+  Kachel-/Objekt-Layer, Entities mit Attributen, Undo/Redo, Kachelanimationen,
+  Tiled-Import/Export (TMJ/TMX, Templates, Wang-Metadaten) und
+  Playtest-Vorschau (`tools/leveleditor`, siehe
+  [Editor-README](tools/leveleditor/README.md))
 - Native Zugriffe für X11, Wayland, Win32, Cocoa, EGL und OSMesa
 
 ## Abhängigkeiten
@@ -211,12 +213,15 @@ damit er auch auf macOS (OpenGL 4.1) läuft.
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo
+./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo --play
 ```
 
 Funktionen: Projektverwaltung mit mehreren Levels, Kachel- und Objektebenen,
 Tileset-Import, Stift/Rechteck/Linie/Füllen/Pipette, Entities mit typisierten
-Attributen, Inspector, Undo/Redo, Minimap, Autosave sowie Tiled-Import und
--Export als `.tmj` und `.tmx`.
+Attributen, Inspector, Undo/Redo, Minimap, Autosave, andockbare Panels,
+Kachelanimationen, Playtest-Vorschau (`F5`) sowie Tiled-Import und -Export als
+`.tmj` und `.tmx` – inklusive CSV/Base64/zlib/gzip, Templates und
+Wang-Metadaten.
 
 Details, Tastenkürzel und Projektformat:
 [`tools/leveleditor/README.md`](tools/leveleditor/README.md).

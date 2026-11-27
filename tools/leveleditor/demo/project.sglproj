@@ -14,7 +14,78 @@
    "columns": 8,
    "tilecount": 32,
    "margin": 0,
-   "spacing": 0
+   "spacing": 0,
+   "wangsets": [
+    {
+     "name": "Erde",
+     "type": "corner",
+     "tile": -1,
+     "colors": [
+      {
+       "name": "Gras",
+       "color": "#4fa83e",
+       "tile": -1,
+       "probability": 1
+      },
+      {
+       "name": "Erde",
+       "color": "#8a6040",
+       "tile": -1,
+       "probability": 1
+      },
+      {
+       "name": "Stein",
+       "color": "#8a8f99",
+       "tile": -1,
+       "probability": 1
+      }
+     ],
+     "wangtiles": [
+      {
+       "tileid": 0,
+       "wangid": [
+        1,
+        1,
+        1,
+        1
+       ]
+      },
+      {
+       "tileid": 1,
+       "wangid": [
+        2,
+        2,
+        2,
+        2
+       ]
+      },
+      {
+       "tileid": 2,
+       "wangid": [
+        3,
+        3,
+        3,
+        3
+       ]
+      }
+     ]
+    }
+   ],
+   "tiles": [
+    {
+     "id": 3,
+     "animation": [
+      {
+       "tileid": 3,
+       "duration": 600
+      },
+      {
+       "tileid": 11,
+       "duration": 600
+      }
+     ]
+    }
+   ]
   }
  ],
  "entities": [

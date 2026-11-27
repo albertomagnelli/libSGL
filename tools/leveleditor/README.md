@@ -37,6 +37,7 @@ Optionen:
 | `--level <name>` | Level mit diesem Namen aktivieren |
 | `--tab <0\|1\|2>` | Linkes Panel: Projekt, Kacheln, Entities |
 | `--demo` | Temporäres Demo-Projekt unter `/tmp/sgl-editor-demo` anlegen |
+| `--play` | Direkt im Vorschau-/Playtest-Modus starten |
 | `--frame <datei>` | Ein Bild rendern und als PNG speichern (kein Fenster) |
 
 ## Funktionen
@@ -56,12 +57,24 @@ Optionen:
   über Ebenen, Kopieren/Duplizieren von Ebenen.
 - **Ansicht:** Pan/Zoom, Raster, Minimap, Statusleiste, Konsole.
 - **Tiled:** Import und Export von `.tmj` (JSON) und `.tmx` (XML), inklusive
-  CSV-, Base64- und zlib-Kacheldaten, externen Tilesets (`.tsx`/`.tsj`) und
-  Objekt-Properties. Unbekannte Properties bleiben als Strings erhalten.
+  CSV-, Base64-, zlib- und gzip-Kacheldaten, externen Tilesets (`.tsx`/`.tsj`),
+  Kachelanimationen, Tiled-Templates (`.tx`/`.tj`) und Objekt-Properties.
+  Wang-Metadaten (Terrains) werden gelesen, angezeigt und unverändert
+  zurückgeschrieben. Unbekannte Properties bleiben als Strings erhalten.
 - **Persistenz:** Speichern aller Levels, Projektdatei, Autosave unter
   `.sgl/autosave/`, Drag & Drop von Bildern und Tiled-Dateien.
 - **UI:** vollständig in-house (kein ImGui/Qt), gebatchter OpenGL-3.3-Renderer,
   GLSL 3.30, DPI-Skalierung, deutsche Beschriftungen.
+
+## Vorschau/Playtest
+
+![Playtest](docs/playtest.png)
+
+`F5` wechselt in die Vorschau. Die Figur startet am `Startpunkt`-Entity,
+läuft mit `A`/`D` oder den Pfeiltasten, springt mit `Leertaste`/`W` und wird
+von einer Kamera verfolgt. Alle nicht-leeren Kacheln sind solide; Wasser und
+Dekorationen sind derzeit ebenfalls solide. `Esc` oder `F5` beendet die
+Vorschau.
 
 ## Tastenkürzel
 
@@ -85,9 +98,11 @@ Optionen:
 | `M` | Minimap ein/aus |
 | `+` / `-` | Zoom |
 | `Entf` | Ausgewählte Entity löschen |
+| `F5` | Vorschau/Playtest starten/beenden |
 | Mittlere Maustaste | Pan |
 | Mausrad | Zoom um den Cursor |
 | `Alt` beim Ziehen | Snap vorübergehend aus |
+| Tab-Ziehen | Panel zwischen den Docks verschieben |
 
 ## Projektlayout
 
@@ -97,10 +112,13 @@ MeinProjekt/
   levels/
     level01.tmj
     level02.tmj
+  templates/
+    enemy.tj
   assets/
     tilesets/
       terrain.png
   .sgl/
+    layout.json
     autosave/
       level01.json
 ```
@@ -128,15 +146,17 @@ die Darstellung auf allen Plattformen gleich ist.
 ## Grenzen der aktuellen Version
 
 - Orthogonale, endliche Karten; isometrische und Infinite Maps folgen später.
-- TMX-Kompression: CSV, Base64 (unkomprimiert) und zlib; **gzip** wird noch
-  nicht entpackt.
-- Keine Tiled-Templates (`.tx`), Wang-Tiles/Terrains oder Image-Layer.
+- Tiled-Templates werden beim Import aufgelöst und beim Export mit
+  `template`-Verweis plus aufgelösten Feldern geschrieben. Ein separates
+  Template-Bearbeitungswerkzeug gibt es noch nicht.
+- Wang-Metadaten werden erhalten und in der Palette angezeigt; ein
+  Wang-/Terrain-Pinsel, der Kacheln automatisch nach Nachbarn auswählt, fehlt
+  noch.
+- Kein Floating-Docking außerhalb des Hauptfensters; Tabs lassen sich zwischen
+  linkem, rechtem und unterem Dock verschieben, nicht in eigene OS-Fenster.
 - Textfelder unterstützen Caret, Clipboard und `Shift+Pos1/Ende`-Sprung,
   aber noch keine echte Bereichsauswahl.
-- Kein Floating-Docking; die Panels sind fest angeordnet und über Splitter
-  resizebar.
-- Kein Playtest-Modus; Entities und Kachelanimationen werden im Editor
-  statisch dargestellt.
+- Image-Layer und Tiled-Gruppen/Infinite-Chunks werden noch nicht importiert.
 
 ## Tests
 
@@ -144,8 +164,9 @@ die Darstellung auf allen Plattformen gleich ist.
 ctest --test-dir build --output-on-failure
 ```
 
-Die Editor-Tests liegen in `tests/test_editor.cpp` (Projekt-/Level-JSON,
-Undo/Redo, TMJ-/TMX-Roundtrip, Pfad-/Farbhelfer). Mit
+Die Editor-Tests liegen in `tests/test_editor.cpp`: Projekt-/Level-JSON,
+Undo/Redo, TMJ-/TMX-Roundtrip, CSV/Base64/zlib/gzip, Kachelanimationen,
+Templates, Wang-Metadaten, Playtest-Physik und Pfad-/Farbhelfer. Mit
 `-DSGL_HEADLESS_RENDER_TESTS=ON` kommt `sgl_editor_headless` hinzu, das das
 Demo-Projekt headless rendert.
 

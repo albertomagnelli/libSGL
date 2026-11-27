@@ -1,11 +1,13 @@
 #pragma once
 
 #include "doc/Document.hpp"
+#include "doc/Playtest.hpp"
 #include "ui/Ui.hpp"
 
 #include <sgl/Window.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -20,6 +22,7 @@ public:
         std::string level;
         int tab = -1;
         bool demo = false;
+        bool play = false;
     };
 
     EditorApp() = default;
@@ -29,6 +32,15 @@ public:
 
 public:
     enum class Tool { Select, Brush, Rect, Line, Fill, Eraser, Picker, Entity, Pan };
+    enum class Panel : u8 {
+        Project,
+        Palette,
+        Entities,
+        Inspector,
+        Layers,
+        Console,
+        Assets,
+    };
 
 private:
     struct Document {
@@ -73,6 +85,8 @@ private:
     bool initWindow(std::string &error, bool visible);
     void installCallbacks();
     void frame();
+    void drawPlaytest();
+    void togglePlaytest();
     bool saveScreenshot(const fs::path &file);
     void handleShortcuts();
     void updateAutosave(f32 dt);
@@ -86,10 +100,24 @@ private:
     void drawEntityPanel(const ui::Rect &rect);
     void drawViewport(const ui::Rect &rect);
     void drawInspector(const ui::Rect &rect);
-    void drawBottomPanel(const ui::Rect &rect);
+    void drawLayersPanel(const ui::Rect &rect);
+    void drawConsolePanel(const ui::Rect &rect);
+    void drawAssetsPanel(const ui::Rect &rect);
     void drawStatusBar(const ui::Rect &rect);
     void drawDialog();
     void drawLevelTabs(const ui::Rect &rect);
+
+    // Docking
+    void drawDock(const ui::Rect &rect, std::vector<Panel> &panels, int &active, int dockIndex);
+    void drawPanel(Panel panel, const ui::Rect &rect);
+    void handleDockDrop();
+    void movePanel(Panel panel, int fromDock, int toDock);
+    [[nodiscard]] std::vector<Panel> &dockPanels(int dock);
+    [[nodiscard]] int &dockActive(int dock);
+    void resetLayout();
+    void loadLayout();
+    void saveLayout();
+    [[nodiscard]] static const char *PanelName(Panel panel);
 
     // Projekt und Dateien
     void newProject(const fs::path &root, const std::string &name);
@@ -201,8 +229,18 @@ private:
     f32 m_bottomHeight = 190.0f;
     int m_dragSplitter = 0; // 1 links, 2 rechts, 3 unten
     int m_openMenu = -1;
-    int m_bottomTab = 0; // 0 Ebenen, 1 Konsole, 2 Assets
-    int m_leftTab = 0;   // 0 Projekt, 1 Kacheln, 2 Entities
+    std::vector<Panel> m_leftPanels{Panel::Project, Panel::Palette, Panel::Entities};
+    std::vector<Panel> m_rightPanels{Panel::Inspector};
+    std::vector<Panel> m_bottomPanels{Panel::Layers, Panel::Console, Panel::Assets};
+    int m_leftActive = 0;
+    int m_rightActive = 0;
+    int m_bottomActive = 0;
+    ui::Rect m_dockRects[3]{};
+    ui::Rect m_dockTabRects[3]{};
+    std::optional<Panel> m_dragPanel;
+    int m_dragFromDock = -1;
+    bool m_draggingPanel = false;
+    vec2 m_dragStart{};
 
     // Dialoge
     Dialog m_dialog;
@@ -217,6 +255,9 @@ private:
     f32 m_frameAccumulator = 0.0f;
     int m_frameCount = 0;
     f32 m_autosaveTimer = 0.0f;
+    f32 m_deltaTime = 0.0f;
+    bool m_playMode = false;
+    Playtest m_playtest;
     f64 m_lastTime = 0.0;
     f32 m_doubleClickTime[3]{};
     vec2 m_lastClickPos[3]{};

@@ -1,6 +1,8 @@
 add_library(sgl_editor_core STATIC
     doc/Document.cpp
+    doc/JsonUtil.cpp
     doc/JsonWriter.cpp
+    doc/Playtest.cpp
     doc/TiledIO.cpp
     third_party/tinyxml2/tinyxml2.cpp
     third_party/miniz/miniz.c
@@ -38,11 +40,12 @@ endif()
 add_executable(sgl_editor
     main.cpp
     app/EditorApp.cpp
+    app/EditorAppDock.cpp
     app/EditorAppTools.cpp
     ui/Ui.cpp
 )
 target_link_libraries(sgl_editor PRIVATE sgl_editor_core)
-target_include_directories(sgl_editor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(sgl_editor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src)
 target_compile_definitions(sgl_editor PRIVATE
     SGL_EDITOR_FONT="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/DejaVuSans.ttf")
 target_compile_features(sgl_editor PRIVATE cxx_std_23)

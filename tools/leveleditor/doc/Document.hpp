@@ -16,6 +16,15 @@ namespace editor {
 
 namespace fs = std::filesystem;
 
+struct TileAnimationFrame {
+    int tileId = 0;
+    int durationMs = 100;
+};
+
+struct TileAnimation {
+    std::vector<TileAnimationFrame> frames;
+};
+
 struct TileSet {
     std::string name = "tileset";
     std::string image;              // relativ zum Projekt oder absolut
@@ -26,6 +35,8 @@ struct TileSet {
     int tileCount = 0;
     int margin = 0;
     int spacing = 0;
+    std::map<int, TileAnimation> animations;
+    std::string wangsets; // Tiled-Wang-Metadaten als JSON-Array, bleibt erhalten
 };
 
 struct TileLayer {
@@ -44,6 +55,7 @@ struct Entity {
     f32 w = 32.0f;
     f32 h = 32.0f;
     f32 rotation = 0.0f;
+    std::string templatePath;
     std::map<std::string, std::string> attrs;
 };
 
@@ -119,6 +131,7 @@ TileSet *FindTileSetForGid(Level &level, u32 gid);
 const TileSet *FindTileSetForGid(const Level &level, u32 gid);
 TileSet *FindTileSet(Level &level, std::string_view name);
 void EnsureEntityDef(Project &project, const std::string &name);
+u32 AnimatedTile(const Level &level, u32 gid, f32 seconds);
 
 // ── Persistenz ──────────────────────────────────────────────────────────────
 

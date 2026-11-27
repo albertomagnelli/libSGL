@@ -563,8 +563,9 @@ void EditorApp::drawViewport(const ui::Rect &rect) {
                              static_cast<u8>(std::lround(std::clamp(layer.opacity, 0.0f, 1.0f) * 255.0f))};
         for (int y = y0; y < y1; ++y) {
             for (int x = x0; x < x1; ++x) {
-                const u32 gid = level->tileAt(layer, x, y);
+                u32 gid = level->tileAt(layer, x, y);
                 if (gid == 0) continue;
+                gid = AnimatedTile(*level, gid, static_cast<f32>(sgl::GetTime()));
                 TileSet *tileset = FindTileSetForGid(*level, gid);
                 if (tileset == nullptr) continue;
                 ensureTileTexture(*tileset);
@@ -920,6 +921,7 @@ void EditorApp::newProject(const fs::path &root, const std::string &name) {
         return;
     }
     m_project = CreateProject(name, directory);
+    resetLayout();
     m_documents.clear();
     m_active = -1;
     m_textures.clear();
@@ -968,6 +970,7 @@ bool EditorApp::saveProject() {
         return false;
     }
     m_projectDirty = false;
+    saveLayout();
     m_status = "Gespeichert: " + PathToUtf8(m_project.root);
     log("Projekt gespeichert.");
     return true;
@@ -1000,6 +1003,7 @@ bool EditorApp::openProject(const fs::path &file) {
     }
     m_project = std::move(project);
     m_project.root = file.parent_path();
+    loadLayout();
     m_documents.clear();
     m_textures.clear();
     m_textureFailed.clear();

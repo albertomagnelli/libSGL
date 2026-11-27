@@ -1,10 +1,12 @@
 #include "Document.hpp"
 
+#include "JsonUtil.hpp"
 #include "JsonWriter.hpp"
 
 #include "common/Json.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -71,11 +73,53 @@ void WriteTileSet(JsonWriter &writer, const TileSet &tileset) {
     writer.key("tilecount"); writer.value(tileset.tileCount);
     writer.key("margin"); writer.value(tileset.margin);
     writer.key("spacing"); writer.value(tileset.spacing);
+    if (!tileset.wangsets.empty()) {
+        writer.key("wangsets");
+        writer.raw(tileset.wangsets);
+    }
+    if (!tileset.animations.empty()) {
+        writer.key("tiles");
+        writer.beginArray();
+        for (const auto &[id, animation] : tileset.animations) {
+            writer.beginObject();
+            writer.key("id"); writer.value(id);
+            writer.key("animation");
+            writer.beginArray();
+            for (const auto &frame : animation.frames) {
+                writer.beginObject();
+                writer.key("tileid"); writer.value(frame.tileId);
+                writer.key("duration"); writer.value(frame.durationMs);
+                writer.endObject();
+            }
+            writer.endArray();
+            writer.endObject();
+        }
+        writer.endArray();
+    }
     writer.endObject();
 }
 
 TileSet ReadTileSet(const Json &json) {
     TileSet tileset;
+    // Animationen stehen in "tiles": [{ "id": ..., "animation": [...] }].
+    if (const Json *tiles = json.find("tiles"); tiles != nullptr && tiles->isArray()) {
+        for (int i = 0; i < tiles->size(); ++i) {
+            const Json &tile = tiles->at(i);
+            const int id = tile.find("id") != nullptr ? tile.find("id")->intValue() : 0;
+            const Json *animationJson = tile.find("animation");
+            if (animationJson == nullptr || !animationJson->isArray()) continue;
+            TileAnimation animation;
+            for (int f = 0; f < animationJson->size(); ++f) {
+                const Json &frame = animationJson->at(f);
+                TileAnimationFrame value;
+                value.tileId = frame.find("tileid") != nullptr ? frame.find("tileid")->intValue() : 0;
+                value.durationMs =
+                    frame.find("duration") != nullptr ? frame.find("duration")->intValue(100) : 100;
+                animation.frames.push_back(value);
+            }
+            if (!animation.frames.empty()) tileset.animations[id] = std::move(animation);
+        }
+    }
     tileset.name = JsonString(json.find("name"), "tileset");
     tileset.image = JsonString(json.find("image"));
     tileset.firstGid = JsonInt(json.find("firstgid"), 1);
@@ -85,6 +129,10 @@ TileSet ReadTileSet(const Json &json) {
     tileset.tileCount = JsonInt(json.find("tilecount"), 0);
     tileset.margin = JsonInt(json.find("margin"), 0);
     tileset.spacing = JsonInt(json.find("spacing"), 0);
+    if (const Json *wangsets = json.find("wangsets"); wangsets != nullptr) {
+        if (wangsets->isString()) tileset.wangsets = wangsets->string();
+        else if (wangsets->isArray()) tileset.wangsets = JsonToText(*wangsets);
+    }
     return tileset;
 }
 
@@ -227,6 +275,25 @@ std::string DefaultAttribute(const EntityDef &def, std::string_view name) {
 
 int NewEntityId(Level &level) {
     return level.nextEntityId++;
+}
+
+u32 AnimatedTile(const Level &level, u32 gid, f32 seconds) {
+    if (gid == 0) return 0;
+    const TileSet *tileset = FindTileSetForGid(level, gid);
+    if (tileset == nullptr) return gid;
+    const int local = static_cast<int>(gid) - tileset->firstGid;
+    const auto found = tileset->animations.find(local);
+    if (found == tileset->animations.end() || found->second.frames.empty()) return gid;
+    int total = 0;
+    for (const auto &frame : found->second.frames) total += std::max(frame.durationMs, 1);
+    int time = static_cast<int>(std::fmod(std::max(seconds, 0.0f) * 1000.0f, static_cast<f32>(total)));
+    for (const auto &frame : found->second.frames) {
+        if (time < frame.durationMs) {
+            return static_cast<u32>(tileset->firstGid + frame.tileId);
+        }
+        time -= std::max(frame.durationMs, 1);
+    }
+    return gid;
 }
 
 TileSet *FindTileSetForGid(Level &level, u32 gid) {
@@ -406,6 +473,9 @@ bool SaveLevel(const Level &level, const fs::path &file, std::string &error) {
             writer.key("w"); writer.value(static_cast<double>(entity.w));
             writer.key("h"); writer.value(static_cast<double>(entity.h));
             writer.key("rotation"); writer.value(static_cast<double>(entity.rotation));
+            if (!entity.templatePath.empty()) {
+                writer.key("template"); writer.value(entity.templatePath);
+            }
             WriteEntityAttrs(writer, entity.attrs);
             writer.endObject();
         }
@@ -477,6 +547,7 @@ bool LoadLevel(const fs::path &file, Level &level, std::string &error) {
                     entity.w = JsonFloat(entityJson.find("w"), 32.0f);
                     entity.h = JsonFloat(entityJson.find("h"), 32.0f);
                     entity.rotation = JsonFloat(entityJson.find("rotation"), 0.0f);
+                    entity.templatePath = JsonString(entityJson.find("template"));
                     entity.attrs = ReadEntityAttrs(entityJson);
                     if (entity.id >= level.nextEntityId) level.nextEntityId = entity.id + 1;
                     layer.entities.push_back(std::move(entity));
