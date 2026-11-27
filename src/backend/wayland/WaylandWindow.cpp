@@ -370,7 +370,7 @@ void WaylandWindowBackend::createEGL(Error& error) {
     }
     eglBindAPI(EGL_OPENGL_API);
 
-    const EGLint configAttribs[] = {
+    EGLint configAttribs[] = {
         EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
         EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
         EGL_RED_SIZE, m_hints.redBits,
@@ -385,8 +385,24 @@ void WaylandWindowBackend::createEGL(Error& error) {
     };
 
     EGLint configCount = 0;
-    if (!eglChooseConfig(m_eglDisplay, configAttribs, &m_eglConfig, 1, &configCount) ||
-        configCount == 0) {
+    auto chooseConfig = [&]() {
+        configCount = 0;
+        return eglChooseConfig(m_eglDisplay, configAttribs, &m_eglConfig, 1,
+                               &configCount) &&
+               configCount > 0;
+    };
+    if (!chooseConfig() && m_hints.samples > 0) {
+        // EGL_SAMPLE_BUFFERS und EGL_SAMPLES deaktivieren.
+        configAttribs[17] = 0;
+        configAttribs[19] = 0;
+        chooseConfig();
+    }
+    if (configCount == 0 && m_hints.alphaBits > 0) {
+        // EGL_ALPHA_SIZE deaktivieren.
+        configAttribs[11] = 0;
+        chooseConfig();
+    }
+    if (configCount == 0) {
         error = MakeError(ErrorCode::FormatUnavailable, "Keine passende EGL-Konfiguration.");
         return;
     }

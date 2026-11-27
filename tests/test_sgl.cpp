@@ -194,6 +194,33 @@ TEST_CASE("X11 windows can be created and controlled", "[x11][window]") {
     window.reset();
 }
 
+TEST_CASE("X11 faellt bei nicht verfuegbarem MSAA zurueck", "[x11][window]") {
+    if (std::getenv("DISPLAY") == nullptr) {
+        SKIP("DISPLAY ist nicht gesetzt.");
+    }
+
+    InitGuard guard;
+    sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
+
+    auto result = sgl::Init();
+    if (!result) {
+        SKIP("X11 konnte nicht initialisiert werden: " + result.error().message);
+    }
+
+    sgl::WindowHints hints;
+    hints.width = 160;
+    hints.height = 120;
+    hints.visible = false;
+    hints.samples = 64; // von praktisch keinem Treiber unterstuetzt
+
+    auto windowResult = sgl::Window::Create(hints);
+    REQUIRE(windowResult.has_value());
+    std::unique_ptr<sgl::Window> window = std::move(*windowResult);
+    REQUIRE(window->getFramebufferSize().x > 0);
+    REQUIRE(window->getFramebufferSize().y > 0);
+    window.reset();
+}
+
 TEST_CASE("X11 EGL contexts are supported", "[x11][egl]") {
     if (std::getenv("DISPLAY") == nullptr) {
         SKIP("DISPLAY ist nicht gesetzt.");

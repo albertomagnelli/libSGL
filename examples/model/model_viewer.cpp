@@ -711,7 +711,9 @@ int main(int argc, char** argv) {
     WindowHints hints;
     hints.width = 1280;
     hints.height = 720;
-    hints.samples = 4;
+    // Im Headless-Modus wird in ein eigenes FBO gerendert; MSAA im
+    // Standard-Framebuffer ist dort weder nötig noch überall verfügbar.
+    hints.samples = options.headless ? 0 : 4;
     hints.visible = !options.headless;
 
     std::unique_ptr<Window> window =

@@ -98,7 +98,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
         }
         eglBindAPI(EGL_OPENGL_API);
 
-        const EGLint configAttribs[] = {
+        EGLint configAttribs[] = {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
             EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
             EGL_RED_SIZE, hints.redBits,
@@ -112,8 +112,24 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
             EGL_NONE
         };
         EGLint configCount = 0;
-        if (!eglChooseConfig(m_eglDisplay, configAttribs, &m_eglConfig, 1, &configCount) ||
-            configCount == 0) {
+        auto chooseConfig = [&]() {
+            configCount = 0;
+            return eglChooseConfig(m_eglDisplay, configAttribs, &m_eglConfig, 1,
+                                   &configCount) &&
+                   configCount > 0;
+        };
+        if (!chooseConfig() && hints.samples > 0) {
+            // EGL_SAMPLE_BUFFERS und EGL_SAMPLES deaktivieren.
+            configAttribs[17] = 0;
+            configAttribs[19] = 0;
+            chooseConfig();
+        }
+        if (configCount == 0 && hints.alphaBits > 0) {
+            // EGL_ALPHA_SIZE deaktivieren.
+            configAttribs[11] = 0;
+            chooseConfig();
+        }
+        if (configCount == 0) {
             error = MakeError(ErrorCode::FormatUnavailable, "Keine passende EGL-Konfiguration.");
             return;
         }
@@ -145,12 +161,22 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
         int count = 0;
         GLXFBConfig* configs = glXChooseFBConfig(s.display, s.screen, fbAttribs, &count);
         if ((!configs || count == 0) && hints.samples > 0) {
-            fbAttribs[23] = 0;
+            if (configs != nullptr) {
+                XFree(configs);
+                configs = nullptr;
+            }
+            // GLX_SAMPLE_BUFFERS und GLX_SAMPLES deaktivieren.
             fbAttribs[25] = 0;
+            fbAttribs[27] = 0;
             configs = glXChooseFBConfig(s.display, s.screen, fbAttribs, &count);
         }
         if ((!configs || count == 0) && hints.alphaBits > 0) {
-            fbAttribs[11] = 0;
+            if (configs != nullptr) {
+                XFree(configs);
+                configs = nullptr;
+            }
+            // GLX_ALPHA_SIZE deaktivieren.
+            fbAttribs[15] = 0;
             configs = glXChooseFBConfig(s.display, s.screen, fbAttribs, &count);
         }
         if (!configs || count == 0) {

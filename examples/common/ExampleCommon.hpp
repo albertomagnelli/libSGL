@@ -43,12 +43,21 @@ inline std::unique_ptr<sgl::Window> CreateWindow(std::string_view title, int wid
         result = sgl::Window::Create(fallback);
     }
     if (!result) {
-        // Letzter Versuch: klassischer Kompatibilitätskontext.
+        // Manche GLX-Server (Xvfb/llvmpipe) bieten keinen MSAA-Framebuffer.
+        sgl::WindowHints fallback = hints;
+        fallback.contextVersionMajor = 3;
+        fallback.contextVersionMinor = 3;
+        fallback.samples = 0;
+        result = sgl::Window::Create(fallback);
+    }
+    if (!result) {
+        // Letzter Versuch: klassischer Kompatibilitätskontext ohne MSAA.
         sgl::WindowHints fallback = hints;
         fallback.contextVersionMajor = 2;
         fallback.contextVersionMinor = 1;
         fallback.contextProfile = sgl::ContextProfile::Any;
         fallback.contextForwardCompat = false;
+        fallback.samples = 0;
         result = sgl::Window::Create(fallback);
     }
     if (!result) {
