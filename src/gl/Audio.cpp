@@ -11,15 +11,18 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <mutex>
+#include <string_view>
 #include <vector>
 
 #include <sgl/Log.hpp>
 
+#include "gl/AudioCodecs.hpp"
 #include "miniaudio.h"
 
 namespace sgl {
@@ -75,7 +78,7 @@ namespace {
     ma_decoder              decoder{};
 
     if (ma_decoder_init_file(path.c_str(), &config, &decoder) != MA_SUCCESS) {
-      SLOGW << "Audio: \"" << path << "\" nicht dekodierbar (unterstuetzt: WAV, FLAC, MP3, OGG)";
+      SLOGW << "Audio: \"" << path << "\" nicht dekodierbar (unterstuetzt: WAV, FLAC, MP3, OGG, QOA)";
 
       return false;
     }
@@ -205,6 +208,73 @@ namespace {
     reported.emplace_back(message);
     SLOGW << message;
   }
+
+  std::string NormalizeExtension(std::string_view extension) {
+    if (extension.empty()) return {};
+
+    std::string result(extension);
+
+    if (!result.empty() && result.front() != '.') result.insert(result.begin(), '.');
+
+    for (char &character : result) {
+      character = static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+    }
+
+    return result;
+  }
+
+  std::string FileExtension(const std::string &path) {
+    const auto slash = path.find_last_of("/\\");
+    const auto dot   = path.find_last_of('.');
+
+    if ((dot == std::string::npos) || ((slash != std::string::npos) && (dot < slash))) return {};
+
+    return NormalizeExtension(std::string_view(path).substr(dot));
+  }
+
+  bool HasExtension(const std::string &path, std::string_view extension) {
+    return FileExtension(path) == NormalizeExtension(extension);
+  }
+
+  bool DecodeQoaFileIntoWave(const std::string &path, Wave &wave) {
+    std::vector<f32> samples;
+    i32 sampleRate = 0;
+    i32 channels   = 0;
+
+    if (!detail::DecodeQoaFile(path, samples, sampleRate, channels)) return false;
+
+    return wave.SetSamples(std::move(samples), sampleRate, channels);
+  }
+
+  bool DecodeQoaMemoryIntoWave(const u8 *data, const std::size_t size, Wave &wave) {
+    std::vector<f32> samples;
+    i32 sampleRate = 0;
+    i32 channels   = 0;
+
+    if (!detail::DecodeQoaMemory(data, size, samples, sampleRate, channels)) return false;
+
+    return wave.SetSamples(std::move(samples), sampleRate, channels);
+  }
+
+  bool DecodeXmFileIntoWave(const std::string &path, Wave &wave) {
+    std::vector<f32> samples;
+    i32 sampleRate = 0;
+    i32 channels   = 0;
+
+    if (!detail::DecodeXmFile(path, samples, sampleRate, channels)) return false;
+
+    return wave.SetSamples(std::move(samples), sampleRate, channels);
+  }
+
+  bool DecodeXmMemoryIntoWave(const u8 *data, const std::size_t size, Wave &wave) {
+    std::vector<f32> samples;
+    i32 sampleRate = 0;
+    i32 channels   = 0;
+
+    if (!detail::DecodeXmMemory(data, size, samples, sampleRate, channels)) return false;
+
+    return wave.SetSamples(std::move(samples), sampleRate, channels);
+  }
 } // namespace
 
 // =============================================================================
@@ -213,14 +283,31 @@ namespace {
 bool Wave::LoadFromFile(const std::string &path) {
   Unload();
 
+  if (HasExtension(path, ".qoa")) {
+    if (DecodeQoaFileIntoWave(path, *this)) return true;
+
+    SLOGW << "Audio: \"" << path << "\" ist kein gueltiges QOA";
+
+    return false;
+  }
+
   return DecodeFile(path, m_samples, m_sampleRate, m_channels);
 }
 
 bool Wave::LoadFromMemory(const u8 *data, const std::size_t size, const std::string &extension) {
   Unload();
 
-  (void)extension; // Format erkennt miniaudio am Inhalt
+  const std::string format = NormalizeExtension(extension);
 
+  if ((format == ".qoa") || detail::IsQoaMemory(data, size)) {
+    if (DecodeQoaMemoryIntoWave(data, size, *this)) return true;
+
+    SLOGW << "Audio: QOA-Speicherinhalt ist ungueltig";
+
+    return false;
+  }
+
+  // miniaudio erkennt WAV/FLAC/MP3/OGG am Inhalt.
   return DecodeMemory(data, size, m_samples, m_sampleRate, m_channels);
 }
 
@@ -317,6 +404,10 @@ bool Wave::Convert(const i32 sampleRate, const i32 channels) {
 
 bool Wave::SaveToFile(const std::string &path) const {
   if (!IsValid()) return false;
+
+  if (HasExtension(path, ".qoa")) {
+    return detail::EncodeQoaFile(path, m_samples, m_sampleRate, m_channels);
+  }
 
   std::ofstream stream(path, std::ios::binary);
 
@@ -471,6 +562,7 @@ bool Sound::LoadFromWave(const Wave &wave, const i32 voices) {
 
   ma_audio_buffer_config config = ma_audio_buffer_config_init(
       ma_format_f32, static_cast<ma_uint32>(m_wave.Channels()), frames, m_wave.Samples().data(), nullptr);
+  config.sampleRate = static_cast<ma_uint32>(m_wave.SampleRate());
 
   if (ma_audio_buffer_init(&config, &m_impl->buffer) != MA_SUCCESS) {
     SLOGE << "Sound: Puffer laesst sich nicht anlegen";
@@ -628,9 +720,12 @@ bool Sound::IsLooping() const { return (m_impl != nullptr) && m_impl->looping; }
 // =============================================================================
 struct Music::Impl {
   ma_sound        sound{};
-  ma_decoder      decoder{}; // nur fuer LoadFromMemory
+  ma_decoder      decoder{};       // nur fuer LoadFromMemory
+  ma_audio_buffer buffer{};        // QOA/XM: vollstaendig dekodiert
+  Wave            decoded;         // Daten fuer buffer
   bool            soundReady{false};
   bool            decoderReady{false};
+  bool            bufferReady{false};
   bool            streaming{false};
   bool            paused{false};
   f32             volume{1.0f};
@@ -639,6 +734,45 @@ struct Music::Impl {
   bool            looping{false};
   std::vector<u8> memory; // muss leben, solange der Decoder laeuft
 };
+
+bool Music::initBuffer(Impl &impl, Wave wave) {
+  if (!wave.IsValid()) return false;
+
+  AudioEngine &audio = Engine();
+
+  impl.decoded = std::move(wave);
+
+  const auto frames = static_cast<ma_uint64>(impl.decoded.FrameCount());
+
+  ma_audio_buffer_config config = ma_audio_buffer_config_init(
+      ma_format_f32, static_cast<ma_uint32>(impl.decoded.Channels()), frames,
+      impl.decoded.Samples().data(), nullptr);
+  config.sampleRate = static_cast<ma_uint32>(impl.decoded.SampleRate());
+
+  if (ma_audio_buffer_init(&config, &impl.buffer) != MA_SUCCESS) {
+    SLOGE << "Music: Puffer laesst sich nicht anlegen";
+
+    return false;
+  }
+
+  impl.bufferReady = true;
+
+  if (ma_sound_init_from_data_source(&audio.engine, &impl.buffer, 0, nullptr,
+                                     &impl.sound) != MA_SUCCESS) {
+    SLOGE << "Music: Stimme laesst sich nicht anlegen";
+
+    return false;
+  }
+
+  impl.soundReady = true;
+  impl.streaming  = false;
+
+  ma_sound_set_volume(&impl.sound, impl.volume);
+  ma_sound_set_pitch(&impl.sound, impl.pitch);
+  ma_sound_set_pan(&impl.sound, impl.pan);
+
+  return true;
+}
 
 Music::Music() : m_impl(std::make_unique<Impl>()) {}
 
@@ -669,10 +803,31 @@ bool Music::LoadFromFile(const std::string &path) {
     return false;
   }
 
+  const std::string extension = FileExtension(path);
+
+  // QOA und XM werden vollständig nach PCM dekodiert. Das hält Wiedergabe,
+  // Seek und Looping identisch zu den übrigen Music-Formaten.
+  if ((extension == ".qoa") || (extension == ".xm")) {
+    Wave decoded;
+
+    const bool isQoa = extension == ".qoa";
+    const bool ok = isQoa ? DecodeQoaFileIntoWave(path, decoded)
+                          : DecodeXmFileIntoWave(path, decoded);
+
+    if (!ok) {
+      SLOGW << "Music: \"" << path << "\" nicht dekodierbar ("
+            << (isQoa ? "QOA" : "XM") << ")";
+
+      return false;
+    }
+
+    return initBuffer(*m_impl, std::move(decoded));
+  }
+
   constexpr auto flags = MA_SOUND_FLAG_STREAM;
 
   if (ma_sound_init_from_file(&audio.engine, path.c_str(), flags, nullptr, nullptr, &m_impl->sound) != MA_SUCCESS) {
-    SLOGW << "Music: \"" << path << "\" nicht ladbar (unterstuetzt: WAV, FLAC, MP3, OGG)";
+    SLOGW << "Music: \"" << path << "\" nicht ladbar (unterstuetzt: WAV, FLAC, MP3, OGG, QOA, XM)";
 
     return false;
   }
@@ -694,9 +849,7 @@ bool Music::LoadFromMemory(const u8 *data, const std::size_t size, const std::st
 
   if ((data == nullptr) || (size == 0)) return false;
 
-  (void)extension;
-
-  m_impl->memory.assign(data, data + size);
+  const std::string format = NormalizeExtension(extension);
 
   AudioEngine &audio = Engine();
 
@@ -705,6 +858,32 @@ bool Music::LoadFromMemory(const u8 *data, const std::size_t size, const std::st
 
     return false;
   }
+
+  if ((format == ".qoa") || detail::IsQoaMemory(data, size)) {
+    Wave decoded;
+
+    if (!DecodeQoaMemoryIntoWave(data, size, decoded)) {
+      SLOGW << "Music: QOA-Speicherinhalt ist ungueltig";
+
+      return false;
+    }
+
+    return initBuffer(*m_impl, std::move(decoded));
+  }
+
+  if ((format == ".xm") || detail::IsXmMemory(data, size)) {
+    Wave decoded;
+
+    if (!DecodeXmMemoryIntoWave(data, size, decoded)) {
+      SLOGW << "Music: XM-Speicherinhalt ist ungueltig";
+
+      return false;
+    }
+
+    return initBuffer(*m_impl, std::move(decoded));
+  }
+
+  m_impl->memory.assign(data, data + size);
 
   const ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
 
@@ -738,9 +917,12 @@ void Music::Unload() {
   if (m_impl != nullptr) {
     if (m_impl->soundReady && audio.ready) ma_sound_uninit(&m_impl->sound);
     if (m_impl->decoderReady && audio.ready) ma_decoder_uninit(&m_impl->decoder);
+    if (m_impl->bufferReady && audio.ready) ma_audio_buffer_uninit(&m_impl->buffer);
 
     m_impl->soundReady   = false;
     m_impl->decoderReady = false;
+    m_impl->bufferReady  = false;
+    m_impl->decoded.Unload();
     m_impl->memory.clear();
 
     m_impl = std::make_unique<Impl>();

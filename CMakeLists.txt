@@ -51,6 +51,7 @@ set(SGL_SOURCES
     src/gl/Texture.cpp
     src/gl/AnimatedSprite.cpp
     src/gl/Audio.cpp
+    src/gl/AudioCodecs.cpp
     src/gl/CollisionShape.cpp
     src/gl/Framebuffer.cpp
     src/gl/Sprite.cpp
@@ -58,6 +59,8 @@ set(SGL_SOURCES
     third_party/ttf2mesh/ttf2mesh.c
     third_party/audio/miniaudio.c
     third_party/audio/stb_vorbis.c
+    third_party/audio/qoa_impl.c
+    third_party/audio/jar_xm_impl.c
 )
 
 set(SGL_DEFINITIONS "")
@@ -231,6 +234,8 @@ set(SGL_THIRD_PARTY_C_SOURCES
     third_party/ttf2mesh/ttf2mesh.c
     third_party/audio/miniaudio.c
     third_party/audio/stb_vorbis.c
+    third_party/audio/qoa_impl.c
+    third_party/audio/jar_xm_impl.c
 )
 
 if(MSVC)

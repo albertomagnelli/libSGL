@@ -1,10 +1,15 @@
 #include <catch_amalgamated.hpp>
 
 #include <array>
+#include <cmath>
 #include <filesystem>
+#include <fstream>
+#include <string>
 #include <vector>
 
 #include <sgl/Audio.hpp>
+
+#include "gl/AudioCodecs.hpp"
 
 using namespace sgl;
 
@@ -61,6 +66,63 @@ TEST_CASE("Wave schreibt und liest eine WAV-Datei", "[audio][wave][io]") {
 
     std::filesystem::remove(file);
     std::filesystem::remove(codeFile);
+}
+
+
+TEST_CASE("Wave schreibt und liest eine QOA-Datei", "[audio][wave][qoa][io]") {
+    Wave wave;
+    REQUIRE(wave.SetSamples(std::vector<f32>(4410, 0.25f), 44100, 1));
+
+    const std::filesystem::path file =
+        std::filesystem::temp_directory_path() / "sgl-audio-test.qoa";
+    std::filesystem::remove(file);
+
+    REQUIRE(wave.SaveToFile(file.string()));
+    REQUIRE(std::filesystem::exists(file));
+
+    Wave loaded;
+    REQUIRE(loaded.LoadFromFile(file.string()));
+    REQUIRE(loaded.IsValid());
+    REQUIRE(loaded.SampleRate() == 44100);
+    REQUIRE(loaded.Channels() == 1);
+    REQUIRE(loaded.FrameCount() == 4410);
+    REQUIRE(loaded.Samples().front() == Catch::Approx(0.25f).margin(0.05f));
+
+    std::filesystem::remove(file);
+}
+
+TEST_CASE("XM-Modul wird nach PCM gerendert", "[audio][xm]") {
+    const std::filesystem::path file =
+        std::filesystem::path(SGL_TEST_AUDIO_RESOURCES) / "mini1111.xm";
+    REQUIRE(std::filesystem::exists(file));
+
+    std::ifstream stream(file, std::ios::binary | std::ios::ate);
+    REQUIRE(stream);
+
+    const std::streamoff size = stream.tellg();
+    REQUIRE(size > 0);
+
+    std::vector<u8> bytes(static_cast<std::size_t>(size));
+    stream.seekg(0, std::ios::beg);
+    REQUIRE(stream.read(reinterpret_cast<char*>(bytes.data()), size));
+
+    std::vector<f32> samples;
+    i32 sampleRate = 0;
+    i32 channels = 0;
+
+    REQUIRE(detail::DecodeXmMemory(bytes.data(), bytes.size(), samples, sampleRate, channels));
+    REQUIRE(sampleRate == 48000);
+    REQUIRE(channels == 2);
+    REQUIRE(samples.size() > 1000);
+
+    bool audible = false;
+    for (const f32 sample : samples) {
+        if (std::abs(sample) > 0.01f) {
+            audible = true;
+            break;
+        }
+    }
+    REQUIRE(audible);
 }
 
 TEST_CASE("Sound und AudioStream lassen sich aus Daten anlegen", "[audio]") {

@@ -25,6 +25,11 @@ int main() {
     i32 loaded = 0;
 
     for (const std::string_view name : files) {
+        if (name == "mini1111.xm") {
+            SLOGI << name << ": XM-Modul (kein Wave/Sound, sondern Music)";
+            continue;
+        }
+
         const auto path = audiodemo::Resource(name);
 
         Wave wave;
@@ -39,7 +44,8 @@ int main() {
               << audiodemo::FormatTime(wave.Duration());
     }
 
-    SLOGI << loaded << " von " << files.size() << " Dateien erfolgreich dekodiert.";
+    SLOGI << loaded << " von " << files.size()
+          << " Dateien als Wave dekodiert (XM ist ein Music-Modul).";
 
     return loaded > 0 ? 0 : 1;
 }

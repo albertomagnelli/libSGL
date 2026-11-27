@@ -2,6 +2,7 @@ set(SGL_AUDIO_EXAMPLES
     audio_info
     audio_sound_loading
     audio_music_stream
+    audio_module_stream
     audio_raw_stream
 )
 

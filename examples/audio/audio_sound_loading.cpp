@@ -19,8 +19,8 @@ using namespace sgl;
 int main() {
     audiodemo::InitAudio();
 
-    constexpr std::array<std::string_view, 4> effects{
-        "coin.wav", "spring.wav", "sound.wav", "weird.wav",
+    constexpr std::array<std::string_view, 5> effects{
+        "coin.wav", "spring.wav", "sound.wav", "weird.wav", "target.qoa",
     };
 
     for (const std::string_view name : effects) {

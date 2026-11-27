@@ -32,9 +32,10 @@ lädt einen OpenGL-4.6-Core-Kontext.
   pixelgenauen Überschneidungstests (`sgl::CollisionShape`)
 - Framebuffer: Farb-/Tiefe-/Stencil-Anhänge, MRT, MSAA und Blit/Resolve
   (`sgl::Framebuffer`)
-- Audio: Wellen dekodieren/schreiben, Effekte mit mehreren Stimmen, gestreamte
-  Musik und eigene PCM-Ströme über miniaudio (`sgl::Wave`, `sgl::Sound`,
-  `sgl::Music`, `sgl::AudioStream`)
+- Audio: WAV/FLAC/MP3/OGG/QOA dekodieren, WAV/QOA schreiben, Effekte mit
+  mehreren Stimmen, gestreamte Musik und eigene PCM-Ströme; XM-Module werden
+  für `Music` nach PCM gerendert (`sgl::Wave`, `sgl::Sound`, `sgl::Music`,
+  `sgl::AudioStream`)
 - Schriften: Bitmap-/SDF-Glyphenatlas, eingebettete DejaVu-Standardschrift,
   UTF-8, Kerning und Textvermessung (`sgl::Font`)
 - Mesh-Schriften: 2D- und 3D-Glyphennetze aus TrueType-Dateien (`sgl::Font2d`,
@@ -67,6 +68,8 @@ lädt einen OpenGL-4.6-Core-Kontext.
 | ttf2mesh | Mesh-Schriften | unter `third_party/ttf2mesh` vendort (MIT), direkt in `sgl` kompiliert |
 | miniaudio 0.11 | Audio-Backend (WAV/FLAC/MP3) | unter `third_party/audio` vendort, direkt in `sgl` kompiliert |
 | stb_vorbis 1.24 | Ogg-Vorbis für miniaudio | unter `third_party/audio` vendort (Public Domain), direkt in `sgl` kompiliert |
+| qoa.h | QOA-Decoder/Encoder | unter `third_party/audio` vendort (MIT), direkt in `sgl` kompiliert |
+| jar_xm.h | XM-Modul-Player | unter `third_party/audio` vendort (WTFPL v2), direkt in `sgl` kompiliert |
 | DejaVu Sans (Teilmenge) | eingebettete Standardschrift | Daten in `src/gl/DefaultFont.cpp` |
 
 ## Bauen

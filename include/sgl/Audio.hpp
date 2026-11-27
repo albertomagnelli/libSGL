@@ -2,7 +2,9 @@
 // sgl · Audio (Wave, Sound, Music, AudioStream)
 //
 // Backend ist miniaudio (eingebettet in third_party/audio, kein externes
-// Paket): Wave/FLAC/MP3 direkt, Ogg-Vorbis ueber stb_vorbis.
+// Paket): WAV/FLAC/MP3 direkt, Ogg-Vorbis ueber stb_vorbis, QOA ueber qoa.h
+// und XM-Module ueber jar_xm. XM wird als Music vollstaendig nach PCM
+// gerendert; Wave/Sound unterstuetzen es nicht.
 //
 //   Wave    : dekodierte PCM-Daten im Speicher (32 Bit float, verschachtelt)
 //   Sound   : kurzer Effekt, mehrere Stimmen gleichzeitig (Standard 8),
@@ -63,7 +65,7 @@ public:
   // Samplerate/Kanaele umrechnen (sampleSize muss 32 sein)
   bool Convert(i32 sampleRate, i32 channels);
 
-  // Als 16-Bit-PCM-WAV schreiben
+  // Als 16-Bit-PCM-WAV schreiben; bei der Endung .qoa als QOA
   bool SaveToFile(const std::string &path) const;
 
   // Als C-Header mit float-Array schreiben
@@ -160,6 +162,8 @@ public:
   struct Impl; // intern (Definition in Audio.cpp)
 
 private:
+  static bool initBuffer(Impl& impl, Wave wave);
+
   std::unique_ptr<Impl> m_impl;
 };
 
