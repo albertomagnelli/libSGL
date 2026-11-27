@@ -96,13 +96,13 @@ std::unique_ptr<Backend> CreatePlatformBackend(Platform platform, Error& error) 
 #endif
     case Platform::Win32:
 #if defined(SGL_HAS_WIN32) && SGL_HAS_WIN32
-        return createWin32Backend(error);
+        return CreateWin32Backend(error);
 #else
         break;
 #endif
     case Platform::Cocoa:
 #if defined(SGL_HAS_COCOA) && SGL_HAS_COCOA
-        return createCocoaBackend(error);
+        return CreateCocoaBackend(error);
 #else
         break;
 #endif

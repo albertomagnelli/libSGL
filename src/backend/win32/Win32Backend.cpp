@@ -111,7 +111,7 @@ struct XInputRaw {
     XInputRaw() { axes.fill(0.0f); buttons.fill(0); }
 };
 
-std::string utf8FromWide(const std::wstring& wide) {
+std::string Utf8FromWide(const std::wstring& wide) {
     if (wide.empty()) {
         return {};
     }
@@ -123,7 +123,7 @@ std::string utf8FromWide(const std::wstring& wide) {
     return result;
 }
 
-std::wstring wideFromUtf8(std::string_view text) {
+std::wstring WideFromUtf8(std::string_view text) {
     if (text.empty()) {
         return {};
     }
@@ -135,12 +135,12 @@ std::wstring wideFromUtf8(std::string_view text) {
     return result;
 }
 
-void reportWin32Error(ErrorCode code, const char* context) {
+void ReportWin32Error(ErrorCode code, const char* context) {
     const DWORD value = GetLastError();
     char buffer[256];
     std::snprintf(buffer, sizeof(buffer), "%s (Win32-Fehler %lu)", context,
                   static_cast<unsigned long>(value));
-    reportError(code, buffer);
+    ReportError(code, buffer);
 }
 
 struct State {
@@ -162,9 +162,9 @@ struct State {
 
 State g_state;
 
-UINT virtualKeyForKey(Key key);
+UINT VirtualKeyForKey(Key key);
 
-Key translateVirtualKey(WPARAM vk, LPARAM lp) {
+Key TranslateVirtualKey(WPARAM vk, LPARAM lp) {
     const UINT scancode = static_cast<UINT>((lp >> 16) & 0xFF);
     const bool extended = (lp & (1 << 24)) != 0;
 
@@ -242,7 +242,7 @@ Key translateVirtualKey(WPARAM vk, LPARAM lp) {
     }
 }
 
-Modifiers currentModifiers() {
+Modifiers CurrentModifiers() {
     Modifiers mods = Modifiers::None;
     if (GetKeyState(VK_SHIFT) < 0) mods |= Modifiers::Shift;
     if (GetKeyState(VK_CONTROL) < 0) mods |= Modifiers::Control;
@@ -391,7 +391,7 @@ private:
     u32 m_pendingHighSurrogate = 0;
 };
 
-LRESULT CALLBACK windowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     auto* window = reinterpret_cast<Win32WindowBackend*>(
         GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     if (!window) {
@@ -407,12 +407,12 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpara
     return DefWindowProcW(hwnd, message, wparam, lparam);
 }
 
-BOOL CALLBACK monitorEnumProc(HMONITOR monitor, HDC, LPRECT, LPARAM) {
+BOOL CALLBACK MonitorEnumProc(HMONITOR monitor, HDC, LPRECT, LPARAM) {
     g_state.monitors.push_back(monitor);
     return TRUE;
 }
 
-bool loadXInput() {
+bool LoadXInput() {
     if (g_state.xinputGetState) {
         return true;
     }
@@ -431,8 +431,8 @@ bool loadXInput() {
     return false;
 }
 
-void pollJoysticks() {
-    if (!loadXInput()) {
+void PollJoysticks() {
+    if (!LoadXInput()) {
         return;
     }
     for (DWORD index = 0; index < 4; ++index) {
@@ -447,9 +447,9 @@ void pollJoysticks() {
     }
 }
 
-XInputRaw readXInput(i32 jid) {
+XInputRaw ReadXInput(i32 jid) {
     XInputRaw raw;
-    if (jid < 0 || jid >= 4 || !loadXInput()) {
+    if (jid < 0 || jid >= 4 || !LoadXInput()) {
         return raw;
     }
     XInputState native{};
@@ -486,25 +486,25 @@ XInputRaw readXInput(i32 jid) {
     return raw;
 }
 
-XInputCapabilities xinputCapabilities(i32 jid) {
+XInputCapabilities ReadXInputCapabilities(i32 jid) {
     XInputCapabilities capabilities{};
     capabilities.subType = XINPUT_DEVSUBTYPE_GAMEPAD;
-    if (jid >= 0 && jid < 4 && loadXInput() && g_state.xinputGetCapabilities) {
+    if (jid >= 0 && jid < 4 && LoadXInput() && g_state.xinputGetCapabilities) {
         g_state.xinputGetCapabilities(static_cast<DWORD>(jid), 0, &capabilities);
     }
     return capabilities;
 }
 
-std::string xinputGuid(i32 jid) {
-    const XInputCapabilities capabilities = xinputCapabilities(jid);
+std::string XinputGuid(i32 jid) {
+    const XInputCapabilities capabilities = ReadXInputCapabilities(jid);
     char guid[33];
     std::snprintf(guid, sizeof(guid), "78696e707574%02x000000000000000000",
                   static_cast<unsigned>(capabilities.subType));
     return guid;
 }
 
-std::string xinputName(i32 jid) {
-    const XInputCapabilities capabilities = xinputCapabilities(jid);
+std::string XinputName(i32 jid) {
+    const XInputCapabilities capabilities = ReadXInputCapabilities(jid);
     switch (capabilities.subType) {
     case XINPUT_DEVSUBTYPE_WHEEL: return "XInput Wheel";
     case XINPUT_DEVSUBTYPE_ARCADE_STICK: return "XInput Arcade Stick";
@@ -560,7 +560,7 @@ public:
             TranslateMessage(&message);
             DispatchMessageW(&message);
         }
-        pollJoysticks();
+        PollJoysticks();
     }
 
     void waitEvents(f64 timeout) override {
@@ -636,10 +636,10 @@ public:
         device.cb = sizeof(device);
         for (DWORD index = 0; EnumDisplayDevicesW(info.szDevice, index, &device, 0); ++index) {
             if ((device.StateFlags & DISPLAY_DEVICE_ACTIVE) != 0) {
-                return utf8FromWide(device.DeviceString);
+                return Utf8FromWide(device.DeviceString);
             }
         }
-        return utf8FromWide(info.szDevice);
+        return Utf8FromWide(info.szDevice);
     }
 
     [[nodiscard]] std::vector<VideoMode> getVideoModes(const Monitor& monitor) override {
@@ -689,7 +689,7 @@ public:
 
     void setGamma(const Monitor& monitor, f32 gamma) override {
         if (gamma <= 0.0f) {
-            reportError(ErrorCode::InvalidValue, "Gamma muss groesser als 0 sein.");
+            ReportError(ErrorCode::InvalidValue, "Gamma muss groesser als 0 sein.");
             return;
         }
         GammaRamp ramp;
@@ -753,7 +753,7 @@ public:
     }
 
     [[nodiscard]] bool isJoystickPresent(i32 jid) override {
-        if (jid < 0 || jid >= 4 || !loadXInput()) {
+        if (jid < 0 || jid >= 4 || !LoadXInput()) {
             return false;
         }
         XInputState state{};
@@ -764,18 +764,18 @@ public:
         if (!isJoystickPresent(jid)) {
             return {};
         }
-        return xinputName(jid);
+        return XinputName(jid);
     }
 
     [[nodiscard]] std::string getJoystickGUID(i32 jid) override {
-        return isJoystickPresent(jid) ? xinputGuid(jid) : std::string{};
+        return isJoystickPresent(jid) ? XinputGuid(jid) : std::string{};
     }
 
     [[nodiscard]] std::span<const f32> getJoystickAxes(i32 jid) override {
         if (!isJoystickPresent(jid)) {
             return {};
         }
-        const XInputRaw raw = readXInput(jid);
+        const XInputRaw raw = ReadXInput(jid);
         static std::array<f32, 6> axes{};
         axes = raw.axes;
         return axes;
@@ -785,7 +785,7 @@ public:
         if (!isJoystickPresent(jid)) {
             return {};
         }
-        const XInputRaw raw = readXInput(jid);
+        const XInputRaw raw = ReadXInput(jid);
         static std::array<u8, 10> buttons{};
         buttons = raw.buttons;
         return buttons;
@@ -795,7 +795,7 @@ public:
         if (!isJoystickPresent(jid)) {
             return {};
         }
-        const XInputRaw raw = readXInput(jid);
+        const XInputRaw raw = ReadXInput(jid);
         static std::array<JoystickHat, 1> hats{};
         hats[0] = raw.hat;
         return hats;
@@ -806,7 +806,7 @@ public:
             return false;
         }
         return GamepadMappingDatabase::Instance()
-            .find(xinputGuid(jid), kGamepadPlatform)
+            .find(XinputGuid(jid), kGamepadPlatform)
             .has_value();
     }
 
@@ -815,7 +815,7 @@ public:
             return {};
         }
         const auto mapping =
-            GamepadMappingDatabase::Instance().find(xinputGuid(jid), kGamepadPlatform);
+            GamepadMappingDatabase::Instance().find(XinputGuid(jid), kGamepadPlatform);
         return mapping ? mapping->name : std::string{};
     }
 
@@ -824,12 +824,12 @@ public:
             return std::nullopt;
         }
         const auto mapping =
-            GamepadMappingDatabase::Instance().find(xinputGuid(jid), kGamepadPlatform);
+            GamepadMappingDatabase::Instance().find(XinputGuid(jid), kGamepadPlatform);
         if (!mapping) {
             return std::nullopt;
         }
-        const XInputRaw raw = readXInput(jid);
-        return applyGamepadMapping(*mapping, raw.axes, raw.buttons,
+        const XInputRaw raw = ReadXInput(jid);
+        return ApplyGamepadMapping(*mapping, raw.axes, raw.buttons,
                                    std::span<const JoystickHat>(&raw.hat, 1));
     }
 
@@ -869,36 +869,33 @@ private:
     }
 };
 
-
-} // namespace
-
 bool Win32BackendImpl::init(const InitOptions&, Error& error) {
     if (g_state.initialized) {
         return true;
     }
     g_state.instance = GetModuleHandleW(nullptr);
     if (!g_state.instance) {
-        error = makeError(ErrorCode::PlatformError, "Win32-Instanz konnte nicht ermittelt werden.");
+        error = MakeError(ErrorCode::PlatformError, "Win32-Instanz konnte nicht ermittelt werden.");
         return false;
     }
 
     WNDCLASSEXW windowClass{};
     windowClass.cbSize = sizeof(windowClass);
     windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-    windowClass.lpfnWndProc = windowProc;
+    windowClass.lpfnWndProc = WindowProc;
     windowClass.hInstance = g_state.instance;
     windowClass.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     windowClass.hbrBackground = nullptr;
     windowClass.lpszClassName = L"sglWindowClass";
     g_state.windowClass = RegisterClassExW(&windowClass);
     if (!g_state.windowClass) {
-        reportWin32Error(ErrorCode::PlatformError,
+        ReportWin32Error(ErrorCode::PlatformError,
                          "Win32-Fensterklasse konnte nicht registriert werden");
-        error = getError();
+        error = GetError();
         return false;
     }
 
-    EnumDisplayMonitors(nullptr, nullptr, monitorEnumProc, 0);
+    EnumDisplayMonitors(nullptr, nullptr, MonitorEnumProc, 0);
 
     timeBeginPeriod(g_state.timerResolution);
     g_state.initialized = true;
@@ -928,13 +925,13 @@ void Win32BackendImpl::terminate() {
 std::unique_ptr<CursorBackend> Win32BackendImpl::createCursor(const WindowIcon& image, ivec2 hotspot,
                                                               Error& error) {
     if (image.size.x <= 0 || image.size.y <= 0) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
         return nullptr;
     }
     const auto pixels = static_cast<std::size_t>(image.size.x) *
                         static_cast<std::size_t>(image.size.y);
     if (image.rgba8.size() < pixels * 4) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
         return nullptr;
     }
 
@@ -956,7 +953,7 @@ std::unique_ptr<CursorBackend> Win32BackendImpl::createCursor(const WindowIcon& 
                                      DIB_RGB_COLORS, &bits, nullptr, 0);
     ReleaseDC(nullptr, screen);
     if (!color || !bits) {
-        error = makeError(ErrorCode::OutOfMemory, "Cursor-Bitmap konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::OutOfMemory, "Cursor-Bitmap konnte nicht erstellt werden.");
         return nullptr;
     }
 
@@ -979,7 +976,7 @@ std::unique_ptr<CursorBackend> Win32BackendImpl::createCursor(const WindowIcon& 
     DeleteObject(color);
     DeleteObject(mask);
     if (!cursor) {
-        error = makeError(ErrorCode::PlatformError, "Cursor konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "Cursor konnte nicht erstellt werden.");
         return nullptr;
     }
     return std::make_unique<Win32CursorBackend>(cursor, true);
@@ -998,7 +995,7 @@ std::unique_ptr<CursorBackend> Win32BackendImpl::createStandardCursor(StandardCu
     }
     HCURSOR cursor = LoadCursorW(nullptr, name);
     if (!cursor) {
-        error = makeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht geladen werden.");
+        error = MakeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht geladen werden.");
         return nullptr;
     }
     return std::make_unique<Win32CursorBackend>(cursor, false);
@@ -1012,7 +1009,7 @@ Win32WindowBackend::Win32WindowBackend(const WindowHints& hints, Error& error)
     m_mousePassthrough = hints.mousePassthrough;
 
     if (hints.contextApi != ContextApi::Native || hints.clientApi != ClientApi::OpenGL) {
-        error = makeError(ErrorCode::FeatureUnavailable,
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "Das Win32-Backend unterstuetzt nur native WGL-Kontexte.");
         return;
     }
@@ -1032,12 +1029,12 @@ Win32WindowBackend::Win32WindowBackend(const WindowHints& hints, Error& error)
     AdjustWindowRectEx(&rectangle, style, FALSE, 0);
 
     m_hwnd = CreateWindowExW(
-        m_floating ? WS_EX_TOPMOST : 0, L"sglWindowClass", wideFromUtf8(m_title).c_str(), style,
+        m_floating ? WS_EX_TOPMOST : 0, L"sglWindowClass", WideFromUtf8(m_title).c_str(), style,
         CW_USEDEFAULT, CW_USEDEFAULT, rectangle.right - rectangle.left,
         rectangle.bottom - rectangle.top, nullptr, nullptr, g_state.instance, this);
     if (!m_hwnd) {
-        reportWin32Error(ErrorCode::PlatformError, "Win32-Fenster konnte nicht erstellt werden");
-        error = getError();
+        ReportWin32Error(ErrorCode::PlatformError, "Win32-Fenster konnte nicht erstellt werden");
+        error = GetError();
         return;
     }
 
@@ -1092,16 +1089,16 @@ void Win32WindowBackend::createContext(Error& error) {
 
     const int format = ChoosePixelFormat(m_hdc, &descriptor);
     if (format == 0 || !SetPixelFormat(m_hdc, format, &descriptor)) {
-        reportWin32Error(ErrorCode::FormatUnavailable,
+        ReportWin32Error(ErrorCode::FormatUnavailable,
                          "Kein passendes Win32-Pixelformat gefunden");
-        error = getError();
+        error = GetError();
         return;
     }
 
     HGLRC legacy = wglCreateContext(m_hdc);
     if (!legacy) {
-        reportWin32Error(ErrorCode::ApiUnavailable, "WGL-Kontext konnte nicht erstellt werden");
-        error = getError();
+        ReportWin32Error(ErrorCode::ApiUnavailable, "WGL-Kontext konnte nicht erstellt werden");
+        error = GetError();
         return;
     }
     wglMakeCurrent(m_hdc, legacy);
@@ -1151,7 +1148,7 @@ void Win32WindowBackend::createContext(Error& error) {
     }
 
     if (!m_hglrc) {
-        error = makeError(ErrorCode::VersionUnavailable,
+        error = MakeError(ErrorCode::VersionUnavailable,
                           "Der angeforderte OpenGL-Kontext konnte nicht erstellt werden.");
         return;
     }
@@ -1246,7 +1243,7 @@ bool Win32WindowBackend::isExtensionSupported(const char* name) {
 
 void Win32WindowBackend::setTitle(std::string_view title) {
     m_title = std::string(title);
-    SetWindowTextW(m_hwnd, wideFromUtf8(m_title).c_str());
+    SetWindowTextW(m_hwnd, WideFromUtf8(m_title).c_str());
 }
 
 void Win32WindowBackend::setSize(ivec2 size) {
@@ -1625,12 +1622,12 @@ std::string Win32WindowBackend::getKeyName(Key key, i32 scancode) const {
 }
 
 i32 Win32WindowBackend::getKeyScancode(Key key) const {
-    const UINT vk = static_cast<UINT>(MapVirtualKeyW(virtualKeyForKey(key), MAPVK_VK_TO_VSC));
+    const UINT vk = static_cast<UINT>(MapVirtualKeyW(VirtualKeyForKey(key), MAPVK_VK_TO_VSC));
     return vk == 0 ? -1 : static_cast<i32>(vk);
 }
 
 namespace {
-UINT virtualKeyForKey(Key key) {
+UINT VirtualKeyForKey(Key key) {
     if (key >= Key::A && key <= Key::Z) {
         return 'A' + static_cast<UINT>(key) - static_cast<UINT>(Key::A);
     }
@@ -1673,7 +1670,7 @@ UINT virtualKeyForKey(Key key) {
 } // namespace
 
 bool Win32WindowBackend::isKeyPressed(Key key) const {
-    const UINT vk = virtualKeyForKey(key);
+    const UINT vk = VirtualKeyForKey(key);
     if (vk == 0) {
         return false;
     }
@@ -1714,7 +1711,7 @@ std::string Win32WindowBackend::getClipboardString() const {
     if (HANDLE data = GetClipboardData(CF_UNICODETEXT)) {
         const auto* text = static_cast<const wchar_t*>(GlobalLock(data));
         if (text) {
-            result = utf8FromWide(text);
+            result = Utf8FromWide(text);
             GlobalUnlock(data);
         }
     }
@@ -1727,7 +1724,7 @@ void Win32WindowBackend::setClipboardString(std::string_view text) {
         return;
     }
     EmptyClipboard();
-    const std::wstring wide = wideFromUtf8(text);
+    const std::wstring wide = WideFromUtf8(text);
     const std::size_t bytes = (wide.size() + 1) * sizeof(wchar_t);
     if (HGLOBAL memory = GlobalAlloc(GMEM_MOVEABLE, bytes)) {
         if (void* destination = GlobalLock(memory)) {
@@ -1809,8 +1806,8 @@ LRESULT Win32WindowBackend::handleMessage(UINT message, WPARAM wparam, LPARAM lp
         }
         const bool pressed = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
         const bool repeat = pressed && (lparam & (1 << 30)) != 0;
-        const Key key = translateVirtualKey(wparam, lparam);
-        Modifiers mods = currentModifiers();
+        const Key key = TranslateVirtualKey(wparam, lparam);
+        Modifiers mods = CurrentModifiers();
         if (m_stickyKeys) {
             if (pressed && !repeat) {
                 for (Modifiers flag : {Modifiers::Shift, Modifiers::Control, Modifiers::Alt,
@@ -1851,7 +1848,7 @@ LRESULT Win32WindowBackend::handleMessage(UINT message, WPARAM wparam, LPARAM lp
         }
         if (m_events && (codepoint >= 32 || codepoint == 9 || codepoint == 10 || codepoint == 13)) {
             m_events->onChar(codepoint);
-            m_events->onCharMods(codepoint, currentModifiers());
+            m_events->onCharMods(codepoint, CurrentModifiers());
         }
         return 0;
     }
@@ -1905,7 +1902,7 @@ LRESULT Win32WindowBackend::handleMessage(UINT message, WPARAM wparam, LPARAM lp
         }
         if (m_events) {
             m_events->onMouseButton(button, pressed ? KeyAction::Press : KeyAction::Release,
-                                    currentModifiers());
+                                    CurrentModifiers());
         }
         if (message == WM_XBUTTONDOWN || message == WM_XBUTTONUP) {
             return TRUE;
@@ -1971,7 +1968,7 @@ LRESULT Win32WindowBackend::handleMessage(UINT message, WPARAM wparam, LPARAM lp
             const UINT length = DragQueryFileW(drop, i, nullptr, 0);
             std::wstring path(length, L'\0');
             DragQueryFileW(drop, i, path.data(), length + 1);
-            paths.push_back(utf8FromWide(path));
+            paths.push_back(Utf8FromWide(path));
         }
         DragFinish(drop);
         if (m_events && !paths.empty()) {
@@ -2024,7 +2021,7 @@ LRESULT Win32WindowBackend::handleMessage(UINT message, WPARAM wparam, LPARAM lp
 
 namespace sgl::detail {
 
-std::unique_ptr<Backend> createWin32Backend(Error& error) {
+std::unique_ptr<Backend> CreateWin32Backend(Error& error) {
     auto backend = std::make_unique<win32::Win32BackendImpl>();
     (void)error;
     return backend;

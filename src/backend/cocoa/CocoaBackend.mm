@@ -30,8 +30,6 @@
 
 namespace sgl::detail::cocoa {
 class CocoaWindowBackend;
-struct State;
-State& state();
 } // namespace sgl::detail::cocoa
 
 @interface SglView : NSOpenGLView <NSDraggingDestination>
@@ -44,7 +42,7 @@ State& state();
 
 namespace sgl::detail::cocoa {
 
-std::string utf8FromNSString(NSString* string) {
+std::string Utf8FromNSString(NSString* string) {
     if (!string) {
         return {};
     }
@@ -52,12 +50,12 @@ std::string utf8FromNSString(NSString* string) {
     return text ? std::string(text) : std::string{};
 }
 
-NSString* nsStringFromUtf8(std::string_view text) {
+NSString* NsStringFromUtf8(std::string_view text) {
     return [[NSString alloc] initWithBytes:text.data() length:text.size()
                                    encoding:NSUTF8StringEncoding];
 }
 
-CGFloat flipY(CGFloat y, CGFloat height) {
+CGFloat FlipY(CGFloat y, CGFloat height) {
     return height - y;
 }
 
@@ -119,7 +117,7 @@ struct State {
 
 State g_state;
 
-void refreshJoysticks();
+void RefreshJoysticks();
 
 std::string cfStringToUtf8(CFStringRef string) {
     if (!string) {
@@ -135,7 +133,7 @@ std::string cfStringToUtf8(CFStringRef string) {
 }
 
 template <typename T>
-T cfProperty(IOHIDDeviceRef device, CFStringRef key) {
+T CfProperty(IOHIDDeviceRef device, CFStringRef key) {
     CFTypeRef value = IOHIDDeviceGetProperty(device, key);
     if (!value) {
         return T{};
@@ -157,7 +155,7 @@ T cfProperty(IOHIDDeviceRef device, CFStringRef key) {
     return T{};
 }
 
-Key translateKeyCode(unsigned short keyCode) {
+Key TranslateKeyCode(unsigned short keyCode) {
     switch (keyCode) {
     case 0: return Key::A;
     case 1: return Key::S;
@@ -270,7 +268,7 @@ Key translateKeyCode(unsigned short keyCode) {
     }
 }
 
-unsigned short keyCodeForKey(Key key) {
+unsigned short KeyCodeForKey(Key key) {
     if (key >= Key::A && key <= Key::Z) {
         static const unsigned short codes[] = {0, 11, 8, 2, 14, 3, 5, 4, 34, 38, 40, 37, 46,
                                                45, 31, 35, 12, 15, 1, 17, 32, 9, 13, 7, 16, 6};
@@ -316,7 +314,7 @@ unsigned short keyCodeForKey(Key key) {
     return 0xFFFF;
 }
 
-Modifiers modifiersFromEvent(NSEvent* event) {
+Modifiers ModifiersFromEvent(NSEvent* event) {
     const NSEventModifierFlags flags = [event modifierFlags];
     Modifiers mods = Modifiers::None;
     if ((flags & NSEventModifierFlagShift) != 0) mods |= Modifiers::Shift;
@@ -466,11 +464,11 @@ Monitor MakeMonitor(NSScreen* screen) {
     return MonitorAccess::Make(screen, Platform::Cocoa);
 }
 
-NSScreen* screenFromMonitor(const Monitor& monitor) {
+NSScreen* ScreenFromMonitor(const Monitor& monitor) {
     return static_cast<NSScreen*>(MonitorAccess::Native(monitor));
 }
 
-void rebuildMonitors(bool notify) {
+void RebuildMonitors(bool notify) {
     State& s = g_state;
     std::vector<Monitor> monitors;
     std::vector<void*> handles;
@@ -495,14 +493,14 @@ void rebuildMonitors(bool notify) {
     s.monitorHandles = std::move(handles);
 }
 
-double screenTopLeftY(NSScreen* screen) {
+double ScreenTopLeftY(NSScreen* screen) {
     NSScreen* primary = [NSScreen screens].firstObject;
     const CGFloat primaryHeight = primary ? primary.frame.size.height : 0.0;
     const NSRect frame = screen.frame;
     return primaryHeight - (frame.origin.y + frame.size.height);
 }
 
-CGDirectDisplayID displayIdFromScreen(NSScreen* screen) {
+CGDirectDisplayID DisplayIdFromScreen(NSScreen* screen) {
     NSDictionary* description = screen.deviceDescription;
     NSNumber* number = description[@"NSScreenNumber"];
     return number ? static_cast<CGDirectDisplayID>([number unsignedIntValue]) : 0;
@@ -546,19 +544,19 @@ public:
     }
 
     [[nodiscard]] ivec2 getMonitorPosition(const Monitor& monitor) override {
-        NSScreen* screen = screenFromMonitor(monitor);
+        NSScreen* screen = ScreenFromMonitor(monitor);
         if (!screen) return {0, 0};
         return ivec2(static_cast<i32>(screen.frame.origin.x),
-                     static_cast<i32>(screenTopLeftY(screen)));
+                     static_cast<i32>(ScreenTopLeftY(screen)));
     }
 
     [[nodiscard]] Monitor::Workarea getMonitorWorkarea(const Monitor& monitor) override {
         Monitor::Workarea area;
-        NSScreen* screen = screenFromMonitor(monitor);
+        NSScreen* screen = ScreenFromMonitor(monitor);
         if (screen) {
             const NSRect frame = screen.visibleFrame;
             area.position = ivec2(static_cast<i32>(frame.origin.x),
-                                  static_cast<i32>(screenTopLeftY(screen) + (screen.frame.size.height -
+                                  static_cast<i32>(ScreenTopLeftY(screen) + (screen.frame.size.height -
                                                                             frame.origin.y -
                                                                             frame.size.height)));
             area.size = ivec2(static_cast<i32>(frame.size.width),
@@ -568,7 +566,7 @@ public:
     }
 
     [[nodiscard]] ivec2 getMonitorPhysicalSize(const Monitor& monitor) override {
-        NSScreen* screen = screenFromMonitor(monitor);
+        NSScreen* screen = ScreenFromMonitor(monitor);
         if (!screen) return {0, 0};
         NSDictionary* description = screen.deviceDescription;
         NSSize size = [description[@"NSDeviceSize"] sizeValue];
@@ -576,24 +574,24 @@ public:
     }
 
     [[nodiscard]] vec2 getMonitorContentScale(const Monitor& monitor) override {
-        NSScreen* screen = screenFromMonitor(monitor);
+        NSScreen* screen = ScreenFromMonitor(monitor);
         const CGFloat scale = screen ? screen.backingScaleFactor : 1.0;
         return {static_cast<f32>(scale), static_cast<f32>(scale)};
     }
 
     [[nodiscard]] std::string getMonitorName(const Monitor& monitor) override {
-        NSScreen* screen = screenFromMonitor(monitor);
+        NSScreen* screen = ScreenFromMonitor(monitor);
         if (!screen) return {};
         if ([screen respondsToSelector:@selector(localizedName)]) {
-            return utf8FromNSString([screen localizedName]);
+            return Utf8FromNSString([screen localizedName]);
         }
         return {};
     }
 
     [[nodiscard]] std::vector<VideoMode> getVideoModes(const Monitor& monitor) override {
         std::vector<VideoMode> modes;
-        NSScreen* screen = screenFromMonitor(monitor);
-        const CGDirectDisplayID display = screen ? displayIdFromScreen(screen) : 0;
+        NSScreen* screen = ScreenFromMonitor(monitor);
+        const CGDirectDisplayID display = screen ? DisplayIdFromScreen(screen) : 0;
         if (display == 0) {
             return modes;
         }
@@ -617,9 +615,9 @@ public:
 
     [[nodiscard]] VideoMode getVideoMode(const Monitor& monitor) override {
         VideoMode result;
-        NSScreen* screen = screenFromMonitor(monitor);
+        NSScreen* screen = ScreenFromMonitor(monitor);
         if (!screen) return result;
-        const CGDirectDisplayID display = displayIdFromScreen(screen);
+        const CGDirectDisplayID display = DisplayIdFromScreen(screen);
         CGDisplayModeRef mode = CGDisplayCopyDisplayMode(display);
         if (mode) {
             result.size = ivec2(static_cast<i32>(CGDisplayModeGetWidth(mode)),
@@ -632,7 +630,7 @@ public:
 
     void setGamma(const Monitor& monitor, f32 gamma) override {
         if (gamma <= 0.0f) {
-            reportError(ErrorCode::InvalidValue, "Gamma muss groesser als 0 sein.");
+            ReportError(ErrorCode::InvalidValue, "Gamma muss groesser als 0 sein.");
             return;
         }
         GammaRamp ramp;
@@ -647,8 +645,8 @@ public:
 
     [[nodiscard]] GammaRamp getGammaRamp(const Monitor& monitor) override {
         GammaRamp result;
-        NSScreen* screen = screenFromMonitor(monitor);
-        const CGDirectDisplayID display = screen ? displayIdFromScreen(screen) : 0;
+        NSScreen* screen = ScreenFromMonitor(monitor);
+        const CGDirectDisplayID display = screen ? DisplayIdFromScreen(screen) : 0;
         if (display == 0) return result;
         std::array<CGGammaValue, 256> red{};
         std::array<CGGammaValue, 256> green{};
@@ -665,8 +663,8 @@ public:
     }
 
     void setGammaRamp(const Monitor& monitor, const GammaRamp& ramp) override {
-        NSScreen* screen = screenFromMonitor(monitor);
-        const CGDirectDisplayID display = screen ? displayIdFromScreen(screen) : 0;
+        NSScreen* screen = ScreenFromMonitor(monitor);
+        const CGDirectDisplayID display = screen ? DisplayIdFromScreen(screen) : 0;
         if (display == 0) return;
         std::array<CGGammaValue, 256> red{};
         std::array<CGGammaValue, 256> green{};
@@ -730,7 +728,7 @@ public:
         if (!isJoystickPresent(jid)) return std::nullopt;
         const auto& device = g_state.joysticks[static_cast<std::size_t>(jid)];
         if (!device.mapping) return std::nullopt;
-        return applyGamepadMapping(*device.mapping, device.axes, device.buttons, device.hats);
+        return ApplyGamepadMapping(*device.mapping, device.axes, device.buttons, device.hats);
     }
 
     bool updateGamepadMappings(std::string_view mappings) override {
@@ -753,7 +751,7 @@ public:
 // HID joystick enumeration
 // ---------------------------------------------------------------------------
 
-i64 elementValue(IOHIDDeviceRef device, IOHIDElementRef element) {
+i64 ElementValue(IOHIDDeviceRef device, IOHIDElementRef element) {
     IOHIDValueRef value = nullptr;
     if (IOHIDDeviceGetValue(device, element, &value) == kIOReturnSuccess && value) {
         return IOHIDValueGetIntegerValue(value);
@@ -761,7 +759,7 @@ i64 elementValue(IOHIDDeviceRef device, IOHIDElementRef element) {
     return 0;
 }
 
-JoystickHat hatFromValue(i64 value) {
+JoystickHat HatFromValue(i64 value) {
     switch (value) {
     case 0: return JoystickHat::Up;
     case 1: return JoystickHat::RightUp;
@@ -781,11 +779,11 @@ struct RawHidElement {
     u32 usage = 0;
 };
 
-void readJoystick(JoystickDevice& joystick) {
+void ReadJoystick(JoystickDevice& joystick) {
     joystick.axes.resize(joystick.axisElements.size());
     for (std::size_t i = 0; i < joystick.axisElements.size(); ++i) {
         JoystickAxisElement& axis = joystick.axisElements[i];
-        const i64 raw = elementValue(joystick.device, axis.element);
+        const i64 raw = ElementValue(joystick.device, axis.element);
         // Auto-Kalibrierung wie bei GLFW: beobachtete Min/Max erweitern.
         axis.minimum = std::min(axis.minimum, raw);
         axis.maximum = std::max(axis.maximum, raw);
@@ -800,27 +798,27 @@ void readJoystick(JoystickDevice& joystick) {
     joystick.buttons.resize(joystick.buttonElements.size());
     for (std::size_t i = 0; i < joystick.buttonElements.size(); ++i) {
         JoystickButtonElement& button = joystick.buttonElements[i];
-        button.value = elementValue(joystick.device, button.element) != 0 ? 1 : 0;
+        button.value = ElementValue(joystick.device, button.element) != 0 ? 1 : 0;
         joystick.buttons[i] = button.value;
     }
 
     joystick.hats.resize(joystick.hatElements.size());
     for (std::size_t i = 0; i < joystick.hatElements.size(); ++i) {
         JoystickHatElement& hat = joystick.hatElements[i];
-        hat.value = hatFromValue(elementValue(joystick.device, hat.element));
+        hat.value = HatFromValue(ElementValue(joystick.device, hat.element));
         joystick.hats[i] = hat.value;
     }
 }
 
-bool openJoystick(IOHIDDeviceRef device, JoystickDevice& joystick) {
+bool OpenJoystick(IOHIDDeviceRef device, JoystickDevice& joystick) {
     joystick.device = device;
-    joystick.name = cfProperty<std::string>(device, CFSTR(kIOHIDProductKey));
+    joystick.name = CfProperty<std::string>(device, CFSTR(kIOHIDProductKey));
     if (joystick.name.empty()) {
         joystick.name = "Unknown Joystick";
     }
-    joystick.vendor = cfProperty<u64>(device, CFSTR(kIOHIDVendorIDKey));
-    joystick.product = cfProperty<u64>(device, CFSTR(kIOHIDProductIDKey));
-    joystick.version = cfProperty<u64>(device, CFSTR(kIOHIDVersionNumberKey));
+    joystick.vendor = CfProperty<u64>(device, CFSTR(kIOHIDVendorIDKey));
+    joystick.product = CfProperty<u64>(device, CFSTR(kIOHIDProductIDKey));
+    joystick.version = CfProperty<u64>(device, CFSTR(kIOHIDVersionNumberKey));
     joystick.guid = makeCocoaGamepadGuid(joystick.vendor, joystick.product,
                                          joystick.version, joystick.name);
 
@@ -941,11 +939,11 @@ bool openJoystick(IOHIDDeviceRef device, JoystickDevice& joystick) {
 
     joystick.mapping = GamepadMappingDatabase::Instance().find(joystick.guid, "Mac OS X");
     joystick.gamepad = joystick.mapping.has_value();
-    readJoystick(joystick);
+    ReadJoystick(joystick);
     return true;
 }
 
-void refreshJoysticks() {
+void RefreshJoysticks() {
     State& s = g_state;
     if (!s.hidManager) {
         return;
@@ -978,7 +976,7 @@ void refreshJoysticks() {
 
     // Bestehende Geräte aktualisieren.
     for (auto& joystick : s.joysticks) {
-        readJoystick(joystick);
+        ReadJoystick(joystick);
     }
 
     // Neue Geräte anhängen.
@@ -993,7 +991,7 @@ void refreshJoysticks() {
         }
 
         JoystickDevice joystick;
-        if (!openJoystick(device, joystick)) {
+        if (!OpenJoystick(device, joystick)) {
             continue;
         }
         s.joysticks.push_back(std::move(joystick));
@@ -1158,17 +1156,17 @@ namespace sgl::detail::cocoa {
 CocoaWindowBackend::CocoaWindowBackend(const WindowHints& hints, Error& error)
     : m_size{hints.width, hints.height}, m_title(hints.title), m_hints(hints) {
     if (!g_state.initialized) {
-        error = makeError(ErrorCode::PlatformUnavailable, "Cocoa ist nicht initialisiert.");
+        error = MakeError(ErrorCode::PlatformUnavailable, "Cocoa ist nicht initialisiert.");
         return;
     }
     if (hints.contextApi != ContextApi::Native || hints.clientApi != ClientApi::OpenGL) {
-        error = makeError(ErrorCode::FeatureUnavailable,
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "Das Cocoa-Backend unterstuetzt nur native OpenGL-Kontexte.");
         return;
     }
     if (hints.contextVersionMajor > 4 ||
         (hints.contextVersionMajor == 4 && hints.contextVersionMinor > 1)) {
-        error = makeError(ErrorCode::VersionUnavailable,
+        error = MakeError(ErrorCode::VersionUnavailable,
                           "macOS unterstuetzt hoechstens OpenGL 4.1.");
         return;
     }
@@ -1204,7 +1202,7 @@ CocoaWindowBackend::CocoaWindowBackend(const WindowHints& hints, Error& error)
 
     m_pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
     if (!m_pixelFormat) {
-        error = makeError(ErrorCode::FormatUnavailable,
+        error = MakeError(ErrorCode::FormatUnavailable,
                           "Kein passendes NSOpenGL-Pixelformat gefunden.");
         return;
     }
@@ -1241,7 +1239,7 @@ CocoaWindowBackend::CocoaWindowBackend(const WindowHints& hints, Error& error)
 
     m_context = [[NSOpenGLContext alloc] initWithFormat:m_pixelFormat shareContext:nil];
     if (!m_context) {
-        error = makeError(ErrorCode::PlatformError,
+        error = MakeError(ErrorCode::PlatformError,
                           "NSOpenGL-Kontext konnte nicht erstellt werden.");
         return;
     }
@@ -1371,7 +1369,7 @@ bool CocoaWindowBackend::isExtensionSupported(const char* name) {
 
 void CocoaWindowBackend::setTitle(std::string_view title) {
     m_title = std::string(title);
-    NSString* string = nsStringFromUtf8(m_title);
+    NSString* string = NsStringFromUtf8(m_title);
     [m_window setTitle:string];
     [string release];
 }
@@ -1575,7 +1573,7 @@ void CocoaWindowBackend::setIcon(std::span<const WindowIcon> images) {
 
 void CocoaWindowBackend::setMonitor(const Monitor& monitor, ivec2, ivec2 size, i32) {
     if (monitor.isValid() && size.x > 0 && size.y > 0) {
-        NSScreen* screen = screenFromMonitor(monitor);
+        NSScreen* screen = ScreenFromMonitor(monitor);
         if (screen) {
             if (!m_fullscreen) {
                 m_windowedFrame = m_window.frame;
@@ -1644,12 +1642,12 @@ std::string CocoaWindowBackend::getKeyName(Key key, i32) const {
 }
 
 i32 CocoaWindowBackend::getKeyScancode(Key key) const {
-    const unsigned short code = keyCodeForKey(key);
+    const unsigned short code = KeyCodeForKey(key);
     return code == 0xFFFF ? -1 : static_cast<i32>(code);
 }
 
 bool CocoaWindowBackend::isKeyPressed(Key key) const {
-    const unsigned short code = keyCodeForKey(key);
+    const unsigned short code = KeyCodeForKey(key);
     return code != 0xFFFF && m_pressedKeys.contains(code);
 }
 
@@ -1659,7 +1657,7 @@ bool CocoaWindowBackend::isMouseButtonPressed(MouseButton button) const {
 }
 
 void CocoaWindowBackend::setCursorPos(vec2 position) {
-    const NSPoint point = NSMakePoint(position.x, flipY(position.y, getSize().y));
+    const NSPoint point = NSMakePoint(position.x, FlipY(position.y, getSize().y));
     const NSPoint screenPoint = [m_window convertPointToScreen:[m_view convertPoint:point
                                                                              toView:nil]];
     CGWarpMouseCursorPosition(CGPointMake(screenPoint.x,
@@ -1708,20 +1706,20 @@ void CocoaWindowBackend::updateCursor() {
 std::string CocoaWindowBackend::getClipboardString() const {
     NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
     NSString* string = [pasteboard stringForType:NSPasteboardTypeString];
-    return utf8FromNSString(string);
+    return Utf8FromNSString(string);
 }
 
 void CocoaWindowBackend::setClipboardString(std::string_view text) {
     NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
     [pasteboard clearContents];
-    NSString* string = nsStringFromUtf8(text);
+    NSString* string = NsStringFromUtf8(text);
     [pasteboard setString:string forType:NSPasteboardTypeString];
     [string release];
 }
 
 void CocoaWindowBackend::handleKeyDown(NSEvent* event, bool down) {
     const unsigned short keyCode = [event keyCode];
-    const Key key = translateKeyCode(keyCode);
+    const Key key = TranslateKeyCode(keyCode);
     KeyAction action = down ? KeyAction::Press : KeyAction::Release;
     if (down) {
         if ([event isARepeat] || m_pressedKeys.contains(keyCode)) {
@@ -1733,7 +1731,7 @@ void CocoaWindowBackend::handleKeyDown(NSEvent* event, bool down) {
         m_pressedKeys.erase(keyCode);
     }
 
-    Modifiers mods = modifiersFromEvent(event);
+    Modifiers mods = ModifiersFromEvent(event);
     if (!m_lockKeyMods) {
         mods = static_cast<Modifiers>(static_cast<int>(mods) &
                                       ~static_cast<int>(Modifiers::CapsLock));
@@ -1759,7 +1757,7 @@ void CocoaWindowBackend::handleKeyDown(NSEvent* event, bool down) {
 
 void CocoaWindowBackend::handleFlagsChanged(NSEvent* event) {
     const unsigned short keyCode = [event keyCode];
-    const Key key = translateKeyCode(keyCode);
+    const Key key = TranslateKeyCode(keyCode);
     const bool pressed = !m_pressedKeys.contains(keyCode);
     if (pressed) {
         m_pressedKeys.insert(keyCode);
@@ -1769,7 +1767,7 @@ void CocoaWindowBackend::handleFlagsChanged(NSEvent* event) {
     if (m_events) {
         m_events->onKey(key, static_cast<i32>(keyCode),
                         pressed ? KeyAction::Press : KeyAction::Release,
-                        modifiersFromEvent(event));
+                        ModifiersFromEvent(event));
     }
 }
 
@@ -1780,7 +1778,7 @@ void CocoaWindowBackend::handleMouse(NSEvent* event, MouseButton button, bool do
     }
     if (m_events) {
         m_events->onMouseButton(button, down ? KeyAction::Press : KeyAction::Release,
-                                modifiersFromEvent(event));
+                                ModifiersFromEvent(event));
     }
 }
 
@@ -1788,7 +1786,7 @@ void CocoaWindowBackend::handleCursorMove(NSEvent* event) {
     if (!m_view) return;
     const NSPoint point = [m_view convertPoint:[event locationInWindow] fromView:nil];
     m_cursorPos = vec2(static_cast<f32>(point.x),
-                       static_cast<f32>(flipY(point.y, getSize().y)));
+                       static_cast<f32>(FlipY(point.y, getSize().y)));
     m_hovered = true;
     if (m_cursorMode == CursorMode::Disabled || m_cursorMode == CursorMode::Captured) {
         const vec2 center(static_cast<f32>(getSize().x) * 0.5f,
@@ -1854,7 +1852,7 @@ void CocoaWindowBackend::handleZoom(bool zoomed) {
 void CocoaWindowBackend::handleDrop(NSArray<NSURL*>* urls) {
     std::vector<std::string> paths;
     for (NSURL* url in urls) {
-        paths.push_back(utf8FromNSString([url path]));
+        paths.push_back(Utf8FromNSString([url path]));
     }
     if (m_events && !paths.empty()) {
         m_events->onDrop(std::move(paths));
@@ -1885,7 +1883,7 @@ bool CocoaBackendImpl::init(const InitOptions&, Error& error) {
                         object:nil
                          queue:nil
                     usingBlock:^(NSNotification*) {
-                        rebuildMonitors(true);
+                        RebuildMonitors(true);
                     }];
 
         IOHIDManagerRef manager = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
@@ -1904,8 +1902,8 @@ bool CocoaBackendImpl::init(const InitOptions&, Error& error) {
         }
     }
 
-    rebuildMonitors(false);
-    refreshJoysticks();
+    RebuildMonitors(false);
+    RefreshJoysticks();
     g_state.initialized = true;
     return true;
 }
@@ -1948,13 +1946,13 @@ void CocoaBackendImpl::terminate() {
 std::unique_ptr<CursorBackend> CocoaBackendImpl::createCursor(const WindowIcon& image, ivec2 hotspot,
                                                               Error& error) {
     if (image.size.x <= 0 || image.size.y <= 0) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
         return nullptr;
     }
     const auto pixels = static_cast<std::size_t>(image.size.x) *
                         static_cast<std::size_t>(image.size.y);
     if (image.rgba8.size() < pixels * 4) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
         return nullptr;
     }
 
@@ -1977,7 +1975,7 @@ std::unique_ptr<CursorBackend> CocoaBackendImpl::createCursor(const WindowIcon& 
     [nsImage release];
     [rep release];
     if (!cursor) {
-        error = makeError(ErrorCode::PlatformError, "Cursor konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "Cursor konnte nicht erstellt werden.");
         return nullptr;
     }
     return std::make_unique<CocoaCursorBackend>(cursor, true);
@@ -1995,7 +1993,7 @@ std::unique_ptr<CursorBackend> CocoaBackendImpl::createStandardCursor(StandardCu
     case StandardCursor::VResize: cursor = [NSCursor resizeUpDownCursor]; break;
     }
     if (!cursor) {
-        error = makeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht geladen werden.");
+        error = MakeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht geladen werden.");
         return nullptr;
     }
     return std::make_unique<CocoaCursorBackend>(cursor, false);
@@ -2012,7 +2010,7 @@ void CocoaBackendImpl::pollEvents() {
         }
         [NSApp updateWindows];
     }
-    refreshJoysticks();
+    RefreshJoysticks();
 }
 
 void CocoaBackendImpl::waitEvents(f64 timeout) {
@@ -2047,7 +2045,7 @@ void CocoaBackendImpl::postEmptyEvent() {
 
 namespace sgl::detail {
 
-std::unique_ptr<Backend> createCocoaBackend(Error& error) {
+std::unique_ptr<Backend> CreateCocoaBackend(Error& error) {
     auto backend = std::make_unique<cocoa::CocoaBackendImpl>();
     (void)error;
     return backend;
