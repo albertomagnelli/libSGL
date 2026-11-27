@@ -113,7 +113,7 @@ public:
     [[nodiscard]] Platform getPlatform() const override { return Platform::X11; }
 
     std::unique_ptr<WindowBackend> createWindow(const WindowHints& hints, Error& error) override;
-    std::unique_ptr<CursorBackend> createCursor(const Image& image, ivec2 hotspot, Error& error) override;
+    std::unique_ptr<CursorBackend> createCursor(const WindowIcon& image, ivec2 hotspot, Error& error) override;
     std::unique_ptr<CursorBackend> createStandardCursor(StandardCursor shape, Error& error) override;
 
     [[nodiscard]] std::vector<Monitor> getMonitors() override { return state().monitors; }
@@ -638,7 +638,7 @@ std::unique_ptr<WindowBackend> X11Backend::createWindow(const WindowHints& hints
     return window;
 }
 
-std::unique_ptr<CursorBackend> X11Backend::createCursor(const Image& image, ivec2 hotspot,
+std::unique_ptr<CursorBackend> X11Backend::createCursor(const WindowIcon& image, ivec2 hotspot,
                                                             Error& error) {
     if (image.size.x <= 0 || image.size.y <= 0) {
         error = makeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");

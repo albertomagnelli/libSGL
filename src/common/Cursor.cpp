@@ -4,7 +4,7 @@
 
 namespace sgl {
 
-std::expected<std::unique_ptr<Cursor>, Error> Cursor::create(const Image& image, ivec2 hotspot) {
+std::expected<std::unique_ptr<Cursor>, Error> Cursor::create(const WindowIcon& image, ivec2 hotspot) {
     auto* backend = detail::getBackend();
     if (!backend) {
         return std::unexpected(detail::makeError(ErrorCode::NotInitialized,

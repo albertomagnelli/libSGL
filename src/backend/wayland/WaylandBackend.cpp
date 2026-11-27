@@ -563,7 +563,7 @@ public:
     [[nodiscard]] Platform getPlatform() const override { return Platform::Wayland; }
 
     std::unique_ptr<WindowBackend> createWindow(const WindowHints& hints, Error& error) override;
-    std::unique_ptr<CursorBackend> createCursor(const Image& image, ivec2 hotspot,
+    std::unique_ptr<CursorBackend> createCursor(const WindowIcon& image, ivec2 hotspot,
                                                 Error& error) override;
     std::unique_ptr<CursorBackend> createStandardCursor(StandardCursor shape, Error& error) override;
 
@@ -923,7 +923,7 @@ wl_buffer* createShmBuffer(ivec2 size, const u8* rgba, ivec2 hotspot, int* fdOut
 
 } // namespace
 
-std::unique_ptr<CursorBackend> WaylandBackendImpl::createCursor(const Image& image, ivec2 hotspot,
+std::unique_ptr<CursorBackend> WaylandBackendImpl::createCursor(const WindowIcon& image, ivec2 hotspot,
                                                                 Error& error) {
     WaylandState& s = state();
     if (image.size.x <= 0 || image.size.y <= 0) {

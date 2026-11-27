@@ -10,7 +10,7 @@
 
 namespace sgl {
 
-struct Image {
+struct WindowIcon {
     ivec2 size{0, 0};
     std::vector<u8> rgba8;
 };
@@ -30,7 +30,7 @@ class CursorBackend;
 
 class Cursor {
 public:
-    static std::expected<std::unique_ptr<Cursor>, Error> create(const Image& image, ivec2 hotspot);
+    static std::expected<std::unique_ptr<Cursor>, Error> create(const WindowIcon& image, ivec2 hotspot);
     static std::expected<std::unique_ptr<Cursor>, Error> createStandard(StandardCursor shape);
 
     ~Cursor();

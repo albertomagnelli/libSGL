@@ -40,7 +40,7 @@ std::unique_ptr<sgl::Cursor> createCustomCursor() {
         }
     }
 
-    sgl::Image image;
+    sgl::WindowIcon image;
     image.size = ivec2(size, size);
     image.rgba8 = std::move(pixels);
     auto cursor = sgl::Cursor::create(image, ivec2(size / 2, size / 2));

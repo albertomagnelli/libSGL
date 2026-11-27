@@ -171,8 +171,8 @@ public:
     void setOpacity(f32 opacity) override;
     void setSizeLimits(ivec2 minimum, ivec2 maximum) override;
     void setAspectRatio(i32 numerator, i32 denominator) override;
-    void setIcon(std::span<const Image> images) override;
-    [[nodiscard]] std::vector<Image> getIcon() const override { return m_icon; }
+    void setIcon(std::span<const WindowIcon> images) override;
+    [[nodiscard]] std::vector<WindowIcon> getIcon() const override { return m_icon; }
     void setMonitor(const Monitor& monitor, ivec2 position, ivec2 size, i32 refreshRate) override;
     [[nodiscard]] Monitor getMonitor() const override;
     void setInputMode(InputMode mode, i32 value) override;
@@ -278,7 +278,7 @@ private:
     i32 m_aspectNumerator = 0;
     i32 m_aspectDenominator = 0;
 
-    std::vector<Image> m_icon;
+    std::vector<WindowIcon> m_icon;
     std::vector<std::vector<u8>> m_iconStorage;
 
     void* m_fullscreenMonitor = nullptr;

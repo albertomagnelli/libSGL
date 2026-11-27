@@ -40,11 +40,22 @@ set(SGL_SOURCES
     src/common/Window.cpp
     src/common/Log.cpp
     src/gl/GL.cpp
+    src/gl/Image.cpp
+    src/gl/Font.cpp
+    src/gl/MeshFont.cpp
+    src/gl/DefaultFont.cpp
+    src/gl/Shader.cpp
+    src/gl/Texture.cpp
+    third_party/ttf2mesh/ttf2mesh.c
 )
 
 set(SGL_DEFINITIONS "")
 set(SGL_PUBLIC_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(SGL_PRIVATE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(SGL_PRIVATE_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ttf2mesh"
+)
 set(SGL_LINK_LIBS glm::glm)
 
 if(UNIX AND NOT APPLE)
@@ -196,6 +207,15 @@ else()
     list(APPEND SGL_DEFINITIONS SGL_HAS_OSMESA=0)
 endif()
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+if(MSVC)
+    set_source_files_properties(third_party/ttf2mesh/ttf2mesh.c PROPERTIES COMPILE_OPTIONS "/w")
+else()
+    set_source_files_properties(third_party/ttf2mesh/ttf2mesh.c PROPERTIES COMPILE_OPTIONS "-w")
+endif()
+
 add_library(sgl STATIC ${SGL_SOURCES})
 add_library(sgl::sgl ALIAS sgl)
 
@@ -235,4 +255,5 @@ if(SGL_BUILD_EXAMPLES)
     target_link_libraries(GLLoader PRIVATE sgl::sgl)
 
     add_subdirectory(examples/window)
+    add_subdirectory(examples/font)
 endif()

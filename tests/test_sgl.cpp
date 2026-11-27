@@ -182,10 +182,10 @@ TEST_CASE("X11 windows can be created and controlled", "[x11][window]") {
     window->setCursor(**cursor);
     window->setCursor(nullptr);
 
-    sgl::Image icon;
+    sgl::WindowIcon icon;
     icon.size = ivec2(2, 2);
     icon.rgba8 = std::vector<u8>(16, 255);
-    const std::array<sgl::Image, 1> icons{icon};
+    const std::array<sgl::WindowIcon, 1> icons{icon};
     window->setIcon(icons);
 
     REQUIRE_FALSE(window->isKeyPressed(sgl::Key::Escape));

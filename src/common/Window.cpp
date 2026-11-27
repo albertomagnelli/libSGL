@@ -1,10 +1,17 @@
 #include "sgl/Window.hpp"
 
+#include <mutex>
 #include <utility>
 
 #include "backend/Backend.hpp"
+#include "sgl/Font.hpp"
 
 namespace sgl {
+namespace {
+
+std::once_flag g_defaultFontOnce;
+
+} // namespace
 
 WindowHints getDefaultWindowHints() {
     return WindowHints{};
@@ -28,6 +35,11 @@ std::expected<std::unique_ptr<Window>, Error> Window::create(const WindowHints& 
 
     auto window = std::unique_ptr<Window>(new Window(std::move(windowBackend)));
     window->m_title = hints.title;
+
+    std::call_once(g_defaultFontOnce, [] {
+        g_defaultFont = Font::loadDefault();
+    });
+
     return window;
 }
 
@@ -170,11 +182,11 @@ void Window::setAspectRatio(i32 numerator, i32 denominator) {
     m_backend->setAspectRatio(numerator, denominator);
 }
 
-void Window::setIcon(std::span<const Image> images) {
+void Window::setIcon(std::span<const WindowIcon> images) {
     m_backend->setIcon(images);
 }
 
-std::vector<Image> Window::getIcon() const {
+std::vector<WindowIcon> Window::getIcon() const {
     return m_backend->getIcon();
 }
 

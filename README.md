@@ -23,6 +23,15 @@ lädt einen OpenGL-4.6-Core-Kontext.
 - Joysticks/Gamepads inkl. Hotplug, Achsen, Buttons, Hats, GUIDs und
   Gamepad-Mapping auf Basis der eingebetteten SDL_GameControllerDB
   (Linux evdev, Windows XInput, macOS IOKit HID)
+ - Bildverarbeitung: PNG/JPG/BMP/TGA laden und speichern, Spiegeln, Drehen,
+  Skalieren, Formatkonvertierung (`sgl::Image`)
+- Schriften: Bitmap-/SDF-Glyphenatlas, eingebettete DejaVu-Standardschrift,
+  UTF-8, Kerning und Textvermessung (`sgl::Font`)
+- Mesh-Schriften: 2D- und 3D-Glyphennetze aus TrueType-Dateien (`sgl::Font2d`,
+  `sgl::Font3d`)
+- Shader: GLSL-Programme aus Dateien/Quelltext, Includes, Stufen, Uniform-Cache,
+  ScopedBind und Fehlerdiagnose (`sgl::Shader`)
+- Texturen: `sgl::Texture2d` und `sgl::CubeMap` über Direct State Access
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
 - Native Zugriffe für X11, Wayland, Win32, Cocoa, EGL und OSMesa
 
@@ -39,6 +48,9 @@ lädt einen OpenGL-4.6-Core-Kontext.
 | OSMesa | optionales OSMesa-Backend | optional |
 | Catch2 3.7.1 | Tests | unter `third_party/catch2` vendort |
 | SDL_GameControllerDB | Gamepad-Mapping | unter `third_party/gamecontrollerdb` vendort (zlib) |
+| stb_image, stb_image_write, stb_truetype | Bild- und Schriftladen | unter `third_party/stb` vendort (Public Domain/MIT) |
+| ttf2mesh | Mesh-Schriften | unter `third_party/ttf2mesh` vendort (MIT), direkt in `sgl` kompiliert |
+| DejaVu Sans (Teilmenge) | eingebettete Standardschrift | Daten in `src/gl/DefaultFont.cpp` |
 
 ## Bauen
 
@@ -77,6 +89,18 @@ cmake --build build
 
 Die vollständige Liste und Tastenkürzel stehen in
 [`examples/window/README.md`](examples/window/README.md).
+
+Unter `examples/font/` liegen zwei Mesh-Schrift-Beispiele. Sie können im
+Fenstermodus oder headless als PNG gerendert werden:
+
+```bash
+./build/examples/font/sgl_example_meshfont2d
+./build/examples/font/sgl_example_meshfont3d
+./build/examples/font/sgl_example_meshfont2d --frame /tmp/font2d.png 1280 720
+./build/examples/font/sgl_example_meshfont3d --frame /tmp/font3d.png 1280 720
+```
+
+Details: [`examples/font/README.md`](examples/font/README.md).
 
 ## Logging
 

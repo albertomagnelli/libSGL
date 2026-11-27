@@ -217,8 +217,8 @@ public:
 
     void setSizeLimits(ivec2 minimum, ivec2 maximum);
     void setAspectRatio(i32 numerator, i32 denominator);
-    void setIcon(std::span<const Image> images);
-    [[nodiscard]] std::vector<Image> getIcon() const;
+    void setIcon(std::span<const WindowIcon> images);
+    [[nodiscard]] std::vector<WindowIcon> getIcon() const;
 
     void setMonitor(const Monitor& monitor, ivec2 position, ivec2 size, i32 refreshRate);
     void setMonitor(const Monitor& monitor);

@@ -146,8 +146,8 @@ public:
     void setOpacity(f32) override {}
     void setSizeLimits(ivec2 minimum, ivec2 maximum) override;
     void setAspectRatio(i32, i32) override {}
-    void setIcon(std::span<const Image>) override {}
-    [[nodiscard]] std::vector<Image> getIcon() const override { return {}; }
+    void setIcon(std::span<const WindowIcon>) override {}
+    [[nodiscard]] std::vector<WindowIcon> getIcon() const override { return {}; }
     void setMonitor(const Monitor& monitor, ivec2 position, ivec2 size, i32 refreshRate) override;
     [[nodiscard]] Monitor getMonitor() const override;
     void setInputMode(InputMode mode, i32 value) override;

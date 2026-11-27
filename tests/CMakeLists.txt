@@ -2,6 +2,10 @@ add_executable(sgl_tests
     test_sgl.cpp
     test_gamepad_mapping.cpp
     test_logger.cpp
+    test_image.cpp
+    test_font.cpp
+    test_meshfont.cpp
+    test_shader_texture.cpp
 )
 
 target_link_libraries(sgl_tests PRIVATE sgl::sgl sgl_catch2)

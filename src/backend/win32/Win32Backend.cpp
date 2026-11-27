@@ -308,8 +308,8 @@ public:
     void setOpacity(f32 opacity) override;
     void setSizeLimits(ivec2 minimum, ivec2 maximum) override;
     void setAspectRatio(i32 numerator, i32 denominator) override;
-    void setIcon(std::span<const Image> images) override;
-    [[nodiscard]] std::vector<Image> getIcon() const override { return m_icon; }
+    void setIcon(std::span<const WindowIcon> images) override;
+    [[nodiscard]] std::vector<WindowIcon> getIcon() const override { return m_icon; }
     void setMonitor(const Monitor& monitor, ivec2 position, ivec2 size, i32 refreshRate) override;
     [[nodiscard]] Monitor getMonitor() const override;
     void setInputMode(InputMode mode, i32 value) override;
@@ -381,7 +381,7 @@ private:
 
     Win32CursorBackend* m_cursor = nullptr;
     HCURSOR m_savedCursor = nullptr;
-    std::vector<Image> m_icon;
+    std::vector<WindowIcon> m_icon;
 
     bool m_fullscreen = false;
     Monitor m_fullscreenMonitor;
@@ -535,7 +535,7 @@ public:
         return window;
     }
 
-    std::unique_ptr<CursorBackend> createCursor(const Image& image, ivec2 hotspot,
+    std::unique_ptr<CursorBackend> createCursor(const WindowIcon& image, ivec2 hotspot,
                                                 Error& error) override;
     std::unique_ptr<CursorBackend> createStandardCursor(StandardCursor shape, Error& error) override;
 
@@ -925,7 +925,7 @@ void Win32BackendImpl::terminate() {
     g_state.initialized = false;
 }
 
-std::unique_ptr<CursorBackend> Win32BackendImpl::createCursor(const Image& image, ivec2 hotspot,
+std::unique_ptr<CursorBackend> Win32BackendImpl::createCursor(const WindowIcon& image, ivec2 hotspot,
                                                               Error& error) {
     if (image.size.x <= 0 || image.size.y <= 0) {
         error = makeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
@@ -1453,12 +1453,12 @@ void Win32WindowBackend::setAspectRatio(i32 numerator, i32 denominator) {
     m_aspectDenominator = denominator;
 }
 
-void Win32WindowBackend::setIcon(std::span<const Image> images) {
+void Win32WindowBackend::setIcon(std::span<const WindowIcon> images) {
     m_icon.assign(images.begin(), images.end());
     if (images.empty() || images[0].size.x <= 0) {
         return;
     }
-    const Image& image = images[0];
+    const WindowIcon& image = images[0];
     const auto pixels = static_cast<std::size_t>(image.size.x) *
                         static_cast<std::size_t>(image.size.y);
     if (image.rgba8.size() < pixels * 4) {

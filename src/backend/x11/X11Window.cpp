@@ -827,7 +827,7 @@ void X11WindowBackend::setAspectRatio(i32 numerator, i32 denominator) {
     XSetWMNormalHints(state().display, m_window, &hints);
 }
 
-void X11WindowBackend::setIcon(std::span<const Image> images) {
+void X11WindowBackend::setIcon(std::span<const WindowIcon> images) {
     State& s = state();
     m_icon.assign(images.begin(), images.end());
     m_iconStorage.clear();

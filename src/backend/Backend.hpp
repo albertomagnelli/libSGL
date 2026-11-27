@@ -64,8 +64,8 @@ public:
     virtual void setOpacity(f32) {}
     virtual void setSizeLimits(ivec2, ivec2) {}
     virtual void setAspectRatio(i32, i32) {}
-    virtual void setIcon(std::span<const Image>) {}
-    [[nodiscard]] virtual std::vector<Image> getIcon() const { return {}; }
+    virtual void setIcon(std::span<const WindowIcon>) {}
+    [[nodiscard]] virtual std::vector<WindowIcon> getIcon() const { return {}; }
     virtual void setMonitor(const Monitor&, ivec2, ivec2, i32) {}
     [[nodiscard]] virtual Monitor getMonitor() const { return {}; }
     virtual void setInputMode(InputMode, i32) {}
@@ -93,7 +93,7 @@ public:
     [[nodiscard]] virtual Platform getPlatform() const = 0;
     virtual std::unique_ptr<WindowBackend> createWindow(const WindowHints& hints, Error& error) = 0;
 
-    virtual std::unique_ptr<CursorBackend> createCursor(const Image&, ivec2, Error& error) {
+    virtual std::unique_ptr<CursorBackend> createCursor(const WindowIcon&, ivec2, Error& error) {
         error = makeError(ErrorCode::FeatureUnavailable, "Cursor wird von diesem Backend nicht unterstuetzt.");
         return nullptr;
     }

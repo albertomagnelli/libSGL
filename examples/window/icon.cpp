@@ -10,8 +10,8 @@
 
 namespace {
 
-sgl::Image makeIcon(int size, u8 red, u8 green, u8 blue) {
-    sgl::Image image;
+sgl::WindowIcon makeIcon(int size, u8 red, u8 green, u8 blue) {
+    sgl::WindowIcon image;
     image.size = ivec2(size, size);
     image.rgba8.assign(static_cast<std::size_t>(size) * size * 4, 0);
 
@@ -40,8 +40,8 @@ sgl::Image makeIcon(int size, u8 red, u8 green, u8 blue) {
     return image;
 }
 
-std::vector<sgl::Image> makeIconSet(u8 red, u8 green, u8 blue) {
-    std::vector<sgl::Image> icons;
+std::vector<sgl::WindowIcon> makeIconSet(u8 red, u8 green, u8 blue) {
+    std::vector<sgl::WindowIcon> icons;
     icons.push_back(makeIcon(16, red, green, blue));
     icons.push_back(makeIcon(32, red, green, blue));
     icons.push_back(makeIcon(64, red, green, blue));
@@ -61,7 +61,7 @@ int main() {
         return static_cast<u8>(64 + random() % 192);
     };
 
-    std::vector<sgl::Image> icons = makeIconSet(230, 120, 30);
+    std::vector<sgl::WindowIcon> icons = makeIconSet(230, 120, 30);
     window->setIcon(icons);
     SLOGI("Icon gesetzt (%zu Größen). I wechselt das Set, R färbt neu.\n", icons.size());
 
