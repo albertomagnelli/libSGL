@@ -127,6 +127,16 @@ Fenstermodus oder headless als PNG gerendert werden:
 
 Details: [`examples/font/README.md`](examples/font/README.md).
 
+Unter `examples/model/` zeigt `sgl_example_model_viewer` zwei glTF-Modelle mit
+ihren Materialien; beide rotieren um die Y-Achse:
+
+```bash
+./build/examples/model/sgl_example_model_viewer
+./build/examples/model/sgl_example_model_viewer --frame /tmp/model.png --time 0.5
+```
+
+Details: [`examples/model/README.md`](examples/model/README.md).
+
 ## Logging
 
 `include/sgl/Log.hpp` stellt einen leichtgewichtigen Logger mit farbigen Ausgaben bereit:
