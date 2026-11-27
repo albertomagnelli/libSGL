@@ -41,11 +41,12 @@
 #   define _DEFAULT_SOURCE 1
 #   define PATH_SEP '/'
 #   include <dirent.h>
-#elif defined(__linux) || defined(__linux__)
+#elif defined(__linux) || defined(__linux__) || defined(__APPLE__)
 #   define TTF_LINUX
 #   define _DEFAULT_SOURCE 1
 #   define PATH_SEP '/'
 #   include <dirent.h>
+#   include <limits.h>
 #elif defined(__WINNT__) || defined(_WIN32) || defined(_WIN64)
 #   define TTF_WINDOWS
 #   define _CRT_SECURE_NO_WARNINGS

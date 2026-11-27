@@ -253,8 +253,6 @@ Modifiers CurrentModifiers() {
     return mods;
 }
 
-class Win32BackendImpl;
-
 class Win32CursorBackend final : public CursorBackend {
 public:
     explicit Win32CursorBackend(HCURSOR cursor, bool owned) : m_cursor(cursor), m_owned(owned) {}
@@ -1021,15 +1019,13 @@ Win32WindowBackend::Win32WindowBackend(const WindowHints& hints, Error& error)
     if (!m_decorated) {
         style &= ~(WS_CAPTION | WS_THICKFRAME);
     }
-    if (m_floating) {
-        style |= WS_EX_TOPMOST;
-    }
+    const DWORD extendedStyle = m_floating ? WS_EX_TOPMOST : 0;
 
     RECT rectangle{0, 0, hints.width, hints.height};
-    AdjustWindowRectEx(&rectangle, style, FALSE, 0);
+    AdjustWindowRectEx(&rectangle, style, FALSE, extendedStyle);
 
     m_hwnd = CreateWindowExW(
-        m_floating ? WS_EX_TOPMOST : 0, L"sglWindowClass", WideFromUtf8(m_title).c_str(), style,
+        extendedStyle, L"sglWindowClass", WideFromUtf8(m_title).c_str(), style,
         CW_USEDEFAULT, CW_USEDEFAULT, rectangle.right - rectangle.left,
         rectangle.bottom - rectangle.top, nullptr, nullptr, g_state.instance, this);
     if (!m_hwnd) {
@@ -1812,8 +1808,8 @@ LRESULT Win32WindowBackend::handleMessage(UINT message, WPARAM wparam, LPARAM lp
             if (pressed && !repeat) {
                 for (Modifiers flag : {Modifiers::Shift, Modifiers::Control, Modifiers::Alt,
                                        Modifiers::Super}) {
-                    if (hasModifier(mods, flag)) {
-                        m_stickyMods = hasModifier(m_stickyMods, flag)
+                    if (HasModifier(mods, flag)) {
+                        m_stickyMods = HasModifier(m_stickyMods, flag)
                                            ? static_cast<Modifiers>(static_cast<int>(m_stickyMods) &
                                                                     ~static_cast<int>(flag))
                                            : m_stickyMods | flag;
