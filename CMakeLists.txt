@@ -49,13 +49,22 @@ set(SGL_SOURCES
     src/gl/Noise.cpp
     src/gl/Shader.cpp
     src/gl/Texture.cpp
+    src/gl/AnimatedSprite.cpp
+    src/gl/Audio.cpp
+    src/gl/CollisionShape.cpp
+    src/gl/Framebuffer.cpp
+    src/gl/Sprite.cpp
+    src/common/Json.cpp
     third_party/ttf2mesh/ttf2mesh.c
+    third_party/audio/miniaudio.c
+    third_party/audio/stb_vorbis.c
 )
 
 set(SGL_DEFINITIONS "")
 set(SGL_PUBLIC_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(SGL_PRIVATE_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/audio"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ttf2mesh"
 )
@@ -70,6 +79,11 @@ endif()
 
 find_package(Threads REQUIRED)
 list(APPEND SGL_LINK_LIBS Threads::Threads)
+
+# miniaudio lädt seine Backends unter Linux zur Laufzeit (dlopen).
+if(UNIX)
+    list(APPEND SGL_LINK_LIBS ${CMAKE_DL_LIBS} m)
+endif()
 
 # ---------------------------------------------------------------------------
 # X11 / GLX
@@ -213,10 +227,16 @@ endif()
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+set(SGL_THIRD_PARTY_C_SOURCES
+    third_party/ttf2mesh/ttf2mesh.c
+    third_party/audio/miniaudio.c
+    third_party/audio/stb_vorbis.c
+)
+
 if(MSVC)
-    set_source_files_properties(third_party/ttf2mesh/ttf2mesh.c PROPERTIES COMPILE_OPTIONS "/w")
+    set_source_files_properties(${SGL_THIRD_PARTY_C_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
 else()
-    set_source_files_properties(third_party/ttf2mesh/ttf2mesh.c PROPERTIES COMPILE_OPTIONS "-w")
+    set_source_files_properties(${SGL_THIRD_PARTY_C_SOURCES} PROPERTIES COMPILE_OPTIONS "-w")
 endif()
 
 add_library(sgl STATIC ${SGL_SOURCES})

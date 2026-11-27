@@ -23,8 +23,18 @@ lädt einen OpenGL-4.6-Core-Kontext.
 - Joysticks/Gamepads inkl. Hotplug, Achsen, Buttons, Hats, GUIDs und
   Gamepad-Mapping auf Basis der eingebetteten SDL_GameControllerDB
   (Linux evdev, Windows XInput, macOS IOKit HID)
- - Bildverarbeitung: PNG/JPG/BMP/TGA laden und speichern, Spiegeln, Drehen,
+- Bildverarbeitung: PNG/JPG/BMP/TGA laden und speichern, Spiegeln, Drehen,
   Skalieren, Formatkonvertierung (`sgl::Image`); Datei-I/O über `sgl::ImageIO`
+- 2D-Sprites: Textur, Atlas-Ausschnitt, Tint, Rotation und pixelgenaue
+  Kollision (`sgl::Sprite`); animierte Atlanten mit benannten Animationen,
+  Tempo und Kollision pro Rahmen (`sgl::AnimatedSprite`)
+- Kollisionsformen: Deckungsmasken aus dem Alphakanal mit Rotation und
+  pixelgenauen Überschneidungstests (`sgl::CollisionShape`)
+- Framebuffer: Farb-/Tiefe-/Stencil-Anhänge, MRT, MSAA und Blit/Resolve
+  (`sgl::Framebuffer`)
+- Audio: Wellen dekodieren/schreiben, Effekte mit mehreren Stimmen, gestreamte
+  Musik und eigene PCM-Ströme über miniaudio (`sgl::Wave`, `sgl::Sound`,
+  `sgl::Music`, `sgl::AudioStream`)
 - Schriften: Bitmap-/SDF-Glyphenatlas, eingebettete DejaVu-Standardschrift,
   UTF-8, Kerning und Textvermessung (`sgl::Font`)
 - Mesh-Schriften: 2D- und 3D-Glyphennetze aus TrueType-Dateien (`sgl::Font2d`,
@@ -55,6 +65,8 @@ lädt einen OpenGL-4.6-Core-Kontext.
 | SDL_GameControllerDB | Gamepad-Mapping | unter `third_party/gamecontrollerdb` vendort (zlib) |
 | stb_image, stb_image_write, stb_truetype | Bild- und Schriftladen | unter `third_party/stb` vendort (Public Domain/MIT) |
 | ttf2mesh | Mesh-Schriften | unter `third_party/ttf2mesh` vendort (MIT), direkt in `sgl` kompiliert |
+| miniaudio 0.11 | Audio-Backend (WAV/FLAC/MP3) | unter `third_party/audio` vendort, direkt in `sgl` kompiliert |
+| stb_vorbis 1.24 | Ogg-Vorbis für miniaudio | unter `third_party/audio` vendort (Public Domain), direkt in `sgl` kompiliert |
 | DejaVu Sans (Teilmenge) | eingebettete Standardschrift | Daten in `src/gl/DefaultFont.cpp` |
 
 ## Bauen

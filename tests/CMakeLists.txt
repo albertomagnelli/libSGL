@@ -8,6 +8,9 @@ add_executable(sgl_tests
     test_shader_texture.cpp
     test_color_geometry.cpp
     test_noise.cpp
+    test_collision_animatedsprite.cpp
+    test_audio.cpp
+    test_framebuffer.cpp
 )
 
 target_link_libraries(sgl_tests PRIVATE sgl::sgl sgl_catch2)
