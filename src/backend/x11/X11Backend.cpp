@@ -165,7 +165,9 @@ public:
     [[nodiscard]] std::optional<GamepadState> getGamepadState(i32 jid) override {
         return linuxJoysticks().getGamepadState(jid);
     }
-    bool updateGamepadMappings(std::string_view) override { return true; }
+    bool updateGamepadMappings(std::string_view mappings) override {
+        return linuxJoysticks().updateGamepadMappings(mappings);
+    }
     void setJoystickCallback(std::function<void(i32, bool)> callback) override {
         linuxJoysticks().setCallback(std::move(callback));
     }

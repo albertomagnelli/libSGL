@@ -1,4 +1,4 @@
-// GL.hpp — selbstständiger OpenGL-4.6-Core-Profile-Loader (GLFW).
+// sgl/GL.hpp — selbstständiger OpenGL-4.6-Core-Profile-Loader für sgl.
 //
 // 656 Core-Profile-Funktionen, 1375 Konstanten.
 // Typen und Konstanten liegen im globalen Namensraum (wie bei gl.h/glcorearb.h),
@@ -8,8 +8,8 @@
 // Quellen: Khronos OpenGL Registry (Apache-2.0) und Khronos OpenGL Refpages
 // (Copyright Khronos Group / Sams Publishing, Open Publication License 1.0).
 //
-// WICHTIG: Kein gl.h, glext.h oder glcorearb.h zusätzlich einbinden und
-// GLFW mit GLFW_INCLUDE_NONE verwenden, sonst kollidieren die Namen.
+// WICHTIG: Kein gl.h, glext.h oder glcorearb.h zusätzlich einbinden, sonst
+// kollidieren die Namen.
 
 #pragma once
 

@@ -23,6 +23,7 @@
 
 #include "backend/Backend.hpp"
 #include "backend/BackendFactory.hpp"
+#include "common/GamepadMapping.hpp"
 #include "common/MonitorAccess.hpp"
 
 namespace sgl::detail::win32 {
@@ -61,6 +62,21 @@ struct XInputState {
 
 using XInputGetStateProc = DWORD(WINAPI*)(DWORD, XInputState*);
 
+struct XInputVibration {
+    WORD leftMotorSpeed;
+    WORD rightMotorSpeed;
+};
+
+struct XInputCapabilities {
+    BYTE type;
+    BYTE subType;
+    WORD flags;
+    XInputGamepad gamepad;
+    XInputVibration vibration;
+};
+
+using XInputGetCapabilitiesProc = DWORD(WINAPI*)(DWORD, DWORD, XInputCapabilities*);
+
 constexpr WORD XINPUT_GAMEPAD_DPAD_UP = 0x0001;
 constexpr WORD XINPUT_GAMEPAD_DPAD_DOWN = 0x0002;
 constexpr WORD XINPUT_GAMEPAD_DPAD_LEFT = 0x0004;
@@ -71,11 +87,29 @@ constexpr WORD XINPUT_GAMEPAD_LEFT_THUMB = 0x0040;
 constexpr WORD XINPUT_GAMEPAD_RIGHT_THUMB = 0x0080;
 constexpr WORD XINPUT_GAMEPAD_LEFT_SHOULDER = 0x0100;
 constexpr WORD XINPUT_GAMEPAD_RIGHT_SHOULDER = 0x0200;
-constexpr WORD XINPUT_GAMEPAD_GUIDE = 0x0400;
 constexpr WORD XINPUT_GAMEPAD_A = 0x1000;
 constexpr WORD XINPUT_GAMEPAD_B = 0x2000;
 constexpr WORD XINPUT_GAMEPAD_X = 0x4000;
 constexpr WORD XINPUT_GAMEPAD_Y = 0x8000;
+
+constexpr BYTE XINPUT_DEVSUBTYPE_GAMEPAD = 0x01;
+constexpr BYTE XINPUT_DEVSUBTYPE_WHEEL = 0x02;
+constexpr BYTE XINPUT_DEVSUBTYPE_ARCADE_STICK = 0x03;
+constexpr BYTE XINPUT_DEVSUBTYPE_FLIGHT_STICK = 0x04;
+constexpr BYTE XINPUT_DEVSUBTYPE_DANCE_PAD = 0x05;
+constexpr BYTE XINPUT_DEVSUBTYPE_GUITAR = 0x06;
+constexpr BYTE XINPUT_DEVSUBTYPE_DRUM_KIT = 0x08;
+constexpr WORD XINPUT_CAPS_WIRELESS = 0x0002;
+
+constexpr const char* kGamepadPlatform = "Windows";
+
+struct XInputRaw {
+    std::array<f32, 6> axes{};
+    std::array<u8, 10> buttons{};
+    JoystickHat hat = JoystickHat::Centered;
+
+    XInputRaw() { axes.fill(0.0f); buttons.fill(0); }
+};
 
 std::string utf8FromWide(const std::wstring& wide) {
     if (wide.empty()) {
@@ -118,6 +152,7 @@ struct State {
     bool initialized = false;
 
     XInputGetStateProc xinputGetState = nullptr;
+    XInputGetCapabilitiesProc xinputGetCapabilities = nullptr;
     std::array<bool, 4> joystickConnected{};
     std::function<void(i32, bool)> joystickCallback;
 
@@ -385,6 +420,8 @@ bool loadXInput() {
         if (HMODULE module = LoadLibraryW(name)) {
             g_state.xinputGetState =
                 reinterpret_cast<XInputGetStateProc>(GetProcAddress(module, "XInputGetState"));
+            g_state.xinputGetCapabilities = reinterpret_cast<XInputGetCapabilitiesProc>(
+                GetProcAddress(module, "XInputGetCapabilities"));
             if (g_state.xinputGetState) {
                 return true;
             }
@@ -409,6 +446,80 @@ void pollJoysticks() {
         }
     }
 }
+
+XInputRaw readXInput(i32 jid) {
+    XInputRaw raw;
+    if (jid < 0 || jid >= 4 || !loadXInput()) {
+        return raw;
+    }
+    XInputState native{};
+    if (g_state.xinputGetState(static_cast<DWORD>(jid), &native) != ERROR_SUCCESS) {
+        return raw;
+    }
+
+    const auto& pad = native.gamepad;
+    raw.axes[0] = std::clamp(static_cast<f32>(pad.leftThumbX) / 32767.0f, -1.0f, 1.0f);
+    // GLFW/SDL-Konvention: Y-Achsen sind negativ nach oben.
+    raw.axes[1] = std::clamp(-static_cast<f32>(pad.leftThumbY) / 32767.0f, -1.0f, 1.0f);
+    raw.axes[2] = std::clamp(static_cast<f32>(pad.rightThumbX) / 32767.0f, -1.0f, 1.0f);
+    raw.axes[3] = std::clamp(-static_cast<f32>(pad.rightThumbY) / 32767.0f, -1.0f, 1.0f);
+    raw.axes[4] = static_cast<f32>(pad.leftTrigger) / 127.5f - 1.0f;
+    raw.axes[5] = static_cast<f32>(pad.rightTrigger) / 127.5f - 1.0f;
+
+    const std::array<WORD, 10> buttonMasks = {
+        XINPUT_GAMEPAD_A,          XINPUT_GAMEPAD_B,
+        XINPUT_GAMEPAD_X,          XINPUT_GAMEPAD_Y,
+        XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER,
+        XINPUT_GAMEPAD_BACK,       XINPUT_GAMEPAD_START,
+        XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB,
+    };
+    for (std::size_t i = 0; i < buttonMasks.size(); ++i) {
+        raw.buttons[i] = (pad.buttons & buttonMasks[i]) != 0 ? 1 : 0;
+    }
+
+    int hat = 0;
+    if ((pad.buttons & XINPUT_GAMEPAD_DPAD_UP) != 0) hat |= static_cast<int>(JoystickHat::Up);
+    if ((pad.buttons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0) hat |= static_cast<int>(JoystickHat::Right);
+    if ((pad.buttons & XINPUT_GAMEPAD_DPAD_DOWN) != 0) hat |= static_cast<int>(JoystickHat::Down);
+    if ((pad.buttons & XINPUT_GAMEPAD_DPAD_LEFT) != 0) hat |= static_cast<int>(JoystickHat::Left);
+    raw.hat = static_cast<JoystickHat>(hat);
+    return raw;
+}
+
+XInputCapabilities xinputCapabilities(i32 jid) {
+    XInputCapabilities capabilities{};
+    capabilities.subType = XINPUT_DEVSUBTYPE_GAMEPAD;
+    if (jid >= 0 && jid < 4 && loadXInput() && g_state.xinputGetCapabilities) {
+        g_state.xinputGetCapabilities(static_cast<DWORD>(jid), 0, &capabilities);
+    }
+    return capabilities;
+}
+
+std::string xinputGuid(i32 jid) {
+    const XInputCapabilities capabilities = xinputCapabilities(jid);
+    char guid[33];
+    std::snprintf(guid, sizeof(guid), "78696e707574%02x000000000000000000",
+                  static_cast<unsigned>(capabilities.subType));
+    return guid;
+}
+
+std::string xinputName(i32 jid) {
+    const XInputCapabilities capabilities = xinputCapabilities(jid);
+    switch (capabilities.subType) {
+    case XINPUT_DEVSUBTYPE_WHEEL: return "XInput Wheel";
+    case XINPUT_DEVSUBTYPE_ARCADE_STICK: return "XInput Arcade Stick";
+    case XINPUT_DEVSUBTYPE_FLIGHT_STICK: return "XInput Flight Stick";
+    case XINPUT_DEVSUBTYPE_DANCE_PAD: return "XInput Dance Pad";
+    case XINPUT_DEVSUBTYPE_GUITAR: return "XInput Guitar";
+    case XINPUT_DEVSUBTYPE_DRUM_KIT: return "XInput Drum Kit";
+    case XINPUT_DEVSUBTYPE_GAMEPAD:
+    default:
+        return (capabilities.flags & XINPUT_CAPS_WIRELESS) != 0 ? "Wireless Xbox Controller"
+                                                                : "Xbox Controller";
+    }
+}
+
+} // namespace
 
 class Win32BackendImpl final : public Backend {
 public:
@@ -653,87 +764,78 @@ public:
         if (!isJoystickPresent(jid)) {
             return {};
         }
-        return "XInput Controller #" + std::to_string(jid + 1);
+        return xinputName(jid);
     }
 
-    [[nodiscard]] std::string getJoystickGUID(i32) override {
-        return "78696e70757401000000000000000000";
+    [[nodiscard]] std::string getJoystickGUID(i32 jid) override {
+        return isJoystickPresent(jid) ? xinputGuid(jid) : std::string{};
     }
 
     [[nodiscard]] std::span<const f32> getJoystickAxes(i32 jid) override {
-        auto state = getGamepadState(jid);
-        if (!state) {
+        if (!isJoystickPresent(jid)) {
             return {};
         }
+        const XInputRaw raw = readXInput(jid);
         static std::array<f32, 6> axes{};
-        for (std::size_t i = 0; i < axes.size(); ++i) {
-            axes[i] = state->axes[i];
-        }
+        axes = raw.axes;
         return axes;
     }
 
     [[nodiscard]] std::span<const u8> getJoystickButtons(i32 jid) override {
-        auto state = getGamepadState(jid);
-        if (!state) {
+        if (!isJoystickPresent(jid)) {
             return {};
         }
-        static std::array<u8, static_cast<std::size_t>(GamepadButton::Count)> buttons{};
-        buttons = state->buttons;
+        const XInputRaw raw = readXInput(jid);
+        static std::array<u8, 10> buttons{};
+        buttons = raw.buttons;
         return buttons;
     }
 
-    [[nodiscard]] std::span<const JoystickHat> getJoystickHats(i32) override {
-        return {};
+    [[nodiscard]] std::span<const JoystickHat> getJoystickHats(i32 jid) override {
+        if (!isJoystickPresent(jid)) {
+            return {};
+        }
+        const XInputRaw raw = readXInput(jid);
+        static std::array<JoystickHat, 1> hats{};
+        hats[0] = raw.hat;
+        return hats;
     }
 
-    [[nodiscard]] bool isGamepad(i32 jid) override { return isJoystickPresent(jid); }
-    [[nodiscard]] std::string getGamepadName(i32 jid) override { return getJoystickName(jid); }
+    [[nodiscard]] bool isGamepad(i32 jid) override {
+        if (!isJoystickPresent(jid)) {
+            return false;
+        }
+        return GamepadMappingDatabase::instance()
+            .find(xinputGuid(jid), kGamepadPlatform)
+            .has_value();
+    }
+
+    [[nodiscard]] std::string getGamepadName(i32 jid) override {
+        if (!isJoystickPresent(jid)) {
+            return {};
+        }
+        const auto mapping =
+            GamepadMappingDatabase::instance().find(xinputGuid(jid), kGamepadPlatform);
+        return mapping ? mapping->name : std::string{};
+    }
 
     [[nodiscard]] std::optional<GamepadState> getGamepadState(i32 jid) override {
-        if (jid < 0 || jid >= 4 || !loadXInput()) {
+        if (!isJoystickPresent(jid)) {
             return std::nullopt;
         }
-        XInputState native{};
-        if (g_state.xinputGetState(static_cast<DWORD>(jid), &native) != ERROR_SUCCESS) {
+        const auto mapping =
+            GamepadMappingDatabase::instance().find(xinputGuid(jid), kGamepadPlatform);
+        if (!mapping) {
             return std::nullopt;
         }
-        GamepadState state;
-        const auto& pad = native.gamepad;
-        state.axes[static_cast<std::size_t>(GamepadAxis::LeftX)] =
-            std::clamp(static_cast<f32>(pad.leftThumbX) / 32767.0f, -1.0f, 1.0f);
-        state.axes[static_cast<std::size_t>(GamepadAxis::LeftY)] =
-            std::clamp(static_cast<f32>(pad.leftThumbY) / 32767.0f, -1.0f, 1.0f);
-        state.axes[static_cast<std::size_t>(GamepadAxis::RightX)] =
-            std::clamp(static_cast<f32>(pad.rightThumbX) / 32767.0f, -1.0f, 1.0f);
-        state.axes[static_cast<std::size_t>(GamepadAxis::RightY)] =
-            std::clamp(static_cast<f32>(pad.rightThumbY) / 32767.0f, -1.0f, 1.0f);
-        state.axes[static_cast<std::size_t>(GamepadAxis::LeftTrigger)] =
-            static_cast<f32>(pad.leftTrigger) / 127.5f - 1.0f;
-        state.axes[static_cast<std::size_t>(GamepadAxis::RightTrigger)] =
-            static_cast<f32>(pad.rightTrigger) / 127.5f - 1.0f;
-
-        auto set = [&state](GamepadButton button, bool value) {
-            state.buttons[static_cast<std::size_t>(button)] = value ? 1 : 0;
-        };
-        set(GamepadButton::A, (pad.buttons & XINPUT_GAMEPAD_A) != 0);
-        set(GamepadButton::B, (pad.buttons & XINPUT_GAMEPAD_B) != 0);
-        set(GamepadButton::X, (pad.buttons & XINPUT_GAMEPAD_X) != 0);
-        set(GamepadButton::Y, (pad.buttons & XINPUT_GAMEPAD_Y) != 0);
-        set(GamepadButton::LeftBumper, (pad.buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0);
-        set(GamepadButton::RightBumper, (pad.buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0);
-        set(GamepadButton::Back, (pad.buttons & XINPUT_GAMEPAD_BACK) != 0);
-        set(GamepadButton::Start, (pad.buttons & XINPUT_GAMEPAD_START) != 0);
-        set(GamepadButton::Guide, (pad.buttons & XINPUT_GAMEPAD_GUIDE) != 0);
-        set(GamepadButton::LeftThumb, (pad.buttons & XINPUT_GAMEPAD_LEFT_THUMB) != 0);
-        set(GamepadButton::RightThumb, (pad.buttons & XINPUT_GAMEPAD_RIGHT_THUMB) != 0);
-        set(GamepadButton::DPadUp, (pad.buttons & XINPUT_GAMEPAD_DPAD_UP) != 0);
-        set(GamepadButton::DPadRight, (pad.buttons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0);
-        set(GamepadButton::DPadDown, (pad.buttons & XINPUT_GAMEPAD_DPAD_DOWN) != 0);
-        set(GamepadButton::DPadLeft, (pad.buttons & XINPUT_GAMEPAD_DPAD_LEFT) != 0);
-        return state;
+        const XInputRaw raw = readXInput(jid);
+        return applyGamepadMapping(*mapping, raw.axes, raw.buttons,
+                                   std::span<const JoystickHat>(&raw.hat, 1));
     }
 
-    bool updateGamepadMappings(std::string_view) override { return true; }
+    bool updateGamepadMappings(std::string_view mappings) override {
+        return GamepadMappingDatabase::instance().addMappings(mappings);
+    }
 
     void setJoystickCallback(std::function<void(i32, bool)> callback) override {
         g_state.joystickCallback = std::move(callback);

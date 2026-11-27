@@ -181,6 +181,25 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 | `glfwGetNSGLContext` | `sgl::native::cocoa::getNSGLContext()` |
 | `glfwGetCocoaMonitor` | `sgl::native::cocoa::getNSScreen()` |
 
+## Achsen-Konvention
+
+- Joystick- und Gamepad-Y-Achsen: **negativ = oben, positiv = unten**
+  (GLFW/SDL-Konvention, auf allen Plattformen gleich).
+- X-Achsen: positiv nach rechts.
+- Trigger: `-1 … +1`.
+
+Die Reihenfolge der Rohachsen und Rohbuttons ist wie bei GLFW
+plattformspezifisch. Der Gamepad-Zustand (`GamepadState`) ist dagegen
+plattformübergreifend normiert.
+
+Kalibrierung:
+
+- **Linux:** `EVIOCGABS` liefert `minimum`, `maximum`, `fuzz` und `flat`;
+  normalisiert wird über `minimum`/`maximum`.
+- **macOS:** logische Min/Max plus Auto-Kalibrierung anhand beobachteter Werte
+  (wie GLFW).
+- **Windows/XInput:** feste Bereiche und Deadzones des XInput-Treibers.
+
 ## Bekannte Einschränkungen
 
 - macOS: maximal OpenGL 4.1; ein 4.6-Kontext schlägt fehl.
@@ -190,5 +209,6 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 - Windows/macOS: code-complete, in dieser Umgebung nicht kompilier- oder
   testbar.
 - OSMesa: nur wenn `libosmesa` installiert ist.
-- Gamepad-Mapping: Linux nutzt eine heuristische evdev-Zuordnung für gängige
-  Controller; die vollständige SDL-GameControllerDB ist nicht eingebettet.
+- Gamepad-Mapping: Die SDL_GameControllerDB ist eingebettet (zlib). Geräte
+  ohne passenden Eintrag gelten nicht als Gamepad. Eigene Mappings können
+  über `sgl::updateGamepadMappings()` ergänzt werden.

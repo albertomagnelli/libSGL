@@ -7,11 +7,14 @@
 #include <cstring>
 #include <fcntl.h>
 #include <linux/input.h>
+#include <optional>
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
+
+#include "GamepadMapping.hpp"
 
 namespace sgl::detail {
 namespace {
@@ -31,11 +34,9 @@ struct AbsAxis {
     int minimum = 0;
     int maximum = 0;
     int value = 0;
+    int fuzz = 0;
+    int flat = 0;
 };
-
-bool hasHat(JoystickHat value, JoystickHat flag) {
-    return (static_cast<int>(value) & static_cast<int>(flag)) != 0;
-}
 
 struct LinuxDevice {
     std::string path;
@@ -59,98 +60,10 @@ struct LinuxDevice {
     std::vector<JoystickHat> hats;
     std::vector<std::pair<int, int>> hatCodes;
 
-    void* userPointer = nullptr;
-
+    std::optional<GamepadMapping> mapping;
     bool gamepad = false;
-    GamepadState gamepadState{};
 
-    int buttonFor(std::initializer_list<int> codes) const {
-        for (int code : codes) {
-            const auto it = buttonIndex.find(code);
-            if (it != buttonIndex.end()) {
-                return it->second;
-            }
-        }
-        return -1;
-    }
-
-    int axisFor(std::initializer_list<int> codes) const {
-        for (int code : codes) {
-            const auto it = axisIndex.find(code);
-            if (it != axisIndex.end()) {
-                return it->second;
-            }
-        }
-        return -1;
-    }
-
-    void computeGamepad() {
-        const int a = buttonFor({BTN_A, BTN_SOUTH, BTN_1});
-        const int b = buttonFor({BTN_B, BTN_EAST, BTN_2});
-        const int x = buttonFor({BTN_X, BTN_NORTH, BTN_4});
-        const int y = buttonFor({BTN_Y, BTN_WEST, BTN_3});
-        const int leftX = axisFor({ABS_X});
-        const int leftY = axisFor({ABS_Y});
-        const int rightX = axisFor({ABS_RX});
-        const int rightY = axisFor({ABS_RY});
-        gamepad = a >= 0 && b >= 0 && x >= 0 && y >= 0 && leftX >= 0 && leftY >= 0 &&
-                  rightX >= 0 && rightY >= 0;
-
-        if (!gamepad) {
-            return;
-        }
-
-        gamepadState = GamepadState{};
-        const int lb = buttonFor({BTN_TL, BTN_LEFT});
-        const int rb = buttonFor({BTN_TR, BTN_RIGHT});
-        const int back = buttonFor({BTN_SELECT, BTN_BACK});
-        const int start = buttonFor({BTN_START});
-        const int guide = buttonFor({BTN_MODE, BTN_MODE});
-        const int ls = buttonFor({BTN_THUMBL});
-        const int rs = buttonFor({BTN_THUMBR});
-
-        auto setButton = [this](GamepadButton button, int index) {
-            if (index >= 0 && static_cast<std::size_t>(index) < buttons.size()) {
-                gamepadState.buttons[static_cast<std::size_t>(button)] = buttons[static_cast<std::size_t>(index)];
-            }
-        };
-        setButton(GamepadButton::A, a);
-        setButton(GamepadButton::B, b);
-        setButton(GamepadButton::X, x);
-        setButton(GamepadButton::Y, y);
-        setButton(GamepadButton::LeftBumper, lb);
-        setButton(GamepadButton::RightBumper, rb);
-        setButton(GamepadButton::Back, back);
-        setButton(GamepadButton::Start, start);
-        setButton(GamepadButton::Guide, guide);
-        setButton(GamepadButton::LeftThumb, ls);
-        setButton(GamepadButton::RightThumb, rs);
-
-        auto setAxis = [this](GamepadAxis axis, int index) {
-            if (index >= 0 && static_cast<std::size_t>(index) < axes.size()) {
-                gamepadState.axes[static_cast<std::size_t>(axis)] =
-                    axes[static_cast<std::size_t>(index)];
-            }
-        };
-        setAxis(GamepadAxis::LeftX, leftX);
-        setAxis(GamepadAxis::LeftY, leftY);
-        setAxis(GamepadAxis::RightX, rightX);
-        setAxis(GamepadAxis::RightY, rightY);
-        setAxis(GamepadAxis::LeftTrigger, axisFor({ABS_Z, ABS_GAS, ABS_BRAKE}));
-        setAxis(GamepadAxis::RightTrigger, axisFor({ABS_RZ, ABS_BRAKE, ABS_GAS}));
-
-        if (!hats.empty()) {
-            const auto hat = hats.front();
-            gamepadState.buttons[static_cast<std::size_t>(GamepadButton::DPadUp)] =
-                hasHat(hat, JoystickHat::Up);
-            gamepadState.buttons[static_cast<std::size_t>(GamepadButton::DPadDown)] =
-                hasHat(hat, JoystickHat::Down);
-            gamepadState.buttons[static_cast<std::size_t>(GamepadButton::DPadLeft)] =
-                hasHat(hat, JoystickHat::Left);
-            gamepadState.buttons[static_cast<std::size_t>(GamepadButton::DPadRight)] =
-                hasHat(hat, JoystickHat::Right);
-        }
-    }
+    void* userPointer = nullptr;
 };
 
 
@@ -184,21 +97,19 @@ int openDevice(const std::string& path, LinuxDevice& device) {
         device.product = id.product;
         device.version = id.version;
     }
-    char guid[40];
-    std::snprintf(guid, sizeof(guid), "%04x%04x%04x%04x0000000000000000",
-                  static_cast<unsigned>(device.bus), static_cast<unsigned>(device.vendor),
-                  static_cast<unsigned>(device.product), static_cast<unsigned>(device.version));
-    device.guid = guid;
+    device.guid = makeLinuxGamepadGuid(device.bus, device.vendor, device.product, device.version,
+                                       device.name);
 
     std::array<unsigned long, bitCount(ABS_MAX)> absBits{};
     if (ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absBits)), absBits.data()) < 0) {
         std::memset(absBits.data(), 0, sizeof(absBits));
     }
 
-    const int axisOrder[] = {ABS_X,      ABS_Y,     ABS_Z,       ABS_RX,    ABS_RY,
-                             ABS_RZ,     ABS_THROTTLE, ABS_RUDDER, ABS_WHEEL, ABS_GAS,
-                             ABS_BRAKE,  ABS_DISTANCE, ABS_MISC};
-    for (int code : axisOrder) {
+    // Aufsteigende ABS-Codes wie bei SDL/GLFW; HAT-Achsen werden separat behandelt.
+    for (int code = 0; code <= ABS_MAX; ++code) {
+        if (code >= ABS_HAT0X && code <= ABS_HAT3Y) {
+            continue;
+        }
         if (!testBit(absBits.data(), code)) {
             continue;
         }
@@ -211,6 +122,8 @@ int openDevice(const std::string& path, LinuxDevice& device) {
         axis.minimum = info.minimum;
         axis.maximum = info.maximum;
         axis.value = info.value;
+        axis.fuzz = info.fuzz;
+        axis.flat = info.flat;
         device.axisIndex[code] = static_cast<int>(device.axes.size());
         device.axisCodes.push_back(code);
         device.axisInfo.push_back(axis);
@@ -249,7 +162,8 @@ int openDevice(const std::string& path, LinuxDevice& device) {
 
     device.path = path;
     device.fd = fd;
-    device.computeGamepad();
+    device.mapping = GamepadMappingDatabase::instance().find(device.guid, "Linux");
+    device.gamepad = device.mapping.has_value();
     return fd;
 }
 
@@ -304,7 +218,6 @@ void readDevice(LinuxDevice& device) {
             }
         }
     }
-    device.computeGamepad();
 }
 
 } // namespace
@@ -387,30 +300,30 @@ struct LinuxJoysticks::Impl {
         std::sort(found.begin(), found.end(),
                   [](const LinuxDevice& a, const LinuxDevice& b) { return a.path < b.path; });
 
+        devices = std::move(found);
+
         if (callback) {
-            const std::size_t common = std::min(found.size(), previousNames.size());
+            const std::size_t common = std::min(devices.size(), previousNames.size());
             for (std::size_t i = 0; i < common; ++i) {
-                if (found[i].name != previousNames[i]) {
+                if (devices[i].name != previousNames[i]) {
                     callback(static_cast<i32>(i), false);
                     callback(static_cast<i32>(i), true);
                 }
             }
-            for (std::size_t i = previousNames.size(); i < found.size(); ++i) {
+            for (std::size_t i = previousNames.size(); i < devices.size(); ++i) {
                 callback(static_cast<i32>(i), true);
             }
-            for (std::size_t i = found.size(); i < previousNames.size(); ++i) {
+            for (std::size_t i = devices.size(); i < previousNames.size(); ++i) {
                 callback(static_cast<i32>(i), false);
             }
         }
-
-        devices = std::move(found);
     }
 
     void poll() {
         ensureInotify();
         if (!scanned || pollInotify()) {
-            scan();
             scanned = true;
+            scan();
             return;
         }
         for (auto& device : devices) {
@@ -434,7 +347,10 @@ const LinuxJoysticks::Impl& LinuxJoysticks::impl() const {
 }
 
 bool LinuxJoysticks::isPresent(i32 jid) const {
-    const auto& instance = impl();
+    auto& instance = const_cast<LinuxJoysticks*>(this)->impl();
+    if (!instance.scanned) {
+        instance.poll();
+    }
     return jid >= 0 && static_cast<std::size_t>(jid) < instance.devices.size();
 }
 
@@ -479,14 +395,32 @@ bool LinuxJoysticks::isGamepad(i32 jid) const {
 }
 
 std::string LinuxJoysticks::getGamepadName(i32 jid) const {
-    return isGamepad(jid) ? getName(jid) : std::string{};
+    if (!isPresent(jid)) {
+        return {};
+    }
+    const auto& device = impl().devices[static_cast<std::size_t>(jid)];
+    return device.mapping ? device.mapping->name : std::string{};
 }
 
 std::optional<GamepadState> LinuxJoysticks::getGamepadState(i32 jid) const {
-    if (!isGamepad(jid)) {
+    if (!isPresent(jid)) {
         return std::nullopt;
     }
-    return impl().devices[static_cast<std::size_t>(jid)].gamepadState;
+    const auto& device = impl().devices[static_cast<std::size_t>(jid)];
+    if (!device.mapping) {
+        return std::nullopt;
+    }
+    return applyGamepadMapping(*device.mapping, device.axes, device.buttons, device.hats);
+}
+
+bool LinuxJoysticks::updateGamepadMappings(std::string_view mappings) {
+    auto& instance = impl();
+    const bool added = GamepadMappingDatabase::instance().addMappings(mappings);
+    for (auto& device : instance.devices) {
+        device.mapping = GamepadMappingDatabase::instance().find(device.guid, "Linux");
+        device.gamepad = device.mapping.has_value();
+    }
+    return added;
 }
 
 void LinuxJoysticks::setCallback(std::function<void(i32, bool)> callback) {

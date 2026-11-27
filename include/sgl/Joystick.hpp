@@ -24,6 +24,7 @@ void* getJoystickUserPointer(i32 jid);
 bool isGamepad(i32 jid);
 std::string getGamepadName(i32 jid);
 std::optional<GamepadState> getGamepadState(i32 jid);
+/// Fügt ein Mapping im SDL-GameControllerDB-Format hinzu.
 bool updateGamepadMappings(std::string_view mappings);
 
 void setJoystickCallback(std::function<void(i32, bool)> callback);

@@ -13,8 +13,10 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -23,6 +25,7 @@
 
 #include "backend/Backend.hpp"
 #include "backend/BackendFactory.hpp"
+#include "common/GamepadMapping.hpp"
 #include "common/MonitorAccess.hpp"
 
 namespace sgl::detail::cocoa {
@@ -58,15 +61,44 @@ CGFloat flipY(CGFloat y, CGFloat height) {
     return height - y;
 }
 
+struct JoystickAxisElement {
+    IOHIDElementRef element = nullptr;
+    u32 usage = 0;
+    i64 minimum = 0;
+    i64 maximum = 0;
+    f32 value = 0.0f;
+};
+
+struct JoystickButtonElement {
+    IOHIDElementRef element = nullptr;
+    u32 usage = 0;
+    u8 value = 0;
+};
+
+struct JoystickHatElement {
+    IOHIDElementRef element = nullptr;
+    u32 usage = 0;
+    JoystickHat value = JoystickHat::Centered;
+};
+
 struct JoystickDevice {
     IOHIDDeviceRef device = nullptr;
     std::string name;
     std::string guid;
     u64 vendor = 0;
     u64 product = 0;
+    u64 version = 0;
+
+    std::vector<JoystickAxisElement> axisElements;
+    std::vector<JoystickButtonElement> buttonElements;
+    std::vector<JoystickHatElement> hatElements;
+
     std::vector<f32> axes;
     std::vector<u8> buttons;
     std::vector<JoystickHat> hats;
+
+    std::optional<GamepadMapping> mapping;
+    bool gamepad = false;
 };
 
 struct State {
@@ -80,13 +112,14 @@ struct State {
     std::function<void(i32, bool)> joystickCallback;
     IOHIDManagerRef hidManager = nullptr;
     std::vector<JoystickDevice> joysticks;
-    std::vector<std::string> joystickNames;
 
     id screenObserver = nil;
     u64 clipboardChangeCount = 0;
 };
 
 State g_state;
+
+void refreshJoysticks();
 
 std::string cfStringToUtf8(CFStringRef string) {
     if (!string) {
@@ -684,143 +717,292 @@ public:
 
     [[nodiscard]] bool isGamepad(i32 jid) override {
         if (!isJoystickPresent(jid)) return false;
-        const auto& device = g_state.joysticks[static_cast<std::size_t>(jid)];
-        return device.vendor == 0x045e || device.vendor == 0x054c;
+        return g_state.joysticks[static_cast<std::size_t>(jid)].gamepad;
     }
 
-    [[nodiscard]] std::string getGamepadName(i32 jid) override { return getJoystickName(jid); }
+    [[nodiscard]] std::string getGamepadName(i32 jid) override {
+        if (!isJoystickPresent(jid)) return {};
+        const auto& device = g_state.joysticks[static_cast<std::size_t>(jid)];
+        return device.mapping ? device.mapping->name : std::string{};
+    }
 
     [[nodiscard]] std::optional<GamepadState> getGamepadState(i32 jid) override {
-        if (!isGamepad(jid)) return std::nullopt;
+        if (!isJoystickPresent(jid)) return std::nullopt;
         const auto& device = g_state.joysticks[static_cast<std::size_t>(jid)];
-        GamepadState state;
-        const std::size_t axisCount = device.axes.size();
-        const std::size_t buttonCount = device.buttons.size();
-        if (axisCount > 0) state.axes[0] = device.axes[0];
-        if (axisCount > 1) state.axes[1] = -device.axes[1];
-        if (axisCount > 2) state.axes[2] = device.axes[2];
-        if (axisCount > 3) state.axes[3] = -device.axes[3];
-        if (axisCount > 4) state.axes[4] = device.axes[4] * 2.0f - 1.0f;
-        if (axisCount > 5) state.axes[5] = device.axes[5] * 2.0f - 1.0f;
-        for (std::size_t i = 0; i < std::min<std::size_t>(buttonCount, 15); ++i) {
-            state.buttons[i] = device.buttons[i];
-        }
-        return state;
+        if (!device.mapping) return std::nullopt;
+        return applyGamepadMapping(*device.mapping, device.axes, device.buttons, device.hats);
     }
 
-    bool updateGamepadMappings(std::string_view) override { return true; }
+    bool updateGamepadMappings(std::string_view mappings) override {
+        const bool added = GamepadMappingDatabase::instance().addMappings(mappings);
+        for (auto& device : g_state.joysticks) {
+            device.mapping =
+                GamepadMappingDatabase::instance().find(device.guid, "Mac OS X");
+            device.gamepad = device.mapping.has_value();
+        }
+        return added;
+    }
 
     void setJoystickCallback(std::function<void(i32, bool)> callback) override {
         g_state.joystickCallback = std::move(callback);
     }
 };
 
-CocoaBackendImpl* g_backend = nullptr;
 
 // ---------------------------------------------------------------------------
 // HID joystick enumeration
 // ---------------------------------------------------------------------------
 
+i64 elementValue(IOHIDDeviceRef device, IOHIDElementRef element) {
+    IOHIDValueRef value = nullptr;
+    if (IOHIDDeviceGetValue(device, element, &value) == kIOReturnSuccess && value) {
+        return IOHIDValueGetIntegerValue(value);
+    }
+    return 0;
+}
+
+JoystickHat hatFromValue(i64 value) {
+    switch (value) {
+    case 0: return JoystickHat::Up;
+    case 1: return JoystickHat::RightUp;
+    case 2: return JoystickHat::Right;
+    case 3: return JoystickHat::RightDown;
+    case 4: return JoystickHat::Down;
+    case 5: return JoystickHat::LeftDown;
+    case 6: return JoystickHat::Left;
+    case 7: return JoystickHat::LeftUp;
+    default: return JoystickHat::Centered;
+    }
+}
+
+
+struct RawHidElement {
+    IOHIDElementRef element = nullptr;
+    u32 usage = 0;
+};
+
+void readJoystick(JoystickDevice& joystick) {
+    joystick.axes.resize(joystick.axisElements.size());
+    for (std::size_t i = 0; i < joystick.axisElements.size(); ++i) {
+        JoystickAxisElement& axis = joystick.axisElements[i];
+        const i64 raw = elementValue(joystick.device, axis.element);
+        // Auto-Kalibrierung wie bei GLFW: beobachtete Min/Max erweitern.
+        axis.minimum = std::min(axis.minimum, raw);
+        axis.maximum = std::max(axis.maximum, raw);
+        axis.value = axis.maximum > axis.minimum
+                         ? 2.0f * static_cast<f32>(raw - axis.minimum) /
+                                   static_cast<f32>(axis.maximum - axis.minimum) -
+                               1.0f
+                         : 0.0f;
+        joystick.axes[i] = axis.value;
+    }
+
+    joystick.buttons.resize(joystick.buttonElements.size());
+    for (std::size_t i = 0; i < joystick.buttonElements.size(); ++i) {
+        JoystickButtonElement& button = joystick.buttonElements[i];
+        button.value = elementValue(joystick.device, button.element) != 0 ? 1 : 0;
+        joystick.buttons[i] = button.value;
+    }
+
+    joystick.hats.resize(joystick.hatElements.size());
+    for (std::size_t i = 0; i < joystick.hatElements.size(); ++i) {
+        JoystickHatElement& hat = joystick.hatElements[i];
+        hat.value = hatFromValue(elementValue(joystick.device, hat.element));
+        joystick.hats[i] = hat.value;
+    }
+}
+
+bool openJoystick(IOHIDDeviceRef device, JoystickDevice& joystick) {
+    joystick.device = device;
+    joystick.name = cfProperty<std::string>(device, CFSTR(kIOHIDProductKey));
+    if (joystick.name.empty()) {
+        joystick.name = "Unknown Joystick";
+    }
+    joystick.vendor = cfProperty<u64>(device, CFSTR(kIOHIDVendorIDKey));
+    joystick.product = cfProperty<u64>(device, CFSTR(kIOHIDProductIDKey));
+    joystick.version = cfProperty<u64>(device, CFSTR(kIOHIDVersionNumberKey));
+    joystick.guid = makeCocoaGamepadGuid(joystick.vendor, joystick.product,
+                                         joystick.version, joystick.name);
+
+    if (IOHIDDeviceOpen(device, kIOHIDOptionsTypeNone) != kIOReturnSuccess) {
+        return false;
+    }
+
+    CFArrayRef elements = IOHIDDeviceCopyMatchingElements(device, nullptr,
+                                                          kIOHIDOptionsTypeNone);
+    if (!elements) {
+        IOHIDDeviceClose(device, kIOHIDOptionsTypeNone);
+        return false;
+    }
+
+    std::vector<RawHidElement> rawAxes;
+    std::vector<RawHidElement> rawButtons;
+    std::vector<RawHidElement> rawHats;
+
+    const CFIndex count = CFArrayGetCount(elements);
+    for (CFIndex i = 0; i < count; ++i) {
+        auto* element = static_cast<IOHIDElementRef>(
+            const_cast<void*>(CFArrayGetValueAtIndex(elements, i)));
+        if (!element || CFGetTypeID(element) != IOHIDElementGetTypeID()) {
+            continue;
+        }
+        const IOHIDElementType type = IOHIDElementGetType(element);
+        if (type != kIOHIDElementTypeInput_Axis && type != kIOHIDElementTypeInput_Button &&
+            type != kIOHIDElementTypeInput_Misc) {
+            continue;
+        }
+
+        const u32 page = IOHIDElementGetUsagePage(element);
+        const u32 usage = IOHIDElementGetUsage(element);
+        std::vector<RawHidElement>* target = nullptr;
+
+        if (page == kHIDPage_GenericDesktop) {
+            switch (usage) {
+            case kHIDUsage_GD_X:
+            case kHIDUsage_GD_Y:
+            case kHIDUsage_GD_Z:
+            case kHIDUsage_GD_Rx:
+            case kHIDUsage_GD_Ry:
+            case kHIDUsage_GD_Rz:
+            case kHIDUsage_GD_Slider:
+            case kHIDUsage_GD_Dial:
+            case kHIDUsage_GD_Wheel:
+                target = &rawAxes;
+                break;
+            case kHIDUsage_GD_Hatswitch:
+                target = &rawHats;
+                break;
+            case kHIDUsage_GD_DPadUp:
+            case kHIDUsage_GD_DPadRight:
+            case kHIDUsage_GD_DPadDown:
+            case kHIDUsage_GD_DPadLeft:
+            case kHIDUsage_GD_SystemMainMenu:
+            case kHIDUsage_GD_Select:
+            case kHIDUsage_GD_Start:
+                target = &rawButtons;
+                break;
+            default:
+                break;
+            }
+        } else if (page == kHIDPage_Simulation) {
+            switch (usage) {
+            case kHIDUsage_Sim_Accelerator:
+            case kHIDUsage_Sim_Brake:
+            case kHIDUsage_Sim_Throttle:
+            case kHIDUsage_Sim_Rudder:
+            case kHIDUsage_Sim_Steering:
+                target = &rawAxes;
+                break;
+            default:
+                break;
+            }
+        } else if (page == kHIDPage_Button || page == kHIDPage_Consumer) {
+            target = &rawButtons;
+        }
+
+        if (target) {
+            target->push_back({element, usage});
+        }
+    }
+    CFRelease(elements);
+
+    auto byUsage = [](const RawHidElement& a, const RawHidElement& b) {
+        return a.usage < b.usage;
+    };
+    std::stable_sort(rawAxes.begin(), rawAxes.end(), byUsage);
+    std::stable_sort(rawButtons.begin(), rawButtons.end(), byUsage);
+    std::stable_sort(rawHats.begin(), rawHats.end(), byUsage);
+
+    joystick.axisElements.clear();
+    for (const RawHidElement& element : rawAxes) {
+        JoystickAxisElement axis;
+        axis.element = element.element;
+        axis.usage = element.usage;
+        axis.minimum = IOHIDElementGetLogicalMin(element.element);
+        axis.maximum = IOHIDElementGetLogicalMax(element.element);
+        joystick.axisElements.push_back(axis);
+    }
+
+    joystick.buttonElements.clear();
+    for (const RawHidElement& element : rawButtons) {
+        JoystickButtonElement button;
+        button.element = element.element;
+        button.usage = element.usage;
+        joystick.buttonElements.push_back(button);
+    }
+
+    joystick.hatElements.clear();
+    for (const RawHidElement& element : rawHats) {
+        JoystickHatElement hat;
+        hat.element = element.element;
+        hat.usage = element.usage;
+        joystick.hatElements.push_back(hat);
+    }
+
+    joystick.mapping = GamepadMappingDatabase::instance().find(joystick.guid, "Mac OS X");
+    joystick.gamepad = joystick.mapping.has_value();
+    readJoystick(joystick);
+    return true;
+}
+
 void refreshJoysticks() {
     State& s = g_state;
-    std::vector<JoystickDevice> devices;
-    if (s.hidManager) {
-        CFSetRef set = IOHIDManagerCopyDevices(s.hidManager);
-        if (set) {
-            const CFIndex count = CFSetGetCount(set);
-            std::vector<const void*> values(static_cast<std::size_t>(count));
-            CFSetGetValues(set, values.data());
-            for (const void* value : values) {
-                auto* device = static_cast<IOHIDDeviceRef>(const_cast<void*>(value));
-                JoystickDevice entry;
-                entry.device = device;
-                entry.name = cfProperty<std::string>(device, kIOHIDProductKey);
-                entry.vendor = cfProperty<u64>(device, kIOHIDVendorIDKey);
-                entry.product = cfProperty<u64>(device, kIOHIDProductIDKey);
-                char guid[64];
-                std::snprintf(guid, sizeof(guid), "%04llx%04llx0000000000000000",
-                              static_cast<unsigned long long>(entry.vendor),
-                              static_cast<unsigned long long>(entry.product));
-                entry.guid = guid;
-
-                IOHIDDeviceOpen(device, kIOHIDOptionsTypeNone);
-                CFArrayRef elements = IOHIDDeviceCopyMatchingElements(device, nullptr,
-                                                                      kIOHIDOptionsTypeNone);
-                if (elements) {
-                    const CFIndex elementCount = CFArrayGetCount(elements);
-                    for (CFIndex i = 0; i < elementCount; ++i) {
-                        auto* element = static_cast<IOHIDElementRef>(
-                            const_cast<void*>(CFArrayGetValueAtIndex(elements, i)));
-                        const uint32_t page = IOHIDElementGetUsagePage(element);
-                        const uint32_t usage = IOHIDElementGetUsage(element);
-                        IOHIDValueRef valueRef = nullptr;
-                        if (IOHIDDeviceGetValue(device, element, &valueRef) != kIOReturnSuccess ||
-                            !valueRef) {
-                            continue;
-                        }
-                        const CFIndex value = IOHIDValueGetIntegerValue(valueRef);
-                        if (page == kHIDPage_GenericDesktop) {
-                            if (usage >= kHIDUsage_GD_X && usage <= kHIDUsage_GD_Dial) {
-                                const CFIndex minimum = IOHIDElementGetLogicalMin(element);
-                                const CFIndex maximum = IOHIDElementGetLogicalMax(element);
-                                f32 normalized = 0.0f;
-                                if (maximum > minimum) {
-                                    normalized = static_cast<f32>(value - minimum) /
-                                                 static_cast<f32>(maximum - minimum);
-                                }
-                                entry.axes.push_back(normalized * 2.0f - 1.0f);
-                            } else if (usage == kHIDUsage_GD_Hatswitch) {
-                                JoystickHat hat = JoystickHat::Centered;
-                                switch (value) {
-                                case 0: hat = JoystickHat::Up; break;
-                                case 1: hat = JoystickHat::RightUp; break;
-                                case 2: hat = JoystickHat::Right; break;
-                                case 3: hat = JoystickHat::RightDown; break;
-                                case 4: hat = JoystickHat::Down; break;
-                                case 5: hat = JoystickHat::LeftDown; break;
-                                case 6: hat = JoystickHat::Left; break;
-                                case 7: hat = JoystickHat::LeftUp; break;
-                                default: hat = JoystickHat::Centered; break;
-                                }
-                                entry.hats.push_back(hat);
-                            }
-                        } else if (page == kHIDPage_Button && usage >= 1) {
-                            while (entry.buttons.size() < static_cast<std::size_t>(usage)) {
-                                entry.buttons.push_back(0);
-                            }
-                            entry.buttons[static_cast<std::size_t>(usage - 1)] =
-                                value != 0 ? 1 : 0;
-                        }
-                    }
-                    CFRelease(elements);
-                }
-                devices.push_back(std::move(entry));
-            }
-            CFRelease(set);
-        }
+    if (!s.hidManager) {
+        return;
     }
 
-    if (s.joystickCallback) {
-        const std::size_t common = std::min(devices.size(), s.joystickNames.size());
-        for (std::size_t i = 0; i < common; ++i) {
-            if (devices[i].name != s.joystickNames[i]) {
+    CFSetRef set = IOHIDManagerCopyDevices(s.hidManager);
+    if (!set) {
+        return;
+    }
+
+    const CFIndex count = CFSetGetCount(set);
+    std::vector<const void*> values(static_cast<std::size_t>(count));
+    CFSetGetValues(set, values.data());
+
+    auto contains = [&values](IOHIDDeviceRef device) {
+        return std::find(values.begin(), values.end(), reinterpret_cast<const void*>(device)) !=
+               values.end();
+    };
+
+    // Entfernte Geräte zuerst austragen.
+    for (std::size_t i = s.joysticks.size(); i-- > 0;) {
+        if (!contains(s.joysticks[i].device)) {
+            if (s.joystickCallback) {
                 s.joystickCallback(static_cast<i32>(i), false);
-                s.joystickCallback(static_cast<i32>(i), true);
             }
-        }
-        for (std::size_t i = common; i < devices.size(); ++i) {
-            s.joystickCallback(static_cast<i32>(i), true);
-        }
-        for (std::size_t i = common; i < s.joystickNames.size(); ++i) {
-            s.joystickCallback(static_cast<i32>(i), false);
+            IOHIDDeviceClose(s.joysticks[i].device, kIOHIDOptionsTypeNone);
+            s.joysticks.erase(s.joysticks.begin() + static_cast<std::ptrdiff_t>(i));
         }
     }
 
-    s.joystickNames.clear();
-    for (const auto& device : devices) {
-        s.joystickNames.push_back(device.name);
+    // Bestehende Geräte aktualisieren.
+    for (auto& joystick : s.joysticks) {
+        readJoystick(joystick);
     }
-    s.joysticks = std::move(devices);
+
+    // Neue Geräte anhängen.
+    for (const void* value : values) {
+        auto* device = static_cast<IOHIDDeviceRef>(const_cast<void*>(value));
+        const bool known = std::any_of(s.joysticks.begin(), s.joysticks.end(),
+                                       [device](const JoystickDevice& joystick) {
+                                           return joystick.device == device;
+                                       });
+        if (known) {
+            continue;
+        }
+
+        JoystickDevice joystick;
+        if (!openJoystick(device, joystick)) {
+            continue;
+        }
+        s.joysticks.push_back(std::move(joystick));
+        if (s.joystickCallback) {
+            s.joystickCallback(static_cast<i32>(s.joysticks.size() - 1), true);
+        }
+    }
+
+    CFRelease(set);
 }
 
 } // namespace sgl::detail::cocoa
@@ -1709,12 +1891,12 @@ bool CocoaBackendImpl::init(const InitOptions&, Error& error) {
         IOHIDManagerRef manager = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
         if (manager) {
             NSArray* matching = @[
-                @{(NSString*)kIOHIDDeviceUsagePageKey : @(kHIDPage_GenericDesktop),
-                  (NSString*)kIOHIDDeviceUsageKey : @(kHIDUsage_GD_Joystick)},
-                @{(NSString*)kIOHIDDeviceUsagePageKey : @(kHIDPage_GenericDesktop),
-                  (NSString*)kIOHIDDeviceUsageKey : @(kHIDUsage_GD_GamePad)},
-                @{(NSString*)kIOHIDDeviceUsagePageKey : @(kHIDPage_GenericDesktop),
-                  (NSString*)kIOHIDDeviceUsageKey : @(kHIDUsage_GD_MultiAxisController)}
+                @{[NSString stringWithUTF8String:kIOHIDDeviceUsagePageKey] : @(kHIDPage_GenericDesktop),
+                  [NSString stringWithUTF8String:kIOHIDDeviceUsageKey] : @(kHIDUsage_GD_Joystick)},
+                @{[NSString stringWithUTF8String:kIOHIDDeviceUsagePageKey] : @(kHIDPage_GenericDesktop),
+                  [NSString stringWithUTF8String:kIOHIDDeviceUsageKey] : @(kHIDUsage_GD_GamePad)},
+                @{[NSString stringWithUTF8String:kIOHIDDeviceUsagePageKey] : @(kHIDPage_GenericDesktop),
+                  [NSString stringWithUTF8String:kIOHIDDeviceUsageKey] : @(kHIDUsage_GD_MultiAxisController)}
             ];
             IOHIDManagerSetDeviceMatchingMultiple(manager, (CFArrayRef)matching);
             IOHIDManagerOpen(manager, kIOHIDOptionsTypeNone);
@@ -1723,6 +1905,7 @@ bool CocoaBackendImpl::init(const InitOptions&, Error& error) {
     }
 
     rebuildMonitors(false);
+    refreshJoysticks();
     g_state.initialized = true;
     return true;
 }
@@ -1740,6 +1923,12 @@ void CocoaBackendImpl::terminate() {
         window->destroy();
     }
     g_state.windows.clear();
+    for (auto& joystick : g_state.joysticks) {
+        if (joystick.device) {
+            IOHIDDeviceClose(joystick.device, kIOHIDOptionsTypeNone);
+        }
+    }
+    g_state.joysticks.clear();
     if (g_state.hidManager) {
         IOHIDManagerClose(g_state.hidManager, kIOHIDOptionsTypeNone);
         CFRelease(g_state.hidManager);

@@ -1,8 +1,11 @@
 add_executable(sgl_tests
     test_sgl.cpp
+    test_gamepad_mapping.cpp
+    test_logger.cpp
 )
 
 target_link_libraries(sgl_tests PRIVATE sgl::sgl sgl_catch2)
 target_compile_features(sgl_tests PRIVATE cxx_std_23)
+target_include_directories(sgl_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 
 add_test(NAME sgl_tests COMMAND sgl_tests)

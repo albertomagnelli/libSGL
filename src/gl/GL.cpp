@@ -1,10 +1,10 @@
-// GL.cpp — Loader für GL.hpp.
+// sgl/GL.cpp — Loader für <sgl/GL.hpp>.
 //
 // Die Adressen werden über sgl::getProcAddress() bezogen. sgl verwendet auf
 // jeder Plattform den passenden Mechanismus (wglGetProcAddress unter Windows,
 // glXGetProcAddress unter Linux/X11, eglGetProcAddress unter Wayland, ...).
 
-#include "GL.hpp"
+#include <sgl/GL.hpp>
 
 #include <sgl/Context.hpp>
 

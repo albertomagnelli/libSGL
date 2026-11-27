@@ -164,6 +164,8 @@ enum class GamepadButton : i32 {
     Count = 15,
 };
 
+// Y-Achsen (LeftY/RightY) folgen der GLFW/SDL-Konvention:
+// negativ = oben, positiv = unten. Das gilt auf allen Plattformen.
 enum class GamepadAxis : i32 {
     LeftX = 0,
     LeftY = 1,

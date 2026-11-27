@@ -3,7 +3,7 @@
 ## Ziel
 
 Eigenständige C++23-Bibliothek `sgl` als Ersatz für GLFW 3.4 – **ohne Vulkan**.
-Keine externe GLFW-Abhängigkeit, moderne C++-API, Typen aus `Types.hpp`.
+Keine externe GLFW-Abhängigkeit, moderne C++-API, Typen aus `include/sgl/Types.hpp`.
 
 ## Umfang
 
@@ -97,5 +97,5 @@ tests/                Catch2-Tests
 - macOS unterstützt nur OpenGL bis 4.1; 4.6 wird mit `VersionUnavailable` abgelehnt.
 - Wayland bietet keine Fensterpositionierung und keinen Pointer-Lock.
 - EGL wird für Wayland und optional für X11 verwendet; Win32 nutzt WGL, macOS NSOpenGL.
-- Die vollständige SDL-GameControllerDB ist nicht eingebettet; Linux nutzt eine
-  heuristische evdev-Zuordnung für gängige Controller.
+- Die SDL_GameControllerDB ist eingebettet; eigene Mappings können über
+  `sgl::updateGamepadMappings()` ergänzt werden.

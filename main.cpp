@@ -1,5 +1,5 @@
 // Kleines Beispiel: OpenGL 4.6 Core Profile mit sgl und dem eigenen Loader
-// aus GL.hpp / GL.cpp.
+// aus sgl/GL.hpp / src/gl/GL.cpp.
 //
 // Ablauf:
 //   1. sgl initialisieren und ein Fenster mit Core-Profile-Kontext erzeugen
@@ -9,7 +9,7 @@
 //
 // Beenden mit ESC oder durch Schließen des Fensters.
 
-#include "GL.hpp"
+#include <sgl/GL.hpp>
 
 #include <sgl/sgl.hpp>
 
@@ -27,12 +27,12 @@ void framebufferSizeCallback(ivec2 size) {
 
 int main() {
     sgl::setErrorCallback([](const sgl::Error& error) {
-        std::fprintf(stderr, "sgl-Fehler %d: %s\n", static_cast<int>(error.code),
+        SLOGE("sgl-Fehler %d: %s\n", static_cast<int>(error.code),
                      error.message.c_str());
     });
 
     if (auto result = sgl::init(); !result) {
-        std::fprintf(stderr, "sgl konnte nicht initialisiert werden: %s\n",
+        SLOGE("sgl konnte nicht initialisiert werden: %s\n",
                      result.error().message.c_str());
         return 1;
     }
@@ -40,7 +40,7 @@ int main() {
     sgl::WindowHints hints;
     hints.width = 800;
     hints.height = 600;
-    hints.title = "GL.hpp - OpenGL 4.6 Loader";
+    hints.title = "sgl - OpenGL 4.6 Loader";
     hints.contextVersionMajor = 4;
     hints.contextVersionMinor = 6;
     hints.contextProfile = sgl::ContextProfile::Core;
@@ -48,7 +48,7 @@ int main() {
 
     auto windowResult = sgl::Window::create(hints);
     if (!windowResult) {
-        std::fprintf(stderr, "Fenster/Kontext konnte nicht erzeugt werden: %s\n",
+        SLOGE("Fenster/Kontext konnte nicht erzeugt werden: %s\n",
                      windowResult.error().message.c_str());
         sgl::terminate();
         return 1;
@@ -60,19 +60,19 @@ int main() {
 
     // Wichtig: erst jetzt, mit aktuellem Kontext, die Funktionen laden.
     const GL::LoadReport report = GL::load();
-    std::printf("%zu/%zu OpenGL-Funktionen geladen%s\n", report.loaded, report.total,
+    SLOGI("%zu/%zu OpenGL-Funktionen geladen%s\n", report.loaded, report.total,
                 report.complete() ? " (vollständig)" : " (Treiber bietet nicht alles an)");
 
     if (GL::glGetString) {
         const auto* vendor = reinterpret_cast<const char*>(GL::glGetString(GL_VENDOR));
         const auto* renderer = reinterpret_cast<const char*>(GL::glGetString(GL_RENDERER));
         const auto* version = reinterpret_cast<const char*>(GL::glGetString(GL_VERSION));
-        std::printf("Vendor:   %s\nRenderer: %s\nVersion:  %s\n", vendor, renderer, version);
+        SLOGI("Vendor:   %s\nRenderer: %s\nVersion:  %s\n", vendor, renderer, version);
     }
 
     // Ohne diese Basis-Funktionen ist der Kontext unbrauchbar.
     if (!GL::glClear || !GL::glClearColor || !GL::glViewport) {
-        std::fprintf(stderr, "Grundlegende GL-Funktionen fehlen.\n");
+        SLOGE("Grundlegende GL-Funktionen fehlen.\n");
         window.reset();
         sgl::terminate();
         return 1;

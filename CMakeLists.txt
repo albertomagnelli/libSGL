@@ -29,6 +29,8 @@ set(SGL_SOURCES
     src/common/Cursor.cpp
     src/common/Error.cpp
     src/common/Events.cpp
+    src/common/GamepadMapping.cpp
+    src/common/GamepadMappingsGenerated.cpp
     src/common/Init.cpp
     src/common/Input.cpp
     src/common/Joystick.cpp
@@ -36,6 +38,8 @@ set(SGL_SOURCES
     src/common/Native.cpp
     src/common/Time.cpp
     src/common/Window.cpp
+    src/common/Log.cpp
+    src/gl/GL.cpp
 )
 
 set(SGL_DEFINITIONS "")
@@ -227,7 +231,8 @@ endif()
 # Examples
 # ---------------------------------------------------------------------------
 if(SGL_BUILD_EXAMPLES)
-    add_executable(GLLoader main.cpp GL.cpp)
-    target_include_directories(GLLoader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_executable(GLLoader main.cpp)
     target_link_libraries(GLLoader PRIVATE sgl::sgl)
+
+    add_subdirectory(examples/window)
 endif()

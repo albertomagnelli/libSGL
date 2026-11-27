@@ -4,6 +4,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 
 #include "sgl/Input.hpp"
 #include "sgl/Types.hpp"
@@ -25,6 +26,7 @@ public:
     bool isGamepad(i32 jid) const;
     std::string getGamepadName(i32 jid) const;
     std::optional<GamepadState> getGamepadState(i32 jid) const;
+    bool updateGamepadMappings(std::string_view mappings);
 
     void setCallback(std::function<void(i32, bool)> callback);
     void poll();

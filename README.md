@@ -6,7 +6,7 @@ mit RAII, `std::expected`, `std::function`, `std::span` und `std::string_view`.
 Es gibt **keine** GLFW-kompatible C-Schnittstelle und keine Laufzeitabhängigkeit
 von GLFW.
 
-Der OpenGL-Loader in `GL.hpp` / `GL.cpp` verwendet `sgl::getProcAddress()` und
+Der OpenGL-Loader in `include/sgl/GL.hpp` / `src/gl/GL.cpp` verwendet `sgl::getProcAddress()` und
 lädt einen OpenGL-4.6-Core-Kontext.
 
 ## Funktionsumfang
@@ -21,7 +21,8 @@ lädt einen OpenGL-4.6-Core-Kontext.
   Gamma-Rampen, Hotplug-Benachrichtigung
 - Zwischenablage und Drag & Drop
 - Joysticks/Gamepads inkl. Hotplug, Achsen, Buttons, Hats, GUIDs und
-  Gamepad-Mapping (Linux evdev, Windows XInput, macOS IOKit HID)
+  Gamepad-Mapping auf Basis der eingebetteten SDL_GameControllerDB
+  (Linux evdev, Windows XInput, macOS IOKit HID)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
 - Native Zugriffe für X11, Wayland, Win32, Cocoa, EGL und OSMesa
 
@@ -29,7 +30,7 @@ lädt einen OpenGL-4.6-Core-Kontext.
 
 | Abhängigkeit | Verwendung | Status im Referenzsystem |
 |---|---|---|
-| GLM | `Types.hpp` | Systempaket |
+| GLM | `include/sgl/Types.hpp` | Systempaket |
 | X11, XRandR, Xinerama, Xcursor, Xi, Xext | X11-Backend | Systempaket |
 | GLX / libGL | X11-Kontexte | Systempaket |
 | Wayland-Client, Wayland-EGL, Wayland-Cursor, xkbcommon | Wayland-Backend | Systempaket |
@@ -37,6 +38,7 @@ lädt einen OpenGL-4.6-Core-Kontext.
 | wayland-protocols + wayland-scanner | Protokollcode | Systempaket |
 | OSMesa | optionales OSMesa-Backend | optional |
 | Catch2 3.7.1 | Tests | unter `third_party/catch2` vendort |
+| SDL_GameControllerDB | Gamepad-Mapping | unter `third_party/gamecontrollerdb` vendort (zlib) |
 
 ## Bauen
 
@@ -58,6 +60,46 @@ Optionen:
 -DSGL_BUILD_TESTS=ON
 -DSGL_BUILD_EXAMPLES=ON
 ```
+
+## Fenster-Beispiele
+
+Unter `examples/window/` liegen ausführbare Beispiele für Cursor, rahmenlose
+Fenster, Icons, Vollbild-Umschaltung, Fensterattribute, Eingabe, Zwischenablage,
+Drag & Drop, Monitore und Joysticks:
+
+```bash
+cmake -S . -B build -G Ninja -DSGL_BUILD_EXAMPLES=ON
+cmake --build build
+./build/examples/window/sgl_example_cursor
+./build/examples/window/sgl_example_frameless
+./build/examples/window/sgl_example_fullscreen
+```
+
+Die vollständige Liste und Tastenkürzel stehen in
+[`examples/window/README.md`](examples/window/README.md).
+
+## Logging
+
+`include/sgl/Log.hpp` stellt einen leichtgewichtigen Logger mit farbigen Ausgaben bereit:
+
+```cpp
+#include <sgl/Log.hpp>
+
+SLOGI("Fenster erstellt: %dx%d", 800, 600);
+SLOGD << "Renderer: " << "Mesa";
+```
+
+Format:
+
+```text
+[2026-11-27 14:05:23.123] [INFO ] [Window.cpp:42] Fenster erstellt: 800x600
+```
+
+Reihenfolge: Datum/Uhrzeit, Log-Level, Datei:Zeile, Nachricht. Die Farben
+hängen vom Level ab. Mit der Umgebungsvariable `NO_COLOR` lassen sich die
+ANSI-Farben abschalten. Das Standard-Maximallevel ist `INFO`; über
+`sgl::Logger::setMaxLogLevel()` und `sgl::Logger::setOutputStream()` lässt sich
+das Verhalten anpassen.
 
 ## Minimalbeispiel
 
@@ -112,6 +154,22 @@ int main() {
 - Reine Datentypen (`WindowHints`, `VideoMode`, `GamepadState`, `Image`,
   `GammaRamp`) haben öffentliche Felder.
 
+## Achsen-Konvention
+
+Joystick- und Gamepad-Y-Achsen verhalten sich auf allen Plattformen gleich:
+**negativ = oben, positiv = unten**. Das entspricht der GLFW/SDL-Konvention.
+X-Achsen sind positiv nach rechts. Trigger liegen im Bereich `-1 … +1`.
+Die Reihenfolge der Rohachsen und Rohbuttons ist wie bei GLFW
+plattformspezifisch; `GamepadState` ist plattformübergreifend normiert.
+
+Gamepad-Namen, Achsen- und Button-Zuordnungen stammen aus der vendorten
+SDL_GameControllerDB. Eigene Mappings können zur Laufzeit über
+`sgl::updateGamepadMappings()` ergänzt werden.
+
+Kalibrierung wird plattformspezifisch aus den Treiberdaten abgeleitet:
+`EVIOCGABS` unter Linux, logische Min/Max plus Auto-Kalibrierung unter macOS
+und die festen XInput-Bereiche unter Windows.
+
 ## Plattformhinweise
 
 - **X11** ist die Referenzplattform und wird lokal vollständig gebaut und
@@ -139,5 +197,7 @@ ctest --test-dir build --output-on-failure
 
 ## Lizenzhinweise
 
-Catch2 steht unter BSL-1.0, GLM unter MIT. Die Lizenztexte liegen unter
-`third_party/catch2/LICENSE.txt` bzw. werden über das Systempaket bezogen.
+Catch2 steht unter BSL-1.0, GLM unter MIT, SDL_GameControllerDB unter zlib.
+Die Lizenztexte liegen unter `third_party/catch2/LICENSE.txt` bzw.
+`third_party/gamecontrollerdb/LICENSE.txt`; GLM wird über das Systempaket
+bezogen.
