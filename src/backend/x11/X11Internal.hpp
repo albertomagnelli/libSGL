@@ -247,6 +247,7 @@ private:
     bool m_mousePassthrough = false;
     bool m_doublebuffer = true;
     bool m_fullscreen = false;
+    bool m_restoreWindowedGeometry = false;
     bool m_scaleToMonitor = false;
     bool m_pointerConfined = false;
     bool m_focusPending = false;

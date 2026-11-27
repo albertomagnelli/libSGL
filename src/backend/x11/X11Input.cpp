@@ -396,6 +396,12 @@ void X11WindowBackend::handleClientMessage(XClientMessageEvent& event) {
         }
         if (first == s.netWmStateFullscreen || second == s.netWmStateFullscreen) {
             m_fullscreen = add;
+            if (!add && m_restoreWindowedGeometry) {
+                XMoveResizeWindow(s.display, m_window, m_windowedPosition.x, m_windowedPosition.y,
+                                  static_cast<unsigned int>(std::max(m_windowedSize.x, 1)),
+                                  static_cast<unsigned int>(std::max(m_windowedSize.y, 1)));
+                m_restoreWindowedGeometry = false;
+            }
         }
         return;
     }
@@ -461,6 +467,13 @@ void X11WindowBackend::handleEvent(XEvent& event) {
                     }
                 }
                 m_fullscreen = fullscreen;
+                if (!fullscreen && m_restoreWindowedGeometry) {
+                    XMoveResizeWindow(
+                        s.display, m_window, m_windowedPosition.x, m_windowedPosition.y,
+                        static_cast<unsigned int>(std::max(m_windowedSize.x, 1)),
+                        static_cast<unsigned int>(std::max(m_windowedSize.y, 1)));
+                    m_restoreWindowedGeometry = false;
+                }
             }
         }
         break;

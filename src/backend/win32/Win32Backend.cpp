@@ -1258,7 +1258,10 @@ void Win32WindowBackend::setSize(ivec2 size) {
 }
 
 void Win32WindowBackend::setPosition(ivec2 position) {
-    SetWindowPos(m_hwnd, nullptr, position.x, position.y, 0, 0,
+    RECT rectangle{position.x, position.y, position.x, position.y};
+    AdjustWindowRectEx(&rectangle, static_cast<DWORD>(GetWindowLongW(m_hwnd, GWL_STYLE)), FALSE,
+                       static_cast<DWORD>(GetWindowLongW(m_hwnd, GWL_EXSTYLE)));
+    SetWindowPos(m_hwnd, nullptr, rectangle.left, rectangle.top, 0, 0,
                  SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 

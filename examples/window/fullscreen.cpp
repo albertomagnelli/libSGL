@@ -57,10 +57,13 @@ int main() {
                         mode.size.x, mode.size.y, mode.refreshRate);
         } else {
             window->setMonitor(sgl::Monitor{});
-            window->setPosition(windowedPosition);
             window->setSize(windowedSize);
+            if (sgl::getPlatform() != sgl::Platform::Wayland) {
+                window->setPosition(windowedPosition);
+            }
             fullscreen = false;
-            SLOGI("Fenstermodus wiederhergestellt.\n");
+            SLOGI("Fenstermodus wiederhergestellt: %dx%d bei %d,%d\n", windowedSize.x,
+                  windowedSize.y, windowedPosition.x, windowedPosition.y);
         }
     });
 

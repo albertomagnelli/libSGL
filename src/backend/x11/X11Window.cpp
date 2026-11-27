@@ -886,6 +886,7 @@ void X11WindowBackend::setMonitor(const Monitor& monitor, ivec2 position, ivec2 
             XMoveResizeWindow(s.display, m_window, m_windowedPosition.x, m_windowedPosition.y,
                               static_cast<unsigned int>(std::max(m_windowedSize.x, 1)),
                               static_cast<unsigned int>(std::max(m_windowedSize.y, 1)));
+            m_restoreWindowedGeometry = true;
             m_fullscreen = false;
             m_fullscreenMonitor = nullptr;
         }
@@ -896,6 +897,7 @@ void X11WindowBackend::setMonitor(const Monitor& monitor, ivec2 position, ivec2 
         m_windowedPosition = getPosition();
         m_windowedSize = m_size;
     }
+    m_restoreWindowedGeometry = false;
     m_fullscreen = true;
     m_fullscreenMonitor = MonitorAccess::native(monitor);
 
