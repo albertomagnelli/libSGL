@@ -23,7 +23,7 @@
 namespace sgl {
 namespace {
 
-const char *levelName(const Logger::LogLevel level) noexcept {
+const char *LevelName(const Logger::LogLevel level) noexcept {
   switch (level) {
     case Logger::LogLevel::FATAL:   return "FATAL";
     case Logger::LogLevel::ERROR:   return "ERROR";
@@ -37,7 +37,7 @@ const char *levelName(const Logger::LogLevel level) noexcept {
   return "INVAL";
 }
 
-const char *levelColor(const Logger::LogLevel level) noexcept {
+const char *LevelColor(const Logger::LogLevel level) noexcept {
   switch (level) {
     case Logger::LogLevel::FATAL:   return "\033[1;97;41m"; // weiß auf rot
     case Logger::LogLevel::ERROR:   return "\033[1;31m";    // hellrot
@@ -51,12 +51,12 @@ const char *levelColor(const Logger::LogLevel level) noexcept {
   return "";
 }
 
-bool colorsEnabled() noexcept {
+bool ColorsEnabled() noexcept {
   static const bool enabled = std::getenv("NO_COLOR") == nullptr;
   return enabled;
 }
 
-void enableAnsiColors() noexcept {
+void EnableAnsiColors() noexcept {
 #if defined(_WIN32)
   static const bool enabled = [] {
     const HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -70,7 +70,7 @@ void enableAnsiColors() noexcept {
 #endif
 }
 
-std::string timestamp() {
+std::string Timestamp() {
   const auto now = std::chrono::system_clock::now();
   const auto seconds = std::chrono::system_clock::to_time_t(now);
   const auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -101,7 +101,7 @@ std::atomic<std::ostream *> Logger::sOutput{nullptr};
 std::mutex Logger::sMutex;
 
 Logger::Logger(const LogLevel logLevel, const std::string_view file, const i32 line) noexcept
-    : level_(logLevel), file_(file), line_(line), active_(isEnabled(logLevel)) {}
+    : level_(logLevel), file_(file), line_(line), active_(IsEnabled(logLevel)) {}
 
 Logger::~Logger() {
   flush();
@@ -124,25 +124,25 @@ Logger &Logger::operator<<(std::ostream &(*manip)(std::ostream &)) {
   return *this;
 }
 
-void Logger::setMaxLogLevel(const LogLevel level) noexcept {
+void Logger::SetMaxLogLevel(const LogLevel level) noexcept {
   sMaxLevel.store(level, std::memory_order_relaxed);
 }
 
-Logger::LogLevel Logger::maxLogLevel() noexcept {
+Logger::LogLevel Logger::MaxLogLevel() noexcept {
   return sMaxLevel.load(std::memory_order_relaxed);
 }
 
-bool Logger::isEnabled(const LogLevel level) noexcept {
+bool Logger::IsEnabled(const LogLevel level) noexcept {
   const LogLevel maximum = sMaxLevel.load(std::memory_order_relaxed);
   return level != LogLevel::INVALID && maximum != LogLevel::INVALID &&
          static_cast<u8>(level) <= static_cast<u8>(maximum);
 }
 
-void Logger::setOutputStream(std::ostream *stream) noexcept {
+void Logger::SetOutputStream(std::ostream *stream) noexcept {
   sOutput.store(stream, std::memory_order_relaxed);
 }
 
-std::ostream *Logger::outputStream() noexcept {
+std::ostream *Logger::OutputStream() noexcept {
   std::ostream *stream = sOutput.load(std::memory_order_relaxed);
   return stream != nullptr ? stream : &std::cout;
 }
@@ -174,13 +174,13 @@ void Logger::flush() {
   std::string prefix;
   prefix.reserve(40);
   prefix += '[';
-  prefix += timestamp();
+  prefix += Timestamp();
   prefix += "] ";
 
   std::string body;
   body.reserve(32 + file_.size() + msg_.size());
   body += '[';
-  body += levelName(level_);
+  body += LevelName(level_);
   body += "] [";
   body += file_;
   body += ':';
@@ -190,12 +190,12 @@ void Logger::flush() {
 
   try {
     std::lock_guard lock(sMutex);
-    std::ostream *out = outputStream();
-    enableAnsiColors();
+    std::ostream *out = OutputStream();
+    EnableAnsiColors();
 
     *out << prefix;
-    if (colorsEnabled()) {
-      *out << levelColor(level_) << body << "\033[0m\n";
+    if (ColorsEnabled()) {
+      *out << LevelColor(level_) << body << "\033[0m\n";
     } else {
       *out << body << '\n';
     }

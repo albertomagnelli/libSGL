@@ -27,15 +27,15 @@ int main() {
         const auto path = audiodemo::Resource(name);
         Sound sound;
 
-        if (!sound.LoadFromFile(path.string(), 8)) {
+        if (!sound.loadFromFile(path.string(), 8)) {
             SLOGW << name << ": konnte nicht geladen werden";
             continue;
         }
 
-        SLOGI << name << " (" << audiodemo::FormatTime(sound.Duration()) << ")";
-        sound.Play();
-        audiodemo::SleepSeconds(sound.Duration() + 0.1f);
-        sound.Stop();
+        SLOGI << name << " (" << audiodemo::FormatTime(sound.duration()) << ")";
+        sound.play();
+        audiodemo::SleepSeconds(sound.duration() + 0.1f);
+        sound.stop();
     }
 
     // Mehrere Sounds gleichzeitig: ein kurzer Akkord aus drei sound.wav-Stimmen.
@@ -44,26 +44,26 @@ int main() {
     bool chordReady = true;
 
     for (std::size_t voice = 0; voice < chord.size(); ++voice) {
-        if (!chord[voice].LoadFromFile(audiodemo::Resource("sound.wav").string(), 1)) {
+        if (!chord[voice].loadFromFile(audiodemo::Resource("sound.wav").string(), 1)) {
             chordReady = false;
             continue;
         }
 
-        chord[voice].SetVolume(0.3f);
-        chord[voice].SetPitch(0.75f + static_cast<f32>(voice) * 0.25f);
-        chord[voice].SetPan(static_cast<f32>(voice) - 1.0f);
+        chord[voice].setVolume(0.3f);
+        chord[voice].setPitch(0.75f + static_cast<f32>(voice) * 0.25f);
+        chord[voice].setPan(static_cast<f32>(voice) - 1.0f);
     }
 
     if (chordReady) {
         for (std::size_t voice = 0; voice < chord.size(); ++voice) {
-            chord[voice].Play();
+            chord[voice].play();
             audiodemo::SleepSeconds(0.08f);
         }
 
-        audiodemo::SleepSeconds(chord[0].Duration() + 0.2f);
+        audiodemo::SleepSeconds(chord[0].duration() + 0.2f);
 
         for (Sound& sound : chord) {
-            sound.Stop();
+            sound.stop();
         }
     }
 

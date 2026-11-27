@@ -708,14 +708,14 @@ std::string ShortLabel(const std::vector<StageSource>& stages) {
 
 // ─── Erzeugen ───────────────────────────────────────────────────────────────
 
-Shader Shader::fromFile(const std::filesystem::path& file, ShaderSourceOptions options) {
-    return fromFiles({file}, std::move(options));
+Shader Shader::FromFile(const std::filesystem::path& file, ShaderSourceOptions options) {
+    return FromFiles({file}, std::move(options));
 }
 
-Shader Shader::fromFiles(std::initializer_list<std::filesystem::path> files,
+Shader Shader::FromFiles(std::initializer_list<std::filesystem::path> files,
                          ShaderSourceOptions options) {
     if (files.size() == 0) {
-        throw ShaderError("Shader::fromFiles: leere Dateiliste");
+        throw ShaderError("Shader::FromFiles: leere Dateiliste");
     }
     std::vector<StageSource> stages;
     for (const auto& file : files) {
@@ -741,7 +741,7 @@ Shader Shader::fromFiles(std::initializer_list<std::filesystem::path> files,
     return shader;
 }
 
-Shader Shader::fromSource(const std::string_view source, ShaderSourceOptions options) {
+Shader Shader::FromSource(const std::string_view source, ShaderSourceOptions options) {
     std::error_code ec;
     std::filesystem::path base = std::filesystem::current_path(ec);
     if (ec) {
@@ -754,7 +754,7 @@ Shader Shader::fromSource(const std::string_view source, ShaderSourceOptions opt
     return shader;
 }
 
-Shader Shader::fromSource(ShaderStage stage, std::string_view source,
+Shader Shader::FromSource(ShaderStage stage, std::string_view source,
                           ShaderSourceOptions options) {
     StageSource stageSource;
     stageSource.stage = stage;
@@ -765,10 +765,10 @@ Shader Shader::fromSource(ShaderStage stage, std::string_view source,
         stageSource.baseDir = ".";
     }
     stageSource.debugName = "<string> " + std::string(ToString(stage));
-    return fromSources({std::move(stageSource)}, std::move(options));
+    return FromSources({std::move(stageSource)}, std::move(options));
 }
 
-Shader Shader::fromSources(std::vector<StageSource> stages, ShaderSourceOptions options) {
+Shader Shader::FromSources(std::vector<StageSource> stages, ShaderSourceOptions options) {
     Shader shader;
     shader.m_options = std::move(options);
     shader.build(std::move(stages));
@@ -934,7 +934,7 @@ void Shader::ensureCurrentProgram() const {
     }
 }
 
-void Shader::unbind() {
+void Shader::Unbind() {
     glUseProgram(0);
 }
 
@@ -1024,7 +1024,7 @@ GLenum Shader::uniformType(const std::string_view name) const {
     return GL_NONE;
 }
 
-std::string Shader::indexedName(const std::string_view name, const std::size_t index) {
+std::string Shader::IndexedName(const std::string_view name, const std::size_t index) {
     std::string result(name);
     result += '[';
     result += std::to_string(index);

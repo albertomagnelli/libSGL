@@ -30,8 +30,8 @@ class CursorBackend;
 
 class Cursor {
 public:
-    static std::expected<std::unique_ptr<Cursor>, Error> create(const WindowIcon& image, ivec2 hotspot);
-    static std::expected<std::unique_ptr<Cursor>, Error> createStandard(StandardCursor shape);
+    static std::expected<std::unique_ptr<Cursor>, Error> Create(const WindowIcon& image, ivec2 hotspot);
+    static std::expected<std::unique_ptr<Cursor>, Error> CreateStandard(StandardCursor shape);
 
     ~Cursor();
     Cursor(const Cursor&) = delete;

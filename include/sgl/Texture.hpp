@@ -3,18 +3,18 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Texture2d und CubeMap über Direct State Access. Öffentliche Schnittstelle dieses Headers:
 //
-//   TextureError, Texture2d, fromImage, fromMemory, unbind
+//   TextureError, Texture2d, FromImage, FromMemory, Unbind
 //   ScopedBind, upload, updateRegion, generateMipmaps, setWrap/setFilter,
 //   wrapS, wrapT, minFilter, magFilter, mipmaps, anisotropy, borderColor,
 //   setAnisotropy, setBorderColor, readBack, applyParameters
-//   release, CubeMap, fromImages, fromCrossLayout, uploadFace
+//   release, CubeMap, FromImages, FromCrossLayout, uploadFace
 //   setSeamless, faceImage, InternalFormatFor, PixelFormatFor
 //
 // Beispiel:
 //
-//   Texture2d tex = Texture2d::fromImage(image, TextureOptions{.anisotropy = 8.0f});
+//   Texture2d tex = Texture2d::FromImage(image, TextureOptions{.anisotropy = 8.0f});
 //   tex.use(0);
-//   CubeMap sky = CubeMap::fromCrossLayout(cross);
+//   CubeMap sky = CubeMap::FromCrossLayout(cross);
 //   sky.use(1);
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -53,12 +53,12 @@
 //
 // Beispiel:
 //
-//   const Image bild = ImageIO::load("assets/tex/dirt.png");
-//   Texture2d boden = Texture2d::fromImage(bild, TextureOptions{.mipmaps = MipmapMode::Linear});
+//   const Image bild = ImageIO::Load("assets/tex/dirt.png");
+//   Texture2d boden = Texture2d::FromImage(bild, TextureOptions{.mipmaps = MipmapMode::Linear});
 //   boden.use(0);                       // an Einheit 0 binden
 //   shader.setTexture("uAlbedo", boden.id(), 0);
 //
-//   const CubeMap himmel = CubeMap::fromCrossLayout(ImageIO::load("sky_cross.png"));
+//   const CubeMap himmel = CubeMap::FromCrossLayout(ImageIO::Load("sky_cross.png"));
 //   {
 //       const CubeMap::ScopedBind bind(himmel, 3);   // stellt danach alles zurück
 //       ...
@@ -125,13 +125,13 @@ public:
     Texture2d& operator=(const Texture2d&) = delete;
 
     // Bild hochladen (Ebene 0); Mipmaps werden bei Bedarf erzeugt.
-    [[nodiscard]] static Texture2d fromImage(const Image& image, const TextureOptions& options = {});
+    [[nodiscard]] static Texture2d FromImage(const Image& image, const TextureOptions& options = {});
     // Rohdaten; die Puffergröße muss exakt zu Breite*Höhe*Kanälen passen.
     // Leere Textur mit unveränderlichem Speicher – als Renderziel eines
     // Framebuffers, ohne dass Bilddaten nötig wären.
-    [[nodiscard]] static Texture2d createStorage(i32 width, i32 height, ImageFormat format,
+    [[nodiscard]] static Texture2d CreateStorage(i32 width, i32 height, ImageFormat format,
                                                 const TextureOptions& options = {});
-    [[nodiscard]] static Texture2d fromMemory(i32 width, i32 height, ImageFormat format,
+    [[nodiscard]] static Texture2d FromMemory(i32 width, i32 height, ImageFormat format,
                                 std::span<const u8> pixels,
                                 const TextureOptions& options = {});
 
@@ -154,7 +154,7 @@ public:
 
     // ── Binden ───────────────────────────────────────────────────────────────
     void use(i32 unit = 0) const;
-    static void unbind(i32 unit = 0);
+    static void Unbind(i32 unit = 0);
 
     // Bindet auf einer Einheit für die Lebenszeit des Objekts und stellt danach
     // die vorher gebundene Textur und die aktive Einheit wieder her.
@@ -195,7 +195,7 @@ public:
     // Textur freigegeben werden — der Destruktor erledigt das selbst.
     // Im Shader: Handle als uvec2 übergeben und sampler2D(uHandle) bauen;
     // glUniformHandleui64ARB auf ein sampler2D lehnt Mesa 25.2.8 ab.
-    [[nodiscard]] static bool isResidencySupported();
+    [[nodiscard]] static bool IsResidencySupported();
     // 64-Bit-Handle der Textur (wird einmal erzeugt und gemerkt)
     [[nodiscard]] u64 textureHandle() const;
     [[nodiscard]] bool makeResident();
@@ -237,12 +237,12 @@ public:
     CubeMap& operator=(const CubeMap&) = delete;
 
     // Sechs Gesichter in GL-Reihenfolge; gleiche Maße und gleiches Format.
-    [[nodiscard]] static CubeMap fromImages(const std::array<Image, 6>& faces,
+    [[nodiscard]] static CubeMap FromImages(const std::array<Image, 6>& faces,
                               const TextureOptions& options = {});
     // Kreuz-Layout 3x4 oder 4x3 (je Zelle ein Quadrat). Erkannt werden die
     // üblichen Anordnungen: waagerecht (+X, -X, +Y, -Y) mit +Z/-Z darüber oder
     // darunter.
-    [[nodiscard]] static CubeMap fromCrossLayout(const Image& cross, const TextureOptions& options = {});
+    [[nodiscard]] static CubeMap FromCrossLayout(const Image& cross, const TextureOptions& options = {});
 
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept { return m_id != 0; }
@@ -265,7 +265,7 @@ public:
 
     // ── Binden ───────────────────────────────────────────────────────────────
     void use(i32 unit = 0) const;
-    static void unbind(i32 unit = 0);
+    static void Unbind(i32 unit = 0);
 
     class ScopedBind {
     public:
@@ -294,7 +294,7 @@ public:
     [[nodiscard]] Image faceImage(CubeFace face) const;
 
     // ── Residency (bindless, siehe Texture2d) ────────────────────────────────
-    [[nodiscard]] static bool isResidencySupported();
+    [[nodiscard]] static bool IsResidencySupported();
     [[nodiscard]] u64 textureHandle() const;
     [[nodiscard]] bool makeResident();
     [[nodiscard]] bool makeNonResident();

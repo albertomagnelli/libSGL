@@ -37,6 +37,6 @@ private:
     const Impl& impl() const;
 };
 
-LinuxJoysticks& linuxJoysticks();
+LinuxJoysticks& GetLinuxJoysticks();
 
 } // namespace sgl::detail

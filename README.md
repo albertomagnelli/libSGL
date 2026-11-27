@@ -6,8 +6,17 @@ mit RAII, `std::expected`, `std::function`, `std::span` und `std::string_view`.
 Es gibt **keine** GLFW-kompatible C-Schnittstelle und keine Laufzeitabhängigkeit
 von GLFW.
 
-Der OpenGL-Loader in `include/sgl/GL.hpp` / `src/gl/GL.cpp` verwendet `sgl::getProcAddress()` und
+Der OpenGL-Loader in `include/sgl/GL.hpp` / `src/gl/GL.cpp` verwendet `sgl::GetProcAddress()` und
 lädt einen OpenGL-4.6-Core-Kontext.
+
+## Namenskonventionen
+
+- Klassenmember-Methoden: `camelCase`, z. B. `Window::getSize()`, `Material::setAlbedo()`
+- Freie Funktionen: `PascalCase`, z. B. `sgl::Init()`, `sgl::GetTime()`
+- Statische Klassenmethoden: `PascalCase`, z. B. `Window::Create()`, `ImageIO::Load()`
+- Typen und Klassen: `PascalCase`
+- Membervariablen: `m_camelCase`
+- Getter: `getX()` bzw. `isX()`/`hasX()`
 
 ## Funktionsumfang
 
@@ -169,7 +178,7 @@ das Verhalten anpassen.
 #include <sgl/sgl.hpp>
 
 int main() {
-    if (auto result = sgl::init(); !result) {
+    if (auto result = sgl::Init(); !result) {
         return 1;
     }
 
@@ -182,9 +191,9 @@ int main() {
     hints.contextProfile = sgl::ContextProfile::Core;
     hints.contextForwardCompat = true;
 
-    auto windowResult = sgl::Window::create(hints);
+    auto windowResult = sgl::Window::Create(hints);
     if (!windowResult) {
-        sgl::terminate();
+        sgl::Terminate();
         return 1;
     }
     auto window = std::move(*windowResult);
@@ -199,11 +208,11 @@ int main() {
 
     while (!window->isCloseRequested()) {
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
 }
 ```
 
@@ -226,7 +235,7 @@ plattformspezifisch; `GamepadState` ist plattformübergreifend normiert.
 
 Gamepad-Namen, Achsen- und Button-Zuordnungen stammen aus der vendorten
 SDL_GameControllerDB. Eigene Mappings können zur Laufzeit über
-`sgl::updateGamepadMappings()` ergänzt werden.
+`sgl::UpdateGamepadMappings()` ergänzt werden.
 
 Kalibrierung wird plattformspezifisch aus den Treiberdaten abgeleitet:
 `EVIOCGABS` unter Linux, logische Min/Max plus Auto-Kalibrierung unter macOS

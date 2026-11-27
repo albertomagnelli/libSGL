@@ -84,7 +84,7 @@ Mesh BuildTextMesh(const Font3d& font, const std::vector<std::string>& lines, f3
         if (!glyph.isEmpty()) {
             // Farbton wandert über den Satz, Helligkeit je Glyphe leicht variiert
             const f32 hue = std::fmod(static_cast<f32>(glyphIndex) * 7.0f, 360.0f);
-            const vec4 tint = fontdemo::hsvToRgb(hue, 0.45f, 0.95f);
+            const vec4 tint = fontdemo::HsvToRgb(hue, 0.45f, 0.95f);
             const vec3 colour(tint);
 
             const u32 base = static_cast<u32>(mesh.vertices.size());
@@ -343,7 +343,7 @@ void DrawScene(Scene& scene, i32 width, i32 height, f32 time, bool wireframe) {
 // ─── Headless ───────────────────────────────────────────────────────────────
 
 bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time) {
-    auto headless = fontdemo::createWindow(width, height, "sgl (headless)", 0, false);
+    auto headless = fontdemo::CreateWindow(width, height, "sgl (headless)", 0, false);
     if (!headless) {
         SLOGE("Kein OpenGL-Kontext fuer den Headless-Modus verfuegbar.");
         return false;
@@ -370,11 +370,11 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
         SLOGE("Keine Schrift gefunden (SGL_FONT setzen).");
         return false;
     }
-    const Font3d font = Font3d::fromFile(fontFile);
+    const Font3d font = Font3d::FromFile(fontFile);
 
     Scene scene;
-    scene.textShader = Shader::fromSource(kTextShader);
-    scene.floorShader = Shader::fromSource(kFloorShader);
+    scene.textShader = Shader::FromSource(kTextShader);
+    scene.floorShader = Shader::FromSource(kFloorShader);
 
     // Schriftgröße so wählen, dass der Satz in die Kameraansicht passt
     const f32 widestEm = std::max(font.measure(kLine1, 1.0f), font.measure(kLine2, 1.0f));
@@ -393,7 +393,7 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
     Image image(renderWidth, renderHeight, ImageFormat::Rgba);
     std::memcpy(image.data(), pixels.data(), pixels.size());
     image.flipVertically();
-    ImageIO::save(image.scaled(0.5, Interpolation::Bilinear), file);
+    ImageIO::Save(image.scaled(0.5, Interpolation::Bilinear), file);
 
     SLOGI("%s geschrieben (%dx%d, %zu Dreiecke, %zu Eckpunkte)", file.c_str(), width, height,
           textMesh.indices.size() / 3, textMesh.vertices.size());
@@ -403,7 +403,7 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (!fontdemo::initialize()) {
+    if (!fontdemo::Initialize()) {
         return 1;
     }
 
@@ -411,14 +411,14 @@ int main(int argc, char** argv) {
         const i32 width = argc >= 4 ? static_cast<i32>(std::strtol(argv[3], nullptr, 10)) : 1280;
         const i32 height = argc >= 5 ? static_cast<i32>(std::strtol(argv[4], nullptr, 10)) : 720;
         const bool ok = RenderFrameToFile(argv[2], width, height, 1.7f);
-        sgl::terminate();
+        sgl::Terminate();
         return ok ? 0 : 1;
     }
 
-    auto window = fontdemo::createWindow(1280, 720, "sgl · Font3d mit Beleuchtung", 4, true);
+    auto window = fontdemo::CreateWindow(1280, 720, "sgl · Font3d mit Beleuchtung", 4, true);
     if (!window) {
         SLOGE("Fenster nicht moeglich. Headless: %s --frame bild.png", argv[0]);
-        sgl::terminate();
+        sgl::Terminate();
         return 1;
     }
 
@@ -426,14 +426,14 @@ int main(int argc, char** argv) {
     if (fontFile.empty()) {
         SLOGE("Keine Schrift gefunden (SGL_FONT setzen).");
         window.reset();
-        sgl::terminate();
+        sgl::Terminate();
         return 1;
     }
-    const Font3d font = Font3d::fromFile(fontFile);
+    const Font3d font = Font3d::FromFile(fontFile);
 
     Scene scene;
-    scene.textShader = Shader::fromSource(kTextShader);
-    scene.floorShader = Shader::fromSource(kFloorShader);
+    scene.textShader = Shader::FromSource(kTextShader);
+    scene.floorShader = Shader::FromSource(kFloorShader);
 
     const f32 widestEm = std::max(font.measure(kLine1, 1.0f), font.measure(kLine2, 1.0f));
     const f32 pixelSize = 1900.0f / widestEm;
@@ -458,13 +458,13 @@ int main(int argc, char** argv) {
         window->makeContextCurrent();
         const ivec2 framebuffer = window->getFramebufferSize();
         if (framebuffer.x > 0 && framebuffer.y > 0) {
-            DrawScene(scene, framebuffer.x, framebuffer.y, sgl::getTime(), wireframe);
+            DrawScene(scene, framebuffer.x, framebuffer.y, sgl::GetTime(), wireframe);
             window->swapBuffers();
         }
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

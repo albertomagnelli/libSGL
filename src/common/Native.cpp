@@ -11,7 +11,7 @@ namespace sgl::native {
 
 namespace {
 
-void* pointerToWindowHandle(void* value) {
+void* PointerToWindowHandle(void* value) {
     return value;
 }
 
@@ -19,29 +19,29 @@ void* pointerToWindowHandle(void* value) {
 
 namespace x11 {
 
-void* getDisplay(const Window& window) {
+void* GetDisplay(const Window& window) {
     return window.getNativeHandle().display;
 }
 
-unsigned long getWindow(const Window& window) {
+unsigned long GetWindow(const Window& window) {
     return static_cast<unsigned long>(
         reinterpret_cast<uintptr_t>(window.getNativeHandle().window));
 }
 
-void* getGLXContext(const Window& window) {
+void* GetGlxContext(const Window& window) {
     return window.getNativeHandle().context;
 }
 
-unsigned long getGLXWindow(const Window& window) {
+unsigned long GetGlxWindow(const Window& window) {
     return static_cast<unsigned long>(
         reinterpret_cast<uintptr_t>(window.getNativeHandle().surface));
 }
 
-void* getDisplay(const Monitor& monitor) {
+void* GetDisplay(const Monitor& monitor) {
     return monitor.getNativeHandle().display;
 }
 
-unsigned long getMonitor(const Monitor& monitor) {
+unsigned long GetMonitor(const Monitor& monitor) {
     return static_cast<unsigned long>(
         reinterpret_cast<uintptr_t>(monitor.getNativeHandle().window));
 }
@@ -50,31 +50,31 @@ unsigned long getMonitor(const Monitor& monitor) {
 
 namespace wayland {
 
-void* getDisplay(const Window& window) {
+void* GetDisplay(const Window& window) {
     return window.getNativeHandle().display;
 }
 
-void* getSurface(const Window& window) {
+void* GetSurface(const Window& window) {
     return window.getNativeHandle().window;
 }
 
-void* getEGLDisplay(const Window& window) {
+void* GetEglDisplay(const Window& window) {
     return window.getNativeHandle().eglDisplay;
 }
 
-void* getEGLSurface(const Window& window) {
+void* GetEglSurface(const Window& window) {
     return window.getNativeHandle().surface;
 }
 
-void* getEGLContext(const Window& window) {
+void* GetEglContext(const Window& window) {
     return window.getNativeHandle().context;
 }
 
-void* getDisplay(const Monitor& monitor) {
+void* GetDisplay(const Monitor& monitor) {
     return monitor.getNativeHandle().display;
 }
 
-void* getMonitor(const Monitor& monitor) {
+void* GetMonitor(const Monitor& monitor) {
     return monitor.getNativeHandle().window;
 }
 
@@ -82,19 +82,19 @@ void* getMonitor(const Monitor& monitor) {
 
 namespace win32 {
 
-void* getHWND(const Window& window) {
-    return pointerToWindowHandle(window.getNativeHandle().window);
+void* GetHwnd(const Window& window) {
+    return PointerToWindowHandle(window.getNativeHandle().window);
 }
 
-void* getHDC(const Window& window) {
+void* GetHdc(const Window& window) {
     return window.getNativeHandle().surface;
 }
 
-void* getHGLRC(const Window& window) {
+void* GetHglrc(const Window& window) {
     return window.getNativeHandle().context;
 }
 
-void* getMonitor(const Monitor& monitor) {
+void* GetMonitor(const Monitor& monitor) {
     return monitor.getNativeHandle().window;
 }
 
@@ -102,15 +102,15 @@ void* getMonitor(const Monitor& monitor) {
 
 namespace cocoa {
 
-void* getNSWindow(const Window& window) {
+void* GetNsWindow(const Window& window) {
     return window.getNativeHandle().window;
 }
 
-void* getNSGLContext(const Window& window) {
+void* GetNsglContext(const Window& window) {
     return window.getNativeHandle().context;
 }
 
-void* getNSScreen(const Monitor& monitor) {
+void* GetNsScreen(const Monitor& monitor) {
     return monitor.getNativeHandle().window;
 }
 
@@ -118,15 +118,15 @@ void* getNSScreen(const Monitor& monitor) {
 
 namespace egl {
 
-void* getDisplay(const Window& window) {
+void* GetDisplay(const Window& window) {
     return window.getNativeHandle().eglDisplay;
 }
 
-void* getSurface(const Window& window) {
+void* GetSurface(const Window& window) {
     return window.getNativeHandle().surface;
 }
 
-void* getContext(const Window& window) {
+void* GetContext(const Window& window) {
     return window.getNativeHandle().context;
 }
 
@@ -134,15 +134,15 @@ void* getContext(const Window& window) {
 
 namespace osmesa {
 
-void* getContext(const Window& window) {
+void* GetContext(const Window& window) {
     return window.getNativeHandle().context;
 }
 
-void* getColorBuffer(const Window& window) {
+void* GetColorBuffer(const Window& window) {
     return window.getNativeHandle().window;
 }
 
-void* getDepthBuffer(const Window&) {
+void* GetDepthBuffer(const Window&) {
     return nullptr;
 }
 

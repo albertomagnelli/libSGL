@@ -94,11 +94,11 @@ public:
     virtual std::unique_ptr<WindowBackend> createWindow(const WindowHints& hints, Error& error) = 0;
 
     virtual std::unique_ptr<CursorBackend> createCursor(const WindowIcon&, ivec2, Error& error) {
-        error = makeError(ErrorCode::FeatureUnavailable, "Cursor wird von diesem Backend nicht unterstuetzt.");
+        error = MakeError(ErrorCode::FeatureUnavailable, "Cursor wird von diesem Backend nicht unterstuetzt.");
         return nullptr;
     }
     virtual std::unique_ptr<CursorBackend> createStandardCursor(StandardCursor, Error& error) {
-        error = makeError(ErrorCode::FeatureUnavailable, "Standard-Cursor wird von diesem Backend nicht unterstuetzt.");
+        error = MakeError(ErrorCode::FeatureUnavailable, "Standard-Cursor wird von diesem Backend nicht unterstuetzt.");
         return nullptr;
     }
 
@@ -137,12 +137,12 @@ public:
     virtual void setJoystickCallback(std::function<void(i32, bool)>) {}
 };
 
-Backend* getBackend();
-void setBackend(std::unique_ptr<Backend> backend);
-Window* getCurrentWindow();
-void setCurrentWindow(Window* window);
-std::unique_ptr<Backend> createPlatformBackend(Platform platform, Error& error);
-bool initPlatform(const InitOptions& options, Error& error);
-void terminatePlatform();
+Backend* GetBackend();
+void SetBackend(std::unique_ptr<Backend> backend);
+Window* GetCurrentWindow();
+void SetCurrentWindow(Window* window);
+std::unique_ptr<Backend> CreatePlatformBackend(Platform platform, Error& error);
+bool InitPlatform(const InitOptions& options, Error& error);
+void TerminatePlatform();
 
 } // namespace sgl::detail

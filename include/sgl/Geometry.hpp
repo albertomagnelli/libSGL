@@ -6,7 +6,7 @@
 //   Rectangle, position, size, center, left
 //   top, right, bottom, isEmpty, contains
 //   containsStrict, overlaps, intersection, united, overlapArea
-//   equals, containsRotated, overlapsRotated, cornerRotated, rotate
+//   equals, containsRotated, OverlapsRotated, cornerRotated, rotate
 //   RectangleFromCorners, RectangleFromSize
 //
 // Beispiel:
@@ -87,14 +87,14 @@ struct Rectangle {
                                        f32 rotationDegrees) const;
     // Überschneidung zweier gedrehter Rechtecke (Trennachsen-Test, SAT).
     // Beide Rechtecke werden um ihren eigenen Ursprung gedreht.
-    [[nodiscard]] static bool overlapsRotated(const Rectangle& a, const vec2& aOrigin,
+    [[nodiscard]] static bool OverlapsRotated(const Rectangle& a, const vec2& aOrigin,
                                               f32 aRotation, const Rectangle& b,
                                               const vec2& bOrigin, f32 bRotation);
     // Ecke 0..3 (0 = links oben, dann im Uhrzeigersinn im Bildschirmsystem)
     [[nodiscard]] vec2 cornerRotated(i32 index, const vec2& origin, f32 rotationDegrees) const;
     // Drehung um den Ursprung (Grad, positive Werte gegen den Uhrzeigersinn im
     // mathematischen Sinn – im Bildschirmsystem also im Uhrzeigersinn)
-    [[nodiscard]] static vec2 rotate(const vec2& point, f32 degrees);
+    [[nodiscard]] static vec2 Rotate(const vec2& point, f32 degrees);
 };
 
 // Rechteck aus zwei beliebigen Eckpunkten; die Ecken werden sortiert, sodass

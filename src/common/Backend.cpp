@@ -14,47 +14,47 @@ Window* g_currentWindow = nullptr;
 InitHintsState g_initHints;
 bool g_initialized = false;
 
-bool envSet(const char* name) {
+bool EnvSet(const char* name) {
     const char* value = std::getenv(name);
     return value != nullptr && value[0] != '\0';
 }
 
 } // namespace
 
-InitHintsState& getInitHints() {
+InitHintsState& GetInitHints() {
     return g_initHints;
 }
 
-bool isInitialized() {
+bool IsInitialized() {
     return g_initialized;
 }
 
-Backend* getBackend() {
+Backend* GetBackend() {
     return g_backend.get();
 }
 
-void setBackend(std::unique_ptr<Backend> backend) {
+void SetBackend(std::unique_ptr<Backend> backend) {
     g_backend = std::move(backend);
 }
 
-Window* getCurrentWindow() {
+Window* GetCurrentWindow() {
     return g_currentWindow;
 }
 
-void setCurrentWindow(Window* window) {
+void SetCurrentWindow(Window* window) {
     g_currentWindow = window;
 }
 
-std::unique_ptr<Backend> createPlatformBackend(Platform platform, Error& error) {
+std::unique_ptr<Backend> CreatePlatformBackend(Platform platform, Error& error) {
     if (platform == Platform::Any) {
         std::vector<Platform> candidates;
 #if defined(SGL_HAS_WAYLAND) && SGL_HAS_WAYLAND
-        if (envSet("WAYLAND_DISPLAY")) {
+        if (EnvSet("WAYLAND_DISPLAY")) {
             candidates.push_back(Platform::Wayland);
         }
 #endif
 #if defined(SGL_HAS_X11) && SGL_HAS_X11
-        if (envSet("DISPLAY")) {
+        if (EnvSet("DISPLAY")) {
             candidates.push_back(Platform::X11);
         }
 #endif
@@ -69,14 +69,14 @@ std::unique_ptr<Backend> createPlatformBackend(Platform platform, Error& error) 
         Error lastError;
         for (Platform candidate : candidates) {
             Error candidateError;
-            if (auto backend = createPlatformBackend(candidate, candidateError)) {
+            if (auto backend = CreatePlatformBackend(candidate, candidateError)) {
                 return backend;
             }
             lastError = std::move(candidateError);
         }
         error = lastError.isError()
                     ? std::move(lastError)
-                    : makeError(ErrorCode::PlatformUnavailable,
+                    : MakeError(ErrorCode::PlatformUnavailable,
                                 "Keine Plattform konnte initialisiert werden.");
         return nullptr;
     }
@@ -84,13 +84,13 @@ std::unique_ptr<Backend> createPlatformBackend(Platform platform, Error& error) 
     switch (platform) {
     case Platform::X11:
 #if defined(SGL_HAS_X11) && SGL_HAS_X11
-        return createX11Backend(error);
+        return CreateX11Backend(error);
 #else
         break;
 #endif
     case Platform::Wayland:
 #if defined(SGL_HAS_WAYLAND) && SGL_HAS_WAYLAND
-        return createWaylandBackend(error);
+        return CreateWaylandBackend(error);
 #else
         break;
 #endif
@@ -107,22 +107,22 @@ std::unique_ptr<Backend> createPlatformBackend(Platform platform, Error& error) 
         break;
 #endif
     case Platform::Null:
-        return createNullBackend(error);
+        return CreateNullBackend(error);
     case Platform::Any:
         break;
     }
 
-    error = makeError(ErrorCode::PlatformUnavailable,
+    error = MakeError(ErrorCode::PlatformUnavailable,
                       "Die angeforderte Plattform ist in diesem Build nicht verfuegbar.");
     return nullptr;
 }
 
-bool initPlatform(const InitOptions& options, Error& error) {
+bool InitPlatform(const InitOptions& options, Error& error) {
     if (g_initialized) {
         return true;
     }
 
-    auto backend = createPlatformBackend(g_initHints.platform, error);
+    auto backend = CreatePlatformBackend(g_initHints.platform, error);
     if (!backend) {
         return false;
     }
@@ -132,11 +132,11 @@ bool initPlatform(const InitOptions& options, Error& error) {
 
     g_backend = std::move(backend);
     g_initialized = true;
-    resetTimeBase();
+    ResetTimeBase();
     return true;
 }
 
-void terminatePlatform() {
+void TerminatePlatform() {
     if (g_backend) {
         g_backend->terminate();
         g_backend.reset();

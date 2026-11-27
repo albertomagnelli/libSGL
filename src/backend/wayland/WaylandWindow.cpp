@@ -28,7 +28,7 @@ WaylandCursorBackend::~WaylandCursorBackend() {
 
 namespace {
 
-Key translateKeysym(u32 keysym) {
+Key TranslateKeysym(u32 keysym) {
     switch (keysym) {
     case XKB_KEY_space: return Key::Space;
     case XKB_KEY_apostrophe: return Key::Apostrophe;
@@ -154,7 +154,7 @@ Key translateKeysym(u32 keysym) {
     }
 }
 
-u32 keysymForKey(Key key) {
+u32 KeysymForKey(Key key) {
     if (key >= Key::A && key <= Key::Z) {
         return XKB_KEY_a + (static_cast<u32>(key) - static_cast<u32>(Key::A));
     }
@@ -195,13 +195,13 @@ u32 keysymForKey(Key key) {
     }
 }
 
-void xdgSurfaceConfigure(void* data, xdg_surface* surface, uint32_t serial) {
+void XdgSurfaceConfigure(void* data, xdg_surface* surface, uint32_t serial) {
     auto* window = static_cast<WaylandWindowBackend*>(data);
     xdg_surface_ack_configure(surface, serial);
     window->handleConfigure(window->getSize());
 }
 
-void toplevelConfigure(void* data, xdg_toplevel*, int32_t width, int32_t height,
+void ToplevelConfigure(void* data, xdg_toplevel*, int32_t width, int32_t height,
                        wl_array* states) {
     auto* window = static_cast<WaylandWindowBackend*>(data);
     bool maximized = false;
@@ -219,54 +219,54 @@ void toplevelConfigure(void* data, xdg_toplevel*, int32_t width, int32_t height,
     window->handleToplevelConfigure(ivec2(width, height), maximized, fullscreen, activated);
 }
 
-void toplevelClose(void* data, xdg_toplevel*) {
+void ToplevelClose(void* data, xdg_toplevel*) {
     static_cast<WaylandWindowBackend*>(data)->handleClose();
 }
 
-void toplevelConfigureBounds(void*, xdg_toplevel*, int32_t, int32_t) {}
-void toplevelWmCapabilities(void*, xdg_toplevel*, wl_array*) {}
+void ToplevelConfigureBounds(void*, xdg_toplevel*, int32_t, int32_t) {}
+void ToplevelWmCapabilities(void*, xdg_toplevel*, wl_array*) {}
 
 const xdg_toplevel_listener toplevelListener = {
-    toplevelConfigure, toplevelClose, toplevelConfigureBounds, toplevelWmCapabilities,
+    ToplevelConfigure, ToplevelClose, ToplevelConfigureBounds, ToplevelWmCapabilities,
 };
 
-const xdg_surface_listener xdgSurfaceListener = {xdgSurfaceConfigure};
+const xdg_surface_listener xdgSurfaceListener = {XdgSurfaceConfigure};
 
-void decorationConfigure(void*, zxdg_toplevel_decoration_v1*, uint32_t) {}
+void DecorationConfigure(void*, zxdg_toplevel_decoration_v1*, uint32_t) {}
 
-const zxdg_toplevel_decoration_v1_listener decorationListener = {decorationConfigure};
+const zxdg_toplevel_decoration_v1_listener decorationListener = {DecorationConfigure};
 
-void surfaceEnter(void* data, wl_surface*, wl_output* output) {
+void SurfaceEnter(void* data, wl_surface*, wl_output* output) {
     static_cast<WaylandWindowBackend*>(data)->handleSurfaceEnter(output);
 }
 
-void surfaceLeave(void* data, wl_surface*, wl_output* output) {
+void SurfaceLeave(void* data, wl_surface*, wl_output* output) {
     static_cast<WaylandWindowBackend*>(data)->handleSurfaceLeave(output);
 }
 
-void surfacePreferredBufferScale(void*, wl_surface*, int32_t) {}
-void surfacePreferredBufferTransform(void*, wl_surface*, uint32_t) {}
+void SurfacePreferredBufferScale(void*, wl_surface*, int32_t) {}
+void SurfacePreferredBufferTransform(void*, wl_surface*, uint32_t) {}
 
 const wl_surface_listener surfaceListener = {
-    surfaceEnter, surfaceLeave, surfacePreferredBufferScale, surfacePreferredBufferTransform,
+    SurfaceEnter, SurfaceLeave, SurfacePreferredBufferScale, SurfacePreferredBufferTransform,
 };
 
 } // namespace
 
 WaylandWindowBackend::WaylandWindowBackend(const WindowHints& hints, Error& error)
     : m_size{hints.width, hints.height}, m_title(hints.title), m_hints(hints) {
-    WaylandState& s = state();
+    WaylandState& s = State();
     if (!s.display || !s.compositor || !s.wmBase) {
-        error = makeError(ErrorCode::PlatformUnavailable, "Wayland ist nicht verfuegbar.");
+        error = MakeError(ErrorCode::PlatformUnavailable, "Wayland ist nicht verfuegbar.");
         return;
     }
     if (hints.contextApi == ContextApi::OSMesa) {
-        error = makeError(ErrorCode::FeatureUnavailable,
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "OSMesa ist auf der Wayland-Plattform nicht verfuegbar.");
         return;
     }
     if (hints.clientApi != ClientApi::OpenGL) {
-        error = makeError(ErrorCode::ApiUnavailable,
+        error = MakeError(ErrorCode::ApiUnavailable,
                           "Das Wayland-Backend unterstuetzt nur OpenGL-Kontexte.");
         return;
     }
@@ -278,7 +278,7 @@ WaylandWindowBackend::WaylandWindowBackend(const WindowHints& hints, Error& erro
 
     m_surface = wl_compositor_create_surface(s.compositor);
     if (!m_surface) {
-        error = makeError(ErrorCode::PlatformError, "Wayland-Oberflaeche konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "Wayland-Oberflaeche konnte nicht erstellt werden.");
         return;
     }
     wl_surface_add_listener(m_surface, &surfaceListener, this);
@@ -312,7 +312,7 @@ WaylandWindowBackend::WaylandWindowBackend(const WindowHints& hints, Error& erro
 
     m_eglWindow = wl_egl_window_create(m_surface, m_size.x, m_size.y);
     if (!m_eglWindow) {
-        error = makeError(ErrorCode::PlatformError, "EGL-Fenster konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "EGL-Fenster konnte nicht erstellt werden.");
         return;
     }
 
@@ -328,10 +328,10 @@ WaylandWindowBackend::WaylandWindowBackend(const WindowHints& hints, Error& erro
 
     const auto start = std::chrono::steady_clock::now();
     while (!m_configured && std::chrono::steady_clock::now() - start < std::chrono::seconds(2)) {
-        dispatchEvents(true, 0.01);
+        DispatchEvents(true, 0.01);
     }
     if (!m_configured) {
-        error = makeError(ErrorCode::PlatformError,
+        error = MakeError(ErrorCode::PlatformError,
                           "Wayland-Fenster wurde nicht konfiguriert.");
         return;
     }
@@ -349,7 +349,7 @@ WaylandWindowBackend::~WaylandWindowBackend() {
 }
 
 void WaylandWindowBackend::createEGL(Error& error) {
-    WaylandState& s = state();
+    WaylandState& s = State();
     auto getPlatformDisplay = reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
         eglGetProcAddress("eglGetPlatformDisplayEXT"));
     if (getPlatformDisplay) {
@@ -358,14 +358,14 @@ void WaylandWindowBackend::createEGL(Error& error) {
         m_eglDisplay = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(s.display));
     }
     if (m_eglDisplay == EGL_NO_DISPLAY) {
-        error = makeError(ErrorCode::ApiUnavailable, "EGL-Display konnte nicht geoeffnet werden.");
+        error = MakeError(ErrorCode::ApiUnavailable, "EGL-Display konnte nicht geoeffnet werden.");
         return;
     }
 
     EGLint major = 0;
     EGLint minor = 0;
     if (!eglInitialize(m_eglDisplay, &major, &minor)) {
-        error = makeError(ErrorCode::ApiUnavailable, "EGL konnte nicht initialisiert werden.");
+        error = MakeError(ErrorCode::ApiUnavailable, "EGL konnte nicht initialisiert werden.");
         return;
     }
     eglBindAPI(EGL_OPENGL_API);
@@ -387,7 +387,7 @@ void WaylandWindowBackend::createEGL(Error& error) {
     EGLint configCount = 0;
     if (!eglChooseConfig(m_eglDisplay, configAttribs, &m_eglConfig, 1, &configCount) ||
         configCount == 0) {
-        error = makeError(ErrorCode::FormatUnavailable, "Keine passende EGL-Konfiguration.");
+        error = MakeError(ErrorCode::FormatUnavailable, "Keine passende EGL-Konfiguration.");
         return;
     }
 
@@ -395,7 +395,7 @@ void WaylandWindowBackend::createEGL(Error& error) {
                                           reinterpret_cast<EGLNativeWindowType>(m_eglWindow),
                                           nullptr);
     if (m_eglSurface == EGL_NO_SURFACE) {
-        error = makeError(ErrorCode::PlatformError, "EGL-Surface konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "EGL-Surface konnte nicht erstellt werden.");
         return;
     }
 
@@ -429,13 +429,13 @@ void WaylandWindowBackend::createEGL(Error& error) {
     m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, EGL_NO_CONTEXT,
                                     contextAttribs.data());
     if (m_eglContext == EGL_NO_CONTEXT) {
-        error = makeError(ErrorCode::VersionUnavailable,
+        error = MakeError(ErrorCode::VersionUnavailable,
                           "Der angeforderte OpenGL-Kontext konnte nicht erstellt werden.");
         return;
     }
 
     if (!eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext)) {
-        error = makeError(ErrorCode::PlatformError, "EGL-Kontext konnte nicht aktuell gemacht werden.");
+        error = MakeError(ErrorCode::PlatformError, "EGL-Kontext konnte nicht aktuell gemacht werden.");
         return;
     }
 }
@@ -467,7 +467,7 @@ void WaylandWindowBackend::applyDecorations() {
 }
 
 void WaylandWindowBackend::destroy() {
-    WaylandState& s = state();
+    WaylandState& s = State();
     if (!m_surface) {
         return;
     }
@@ -548,7 +548,7 @@ void* WaylandWindowBackend::getProcAddress(const char* name) {
 NativeHandle WaylandWindowBackend::getNativeHandle() const {
     NativeHandle handle;
     handle.platform = NativePlatform::Wayland;
-    handle.display = state().display;
+    handle.display = State().display;
     handle.window = m_surface;
     handle.context = m_eglContext;
     handle.surface = m_eglSurface;
@@ -621,7 +621,7 @@ void WaylandWindowBackend::setSize(ivec2 size) {
 }
 
 void WaylandWindowBackend::setPosition(ivec2) {
-    reportError(ErrorCode::FeatureUnavailable,
+    ReportError(ErrorCode::FeatureUnavailable,
                 "Wayland erlaubt kein Setzen der Fensterposition.");
 }
 
@@ -767,7 +767,7 @@ void WaylandWindowBackend::setSizeLimits(ivec2 minimum, ivec2 maximum) {
 
 void WaylandWindowBackend::setMonitor(const Monitor& monitor, ivec2, ivec2 size, i32) {
     if (monitor.isValid() && size.x > 0 && size.y > 0) {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         if (m_toplevel) {
             xdg_toplevel_set_fullscreen(m_toplevel, output ? output->output : nullptr);
         }
@@ -782,13 +782,13 @@ void WaylandWindowBackend::setMonitor(const Monitor& monitor, ivec2, ivec2 size,
 
 Monitor WaylandWindowBackend::getMonitor() const {
     if (m_currentOutput) {
-        return MonitorAccess::make(m_currentOutput, Platform::Wayland);
+        return MonitorAccess::Make(m_currentOutput, Platform::Wayland);
     }
     if (m_fullscreenMonitor.isValid()) {
         return m_fullscreenMonitor;
     }
-    if (!state().outputs.empty()) {
-        return MonitorAccess::make(state().outputs.front().get(), Platform::Wayland);
+    if (!State().outputs.empty()) {
+        return MonitorAccess::Make(State().outputs.front().get(), Platform::Wayland);
     }
     return {};
 }
@@ -827,7 +827,7 @@ i32 WaylandWindowBackend::getInputMode(InputMode mode) const {
 
 std::string WaylandWindowBackend::getKeyName(Key key, i32) const {
     char buffer[64] = {};
-    const u32 keysym = keysymForKey(key);
+    const u32 keysym = KeysymForKey(key);
     if (keysym == 0) {
         return {};
     }
@@ -846,7 +846,7 @@ i32 WaylandWindowBackend::getKeyScancode(Key key) const {
     if (!m_xkbState || !m_xkbKeymap) {
         return -1;
     }
-    const u32 target = keysymForKey(key);
+    const u32 target = KeysymForKey(key);
     if (target == 0) {
         return -1;
     }
@@ -876,7 +876,7 @@ void WaylandWindowBackend::setCursor(CursorBackend* cursor) {
 }
 
 void WaylandWindowBackend::updateCursor() {
-    WaylandState& s = state();
+    WaylandState& s = State();
     if (!s.pointer || s.pointerFocus != this) {
         return;
     }
@@ -901,7 +901,7 @@ void WaylandWindowBackend::updateInputRegion() {
         wl_region_destroy(m_inputRegion);
         m_inputRegion = nullptr;
     }
-    m_inputRegion = wl_compositor_create_region(state().compositor);
+    m_inputRegion = wl_compositor_create_region(State().compositor);
     if (!m_mousePassthrough) {
         wl_region_add(m_inputRegion, 0, 0, m_size.x, m_size.y);
     }
@@ -910,7 +910,7 @@ void WaylandWindowBackend::updateInputRegion() {
 }
 
 std::string WaylandWindowBackend::getClipboardString() const {
-    WaylandState& s = state();
+    WaylandState& s = State();
     if (!s.clipboardOffer) {
         return {};
     }
@@ -952,9 +952,9 @@ std::string WaylandWindowBackend::getClipboardString() const {
 }
 
 void WaylandWindowBackend::setClipboardString(std::string_view text) {
-    WaylandState& s = state();
+    WaylandState& s = State();
     if (!s.dataDeviceManager || !s.dataDevice) {
-        reportError(ErrorCode::FeatureUnavailable,
+        ReportError(ErrorCode::FeatureUnavailable,
                     "Wayland-Zwischenablage ist nicht verfuegbar.");
         return;
     }
@@ -964,7 +964,7 @@ void WaylandWindowBackend::setClipboardString(std::string_view text) {
     s.clipboardText = std::string(text);
     m_clipboardText = s.clipboardText;
     s.clipboardSource = wl_data_device_manager_create_data_source(s.dataDeviceManager);
-    wl_data_source_add_listener(s.clipboardSource, dataSourceListenerPtr(), nullptr);
+    wl_data_source_add_listener(s.clipboardSource, DataSourceListenerPtr(), nullptr);
     wl_data_source_offer(s.clipboardSource, "text/plain;charset=utf-8");
     wl_data_source_offer(s.clipboardSource, "text/plain");
     wl_data_source_offer(s.clipboardSource, "UTF8_STRING");
@@ -1014,7 +1014,7 @@ void WaylandWindowBackend::handleClose() {
 }
 
 void WaylandWindowBackend::handleSurfaceEnter(wl_output* output) {
-    if (auto* entry = findOutput(output)) {
+    if (auto* entry = FindOutput(output)) {
         m_currentOutput = entry;
         m_scale = static_cast<f32>(entry->scale);
         if (m_surface) {
@@ -1031,7 +1031,7 @@ void WaylandWindowBackend::handleSurfaceEnter(wl_output* output) {
 }
 
 void WaylandWindowBackend::handleSurfaceLeave(wl_output* output) {
-    if (m_currentOutput == findOutput(output)) {
+    if (m_currentOutput == FindOutput(output)) {
         m_currentOutput = nullptr;
     }
 }
@@ -1098,7 +1098,7 @@ void WaylandWindowBackend::handleKey(uint32_t, uint32_t, uint32_t key, uint32_t 
     Key keyEnum = Key::Unknown;
     Modifiers mods = Modifiers::None;
     if (m_xkbState) {
-        keyEnum = translateKeysym(xkb_state_key_get_one_sym(m_xkbState, key));
+        keyEnum = TranslateKeysym(xkb_state_key_get_one_sym(m_xkbState, key));
         const xkb_mod_mask_t mask = xkb_state_serialize_mods(m_xkbState, XKB_STATE_MODS_EFFECTIVE);
         if (mask & (1u << 0)) mods |= Modifiers::Shift;
         if (mask & (1u << 2)) mods |= Modifiers::Control;

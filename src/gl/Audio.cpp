@@ -243,7 +243,7 @@ namespace {
 
     if (!detail::DecodeQoaFile(path, samples, sampleRate, channels)) return false;
 
-    return wave.SetSamples(std::move(samples), sampleRate, channels);
+    return wave.setSamples(std::move(samples), sampleRate, channels);
   }
 
   bool DecodeQoaMemoryIntoWave(const u8 *data, const std::size_t size, Wave &wave) {
@@ -253,7 +253,7 @@ namespace {
 
     if (!detail::DecodeQoaMemory(data, size, samples, sampleRate, channels)) return false;
 
-    return wave.SetSamples(std::move(samples), sampleRate, channels);
+    return wave.setSamples(std::move(samples), sampleRate, channels);
   }
 
   bool DecodeXmFileIntoWave(const std::string &path, Wave &wave) {
@@ -263,7 +263,7 @@ namespace {
 
     if (!detail::DecodeXmFile(path, samples, sampleRate, channels)) return false;
 
-    return wave.SetSamples(std::move(samples), sampleRate, channels);
+    return wave.setSamples(std::move(samples), sampleRate, channels);
   }
 
   bool DecodeXmMemoryIntoWave(const u8 *data, const std::size_t size, Wave &wave) {
@@ -273,15 +273,15 @@ namespace {
 
     if (!detail::DecodeXmMemory(data, size, samples, sampleRate, channels)) return false;
 
-    return wave.SetSamples(std::move(samples), sampleRate, channels);
+    return wave.setSamples(std::move(samples), sampleRate, channels);
   }
 } // namespace
 
 // =============================================================================
 // Wave
 // =============================================================================
-bool Wave::LoadFromFile(const std::string &path) {
-  Unload();
+bool Wave::loadFromFile(const std::string &path) {
+  unload();
 
   if (HasExtension(path, ".qoa")) {
     if (DecodeQoaFileIntoWave(path, *this)) return true;
@@ -294,8 +294,8 @@ bool Wave::LoadFromFile(const std::string &path) {
   return DecodeFile(path, m_samples, m_sampleRate, m_channels);
 }
 
-bool Wave::LoadFromMemory(const u8 *data, const std::size_t size, const std::string &extension) {
-  Unload();
+bool Wave::loadFromMemory(const u8 *data, const std::size_t size, const std::string &extension) {
+  unload();
 
   const std::string format = NormalizeExtension(extension);
 
@@ -311,7 +311,7 @@ bool Wave::LoadFromMemory(const u8 *data, const std::size_t size, const std::str
   return DecodeMemory(data, size, m_samples, m_sampleRate, m_channels);
 }
 
-bool Wave::SetSamples(std::vector<f32> samples, const i32 sampleRate, const i32 channels) {
+bool Wave::setSamples(std::vector<f32> samples, const i32 sampleRate, const i32 channels) {
   if ((sampleRate <= 0) || (channels <= 0) || samples.empty()) return false;
 
   m_samples    = std::move(samples);
@@ -321,42 +321,42 @@ bool Wave::SetSamples(std::vector<f32> samples, const i32 sampleRate, const i32 
   return true;
 }
 
-void Wave::Unload() {
+void Wave::unload() {
   m_samples.clear();
   m_sampleRate = 0;
   m_channels   = 0;
 }
 
-bool Wave::IsValid() const { return !m_samples.empty() && (m_sampleRate > 0) && (m_channels > 0); }
+bool Wave::isValid() const { return !m_samples.empty() && (m_sampleRate > 0) && (m_channels > 0); }
 
-i32 Wave::FrameCount() const {
+i32 Wave::frameCount() const {
   return (m_channels > 0) ? static_cast<i32>(m_samples.size() / static_cast<std::size_t>(m_channels)) : 0;
 }
 
-i32 Wave::SampleRate() const { return m_sampleRate; }
+i32 Wave::sampleRate() const { return m_sampleRate; }
 
-i32 Wave::Channels() const { return m_channels; }
+i32 Wave::channels() const { return m_channels; }
 
-i32 Wave::SampleSize() const { return static_cast<i32>(sizeof(f32)); }
+i32 Wave::sampleSize() const { return static_cast<i32>(sizeof(f32)); }
 
-i32 Wave::SampleCount() const { return static_cast<i32>(m_samples.size()); }
+i32 Wave::sampleCount() const { return static_cast<i32>(m_samples.size()); }
 
-f32 Wave::Duration() const {
+f32 Wave::duration() const {
   if ((m_sampleRate <= 0) || (m_channels <= 0)) return 0.0f;
 
-  return static_cast<f32>(FrameCount()) / static_cast<f32>(m_sampleRate);
+  return static_cast<f32>(frameCount()) / static_cast<f32>(m_sampleRate);
 }
 
-const std::vector<f32> &Wave::Samples() const { return m_samples; }
+const std::vector<f32> &Wave::samples() const { return m_samples; }
 
-std::vector<f32> &Wave::Samples() { return m_samples; }
+std::vector<f32> &Wave::samples() { return m_samples; }
 
-Wave Wave::Copy() const { return *this; }
+Wave Wave::copy() const { return *this; }
 
-bool Wave::Crop(const i32 firstFrame, const i32 lastFrame) {
-  if (!IsValid()) return false;
+bool Wave::crop(const i32 firstFrame, const i32 lastFrame) {
+  if (!isValid()) return false;
 
-  const i32 frames = FrameCount();
+  const i32 frames = frameCount();
   const i32 first  = std::clamp(firstFrame, 0, frames - 1);
   const i32 last   = std::clamp(lastFrame, first, frames - 1);
 
@@ -371,12 +371,12 @@ bool Wave::Crop(const i32 firstFrame, const i32 lastFrame) {
   return true;
 }
 
-bool Wave::Convert(const i32 sampleRate, const i32 channels) {
-  if (!IsValid() || (sampleRate <= 0) || (channels <= 0)) return false;
+bool Wave::convert(const i32 sampleRate, const i32 channels) {
+  if (!isValid() || (sampleRate <= 0) || (channels <= 0)) return false;
 
   if ((sampleRate == m_sampleRate) && (channels == m_channels)) return true;
 
-  const auto frames = static_cast<ma_uint64>(FrameCount());
+  const auto frames = static_cast<ma_uint64>(frameCount());
 
   // Zielgroesse bestimmen (miniaudio rechnet linear um und mischt Kanaele)
   const auto needed = ma_convert_frames(nullptr, 0, ma_format_f32, static_cast<ma_uint32>(channels),
@@ -402,8 +402,8 @@ bool Wave::Convert(const i32 sampleRate, const i32 channels) {
   return true;
 }
 
-bool Wave::SaveToFile(const std::string &path) const {
-  if (!IsValid()) return false;
+bool Wave::saveToFile(const std::string &path) const {
+  if (!isValid()) return false;
 
   if (HasExtension(path, ".qoa")) {
     return detail::EncodeQoaFile(path, m_samples, m_sampleRate, m_channels);
@@ -418,7 +418,7 @@ bool Wave::SaveToFile(const std::string &path) const {
   }
 
   // 16-Bit-PCM-WAV schreiben
-  const auto frames      = static_cast<u32>(FrameCount());
+  const auto frames      = static_cast<u32>(frameCount());
   const auto channels    = static_cast<u16>(m_channels);
   const auto sampleRate  = static_cast<u32>(m_sampleRate);
   const auto bits        = static_cast<u16>(16);
@@ -457,14 +457,14 @@ bool Wave::SaveToFile(const std::string &path) const {
   return stream.good();
 }
 
-bool Wave::SaveAsCode(const std::string &path, const std::string &variableName) const {
-  if (!IsValid()) return false;
+bool Wave::saveAsCode(const std::string &path, const std::string &variableName) const {
+  if (!isValid()) return false;
 
   std::ofstream stream(path);
 
   if (!stream) return false;
 
-  stream << "// erzeugt mit sgl -- " << FrameCount() << " Rahmen, " << m_sampleRate << " Hz, " << m_channels
+  stream << "// erzeugt mit sgl -- " << frameCount() << " Rahmen, " << m_sampleRate << " Hz, " << m_channels
          << " Kanaele\n";
   stream << "static const float " << variableName << "[] = {\n";
 
@@ -478,7 +478,7 @@ bool Wave::SaveAsCode(const std::string &path, const std::string &variableName) 
   }
 
   stream << "\n};\n";
-  stream << "static const int " << variableName << "FrameCount = " << FrameCount() << ";\n";
+  stream << "static const int " << variableName << "FrameCount = " << frameCount() << ";\n";
   stream << "static const int " << variableName << "SampleRate = " << m_sampleRate << ";\n";
   stream << "static const int " << variableName << "Channels = " << m_channels << ";\n";
 
@@ -498,7 +498,7 @@ struct Sound::Impl {
   bool                  looping{false};
   bool                  paused{false};
 
-  void ApplyParameters() {
+  void applyParameters() {
     for (ma_sound &voice : voices) {
       ma_sound_set_volume(&voice, volume);
       ma_sound_set_pitch(&voice, pitch);
@@ -510,14 +510,14 @@ struct Sound::Impl {
 
 Sound::Sound() : m_impl(std::make_unique<Impl>()) {}
 
-Sound::~Sound() { Unload(); }
+Sound::~Sound() { unload(); }
 
 Sound::Sound(Sound &&other) noexcept : m_impl(std::move(other.m_impl)), m_wave(std::move(other.m_wave)) {}
 
 Sound &Sound::operator=(Sound &&other) noexcept {
   if (this == &other) return *this;
 
-  Unload();
+  unload();
 
   m_impl = std::move(other.m_impl);
   m_wave = std::move(other.m_wave);
@@ -525,18 +525,18 @@ Sound &Sound::operator=(Sound &&other) noexcept {
   return *this;
 }
 
-bool Sound::LoadFromFile(const std::string &path, const i32 voices) {
+bool Sound::loadFromFile(const std::string &path, const i32 voices) {
   Wave wave;
 
-  if (!wave.LoadFromFile(path)) return false;
+  if (!wave.loadFromFile(path)) return false;
 
-  return LoadFromWave(wave, voices);
+  return loadFromWave(wave, voices);
 }
 
-bool Sound::LoadFromWave(const Wave &wave, const i32 voices) {
-  Unload();
+bool Sound::loadFromWave(const Wave &wave, const i32 voices) {
+  unload();
 
-  if (!wave.IsValid()) {
+  if (!wave.isValid()) {
     SLOGW << "Sound: Wavedaten sind leer";
 
     return false;
@@ -558,11 +558,11 @@ bool Sound::LoadFromWave(const Wave &wave, const i32 voices) {
     return true; // Daten sind geladen; IsValid() meldet true, Wiedergabe bleibt stumm
   }
 
-  const auto frames = static_cast<ma_uint64>(m_wave.FrameCount());
+  const auto frames = static_cast<ma_uint64>(m_wave.frameCount());
 
   ma_audio_buffer_config config = ma_audio_buffer_config_init(
-      ma_format_f32, static_cast<ma_uint32>(m_wave.Channels()), frames, m_wave.Samples().data(), nullptr);
-  config.sampleRate = static_cast<ma_uint32>(m_wave.SampleRate());
+      ma_format_f32, static_cast<ma_uint32>(m_wave.channels()), frames, m_wave.samples().data(), nullptr);
+  config.sampleRate = static_cast<ma_uint32>(m_wave.sampleRate());
 
   if (ma_audio_buffer_init(&config, &m_impl->buffer) != MA_SUCCESS) {
     SLOGE << "Sound: Puffer laesst sich nicht anlegen";
@@ -585,12 +585,12 @@ bool Sound::LoadFromWave(const Wave &wave, const i32 voices) {
     }
   }
 
-  m_impl->ApplyParameters();
+  m_impl->applyParameters();
 
   return true;
 }
 
-void Sound::Unload() {
+void Sound::unload() {
   AudioEngine &audio = Engine();
 
   if (m_impl != nullptr) {
@@ -606,18 +606,18 @@ void Sound::Unload() {
     m_impl              = std::make_unique<Impl>();
   }
 
-  m_wave.Unload();
+  m_wave.unload();
 }
 
-bool Sound::IsValid() const { return m_wave.IsValid() && (m_impl != nullptr); }
+bool Sound::isValid() const { return m_wave.isValid() && (m_impl != nullptr); }
 
-const Wave &Sound::Data() const { return m_wave; }
+const Wave &Sound::data() const { return m_wave; }
 
-f32 Sound::Duration() const { return m_wave.Duration(); }
+f32 Sound::duration() const { return m_wave.duration(); }
 
-i32 Sound::VoiceCount() const { return (m_impl != nullptr) ? static_cast<i32>(m_impl->voices.size()) : 0; }
+i32 Sound::voiceCount() const { return (m_impl != nullptr) ? static_cast<i32>(m_impl->voices.size()) : 0; }
 
-void Sound::Play() {
+void Sound::play() {
   if ((m_impl == nullptr) || m_impl->voices.empty()) {
     WarnOnce("Sound: Play ohne Stimme (kein Audiogeraet?)");
 
@@ -641,7 +641,7 @@ void Sound::Play() {
   ma_sound_start(target);
 }
 
-void Sound::Stop() {
+void Sound::stop() {
   if (m_impl == nullptr) return;
 
   for (ma_sound &voice : m_impl->voices) {
@@ -652,7 +652,7 @@ void Sound::Stop() {
   m_impl->paused = false;
 }
 
-void Sound::Pause() {
+void Sound::pause() {
   if (m_impl == nullptr) return;
 
   for (ma_sound &voice : m_impl->voices) ma_sound_stop(&voice); // Cursor bleibt stehen
@@ -660,7 +660,7 @@ void Sound::Pause() {
   m_impl->paused = true;
 }
 
-void Sound::Resume() {
+void Sound::resume() {
   if (m_impl == nullptr) return;
 
   for (ma_sound &voice : m_impl->voices) ma_sound_start(&voice);
@@ -668,7 +668,7 @@ void Sound::Resume() {
   m_impl->paused = false;
 }
 
-bool Sound::IsPlaying() const {
+bool Sound::isPlaying() const {
   if (m_impl == nullptr) return false;
 
   for (const ma_sound &voice : m_impl->voices) {
@@ -678,42 +678,42 @@ bool Sound::IsPlaying() const {
   return false;
 }
 
-void Sound::SetVolume(const f32 volume) {
+void Sound::setVolume(const f32 volume) {
   if (m_impl == nullptr) return;
 
   m_impl->volume = std::clamp(volume, 0.0f, 4.0f);
-  m_impl->ApplyParameters();
+  m_impl->applyParameters();
 }
 
-f32 Sound::Volume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
+f32 Sound::volume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
 
-void Sound::SetPitch(const f32 pitch) {
+void Sound::setPitch(const f32 pitch) {
   if (m_impl == nullptr) return;
 
   m_impl->pitch = std::clamp(pitch, 0.01f, 8.0f);
-  m_impl->ApplyParameters();
+  m_impl->applyParameters();
 }
 
-f32 Sound::Pitch() const { return (m_impl != nullptr) ? m_impl->pitch : 1.0f; }
+f32 Sound::pitch() const { return (m_impl != nullptr) ? m_impl->pitch : 1.0f; }
 
-void Sound::SetPan(const f32 pan) {
+void Sound::setPan(const f32 pan) {
   if (m_impl == nullptr) return;
 
   m_impl->pan = std::clamp(pan, -1.0f, 1.0f);
-  m_impl->ApplyParameters();
+  m_impl->applyParameters();
 }
 
-f32 Sound::Pan() const { return (m_impl != nullptr) ? m_impl->pan : 0.0f; }
+f32 Sound::pan() const { return (m_impl != nullptr) ? m_impl->pan : 0.0f; }
 
-void Sound::SetLooping(const bool looping) {
+void Sound::setLooping(const bool looping) {
   if (m_impl == nullptr) return;
 
   m_impl->looping = looping;
 
-  m_impl->ApplyParameters();
+  m_impl->applyParameters();
 }
 
-bool Sound::IsLooping() const { return (m_impl != nullptr) && m_impl->looping; }
+bool Sound::isLooping() const { return (m_impl != nullptr) && m_impl->looping; }
 
 // =============================================================================
 // Music
@@ -735,19 +735,19 @@ struct Music::Impl {
   std::vector<u8> memory; // muss leben, solange der Decoder laeuft
 };
 
-bool Music::initBuffer(Impl &impl, Wave wave) {
-  if (!wave.IsValid()) return false;
+bool Music::InitBuffer(Impl &impl, Wave wave) {
+  if (!wave.isValid()) return false;
 
   AudioEngine &audio = Engine();
 
   impl.decoded = std::move(wave);
 
-  const auto frames = static_cast<ma_uint64>(impl.decoded.FrameCount());
+  const auto frames = static_cast<ma_uint64>(impl.decoded.frameCount());
 
   ma_audio_buffer_config config = ma_audio_buffer_config_init(
-      ma_format_f32, static_cast<ma_uint32>(impl.decoded.Channels()), frames,
-      impl.decoded.Samples().data(), nullptr);
-  config.sampleRate = static_cast<ma_uint32>(impl.decoded.SampleRate());
+      ma_format_f32, static_cast<ma_uint32>(impl.decoded.channels()), frames,
+      impl.decoded.samples().data(), nullptr);
+  config.sampleRate = static_cast<ma_uint32>(impl.decoded.sampleRate());
 
   if (ma_audio_buffer_init(&config, &impl.buffer) != MA_SUCCESS) {
     SLOGE << "Music: Puffer laesst sich nicht anlegen";
@@ -776,22 +776,22 @@ bool Music::initBuffer(Impl &impl, Wave wave) {
 
 Music::Music() : m_impl(std::make_unique<Impl>()) {}
 
-Music::~Music() { Unload(); }
+Music::~Music() { unload(); }
 
 Music::Music(Music &&other) noexcept : m_impl(std::move(other.m_impl)) {}
 
 Music &Music::operator=(Music &&other) noexcept {
   if (this == &other) return *this;
 
-  Unload();
+  unload();
 
   m_impl = std::move(other.m_impl);
 
   return *this;
 }
 
-bool Music::LoadFromFile(const std::string &path) {
-  Unload();
+bool Music::loadFromFile(const std::string &path) {
+  unload();
 
   m_impl = std::make_unique<Impl>();
 
@@ -821,7 +821,7 @@ bool Music::LoadFromFile(const std::string &path) {
       return false;
     }
 
-    return initBuffer(*m_impl, std::move(decoded));
+    return InitBuffer(*m_impl, std::move(decoded));
   }
 
   constexpr auto flags = MA_SOUND_FLAG_STREAM;
@@ -842,8 +842,8 @@ bool Music::LoadFromFile(const std::string &path) {
   return true;
 }
 
-bool Music::LoadFromMemory(const u8 *data, const std::size_t size, const std::string &extension) {
-  Unload();
+bool Music::loadFromMemory(const u8 *data, const std::size_t size, const std::string &extension) {
+  unload();
 
   m_impl = std::make_unique<Impl>();
 
@@ -868,7 +868,7 @@ bool Music::LoadFromMemory(const u8 *data, const std::size_t size, const std::st
       return false;
     }
 
-    return initBuffer(*m_impl, std::move(decoded));
+    return InitBuffer(*m_impl, std::move(decoded));
   }
 
   if ((format == ".xm") || detail::IsXmMemory(data, size)) {
@@ -880,7 +880,7 @@ bool Music::LoadFromMemory(const u8 *data, const std::size_t size, const std::st
       return false;
     }
 
-    return initBuffer(*m_impl, std::move(decoded));
+    return InitBuffer(*m_impl, std::move(decoded));
   }
 
   m_impl->memory.assign(data, data + size);
@@ -911,7 +911,7 @@ bool Music::LoadFromMemory(const u8 *data, const std::size_t size, const std::st
   return true;
 }
 
-void Music::Unload() {
+void Music::unload() {
   AudioEngine &audio = Engine();
 
   if (m_impl != nullptr) {
@@ -922,19 +922,19 @@ void Music::Unload() {
     m_impl->soundReady   = false;
     m_impl->decoderReady = false;
     m_impl->bufferReady  = false;
-    m_impl->decoded.Unload();
+    m_impl->decoded.unload();
     m_impl->memory.clear();
 
     m_impl = std::make_unique<Impl>();
   }
 }
 
-bool Music::IsValid() const { return (m_impl != nullptr) && m_impl->soundReady; }
+bool Music::isValid() const { return (m_impl != nullptr) && m_impl->soundReady; }
 
-bool Music::IsStreaming() const { return (m_impl != nullptr) && m_impl->streaming; }
+bool Music::isStreaming() const { return (m_impl != nullptr) && m_impl->streaming; }
 
-void Music::Play() {
-  if (!IsValid()) return;
+void Music::play() {
+  if (!isValid()) return;
 
   m_impl->paused = false;
 
@@ -942,8 +942,8 @@ void Music::Play() {
   ma_sound_start(&m_impl->sound);
 }
 
-void Music::Stop() {
-  if (!IsValid()) return;
+void Music::stop() {
+  if (!isValid()) return;
 
   ma_sound_stop(&m_impl->sound);
   ma_sound_seek_to_pcm_frame(&m_impl->sound, 0);
@@ -951,38 +951,38 @@ void Music::Stop() {
   m_impl->paused = false;
 }
 
-void Music::Pause() {
-  if (!IsValid()) return;
+void Music::pause() {
+  if (!isValid()) return;
 
   ma_sound_stop(&m_impl->sound); // Cursor bleibt
 
   m_impl->paused = true;
 }
 
-void Music::Resume() {
-  if (!IsValid()) return;
+void Music::resume() {
+  if (!isValid()) return;
 
   ma_sound_start(&m_impl->sound);
 
   m_impl->paused = false;
 }
 
-bool Music::IsPlaying() const { return IsValid() && (ma_sound_is_playing(&m_impl->sound) != MA_FALSE); }
+bool Music::isPlaying() const { return isValid() && (ma_sound_is_playing(&m_impl->sound) != MA_FALSE); }
 
-bool Music::IsPaused() const { return (m_impl != nullptr) && m_impl->paused; }
+bool Music::isPaused() const { return (m_impl != nullptr) && m_impl->paused; }
 
-void Music::Update() {
+void Music::update() {
   // miniaudio streamt im Audiothread -- hier gibt es nichts nachzufuellen
 }
 
-void Music::Seek(const f32 seconds) {
-  if (!IsValid()) return;
+void Music::seek(const f32 seconds) {
+  if (!isValid()) return;
 
   ma_sound_seek_to_second(&m_impl->sound, std::max(0.0f, seconds));
 }
 
-f32 Music::TimeLength() const {
-  if (!IsValid()) return 0.0f;
+f32 Music::timeLength() const {
+  if (!isValid()) return 0.0f;
 
   float length = 0.0f;
 
@@ -991,8 +991,8 @@ f32 Music::TimeLength() const {
   return length;
 }
 
-f32 Music::TimePlayed() const {
-  if (!IsValid()) return 0.0f;
+f32 Music::timePlayed() const {
+  if (!isValid()) return 0.0f;
 
   float cursor = 0.0f;
 
@@ -1001,38 +1001,38 @@ f32 Music::TimePlayed() const {
   return cursor;
 }
 
-void Music::SetVolume(const f32 volume) {
-  if (!IsValid()) return;
+void Music::setVolume(const f32 volume) {
+  if (!isValid()) return;
 
   m_impl->volume = std::max(0.0f, volume);
   ma_sound_set_volume(&m_impl->sound, m_impl->volume);
 }
 
-f32 Music::Volume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
+f32 Music::volume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
 
-void Music::SetPitch(const f32 pitch) {
-  if (!IsValid()) return;
+void Music::setPitch(const f32 pitch) {
+  if (!isValid()) return;
 
   m_impl->pitch = std::clamp(pitch, 0.01f, 8.0f);
   ma_sound_set_pitch(&m_impl->sound, m_impl->pitch);
 }
 
-void Music::SetPan(const f32 pan) {
-  if (!IsValid()) return;
+void Music::setPan(const f32 pan) {
+  if (!isValid()) return;
 
   m_impl->pan = std::clamp(pan, -1.0f, 1.0f);
   ma_sound_set_pan(&m_impl->sound, m_impl->pan);
 }
 
-void Music::SetLooping(const bool looping) {
-  if (!IsValid()) return;
+void Music::setLooping(const bool looping) {
+  if (!isValid()) return;
 
   m_impl->looping = looping;
 
   ma_sound_set_looping(&m_impl->sound, looping ? MA_TRUE : MA_FALSE);
 }
 
-bool Music::IsLooping() const { return (m_impl != nullptr) && m_impl->looping; }
+bool Music::isLooping() const { return (m_impl != nullptr) && m_impl->looping; }
 
 // =============================================================================
 // AudioStream: eigener PCM-Strom (Ringpuffer als miniaudio-Datenquelle)
@@ -1137,22 +1137,22 @@ namespace {
 
 AudioStream::AudioStream() : m_impl(std::make_unique<Impl>()) {}
 
-AudioStream::~AudioStream() { Unload(); }
+AudioStream::~AudioStream() { unload(); }
 
 AudioStream::AudioStream(AudioStream &&other) noexcept : m_impl(std::move(other.m_impl)) {}
 
 AudioStream &AudioStream::operator=(AudioStream &&other) noexcept {
   if (this == &other) return *this;
 
-  Unload();
+  unload();
 
   m_impl = std::move(other.m_impl);
 
   return *this;
 }
 
-bool AudioStream::Load(const u32 sampleRate, const u32 channels, const u32 bufferFrames) {
-  Unload();
+bool AudioStream::load(const u32 sampleRate, const u32 channels, const u32 bufferFrames) {
+  unload();
 
   m_impl = std::make_unique<Impl>();
 
@@ -1196,7 +1196,7 @@ bool AudioStream::Load(const u32 sampleRate, const u32 channels, const u32 buffe
   return true;
 }
 
-void AudioStream::Unload() {
+void AudioStream::unload() {
   AudioEngine &audio = Engine();
 
   if (m_impl != nullptr) {
@@ -1208,10 +1208,10 @@ void AudioStream::Unload() {
   }
 }
 
-bool AudioStream::IsValid() const { return (m_impl != nullptr) && (m_impl->source.capacityFrames > 0); }
+bool AudioStream::isValid() const { return (m_impl != nullptr) && (m_impl->source.capacityFrames > 0); }
 
-bool AudioStream::Push(const f32 *samples, const i32 frameCount) {
-  if (!IsValid() || (samples == nullptr) || (frameCount <= 0)) return false;
+bool AudioStream::push(const f32 *samples, const i32 frameCount) {
+  if (!isValid() || (samples == nullptr) || (frameCount <= 0)) return false;
 
   auto &source = m_impl->source;
 
@@ -1234,8 +1234,8 @@ bool AudioStream::Push(const f32 *samples, const i32 frameCount) {
   return true;
 }
 
-void AudioStream::Clear() {
-  if (!IsValid()) return;
+void AudioStream::clear() {
+  if (!isValid()) return;
 
   std::lock_guard<std::mutex> lock(m_impl->source.mutex);
 
@@ -1243,64 +1243,64 @@ void AudioStream::Clear() {
   m_impl->source.writeFrame = 0;
 }
 
-i32 AudioStream::QueuedFrames() const {
-  if (!IsValid()) return 0;
+i32 AudioStream::queuedFrames() const {
+  if (!isValid()) return 0;
 
   std::lock_guard<std::mutex> lock(m_impl->source.mutex);
 
   return static_cast<i32>(m_impl->source.writeFrame - m_impl->source.readFrame);
 }
 
-i32 AudioStream::CapacityFrames() const { return IsValid() ? static_cast<i32>(m_impl->source.capacityFrames) : 0; }
+i32 AudioStream::capacityFrames() const { return isValid() ? static_cast<i32>(m_impl->source.capacityFrames) : 0; }
 
-i32 AudioStream::SampleRate() const { return IsValid() ? static_cast<i32>(m_impl->source.sampleRate) : 0; }
+i32 AudioStream::sampleRate() const { return isValid() ? static_cast<i32>(m_impl->source.sampleRate) : 0; }
 
-i32 AudioStream::Channels() const { return IsValid() ? static_cast<i32>(m_impl->source.channels) : 0; }
+i32 AudioStream::channels() const { return isValid() ? static_cast<i32>(m_impl->source.channels) : 0; }
 
-void AudioStream::Play() {
-  if (!IsValid() || !m_impl->soundReady) return;
-
-  ma_sound_start(&m_impl->sound);
-}
-
-void AudioStream::Pause() {
-  if (!IsValid() || !m_impl->soundReady) return;
-
-  ma_sound_stop(&m_impl->sound);
-}
-
-void AudioStream::Resume() {
-  if (!IsValid() || !m_impl->soundReady) return;
+void AudioStream::play() {
+  if (!isValid() || !m_impl->soundReady) return;
 
   ma_sound_start(&m_impl->sound);
 }
 
-void AudioStream::Stop() {
-  if (!IsValid() || !m_impl->soundReady) return;
+void AudioStream::pause() {
+  if (!isValid() || !m_impl->soundReady) return;
 
   ma_sound_stop(&m_impl->sound);
-  Clear();
 }
 
-bool AudioStream::IsPlaying() const { return IsValid() && m_impl->soundReady && (ma_sound_is_playing(&m_impl->sound) != MA_FALSE); }
+void AudioStream::resume() {
+  if (!isValid() || !m_impl->soundReady) return;
 
-void AudioStream::SetVolume(const f32 volume) {
+  ma_sound_start(&m_impl->sound);
+}
+
+void AudioStream::stop() {
+  if (!isValid() || !m_impl->soundReady) return;
+
+  ma_sound_stop(&m_impl->sound);
+  clear();
+}
+
+bool AudioStream::isPlaying() const { return isValid() && m_impl->soundReady && (ma_sound_is_playing(&m_impl->sound) != MA_FALSE); }
+
+void AudioStream::setVolume(const f32 volume) {
   m_impl->volume = std::max(0.0f, volume);
-  if (IsValid() && m_impl->soundReady) ma_sound_set_volume(&m_impl->sound, m_impl->volume);
+  if (isValid() && m_impl->soundReady) ma_sound_set_volume(&m_impl->sound, m_impl->volume);
 }
 
-void AudioStream::SetPitch(const f32 pitch) {
+void AudioStream::setPitch(const f32 pitch) {
   m_impl->pitch = std::clamp(pitch, 0.01f, 8.0f);
-  if (IsValid() && m_impl->soundReady) ma_sound_set_pitch(&m_impl->sound, m_impl->pitch);
+  if (isValid() && m_impl->soundReady) ma_sound_set_pitch(&m_impl->sound, m_impl->pitch);
 }
 
-void AudioStream::SetPan(const f32 pan) {
+void AudioStream::setPan(const f32 pan) {
   m_impl->pan = std::clamp(pan, -1.0f, 1.0f);
-  if (IsValid() && m_impl->soundReady) ma_sound_set_pan(&m_impl->sound, m_impl->pan);
+  if (isValid() && m_impl->soundReady) ma_sound_set_pan(&m_impl->sound, m_impl->pan);
 }
 
-void AudioStream::SetLooping(const bool looping) {
-  if (IsValid() && m_impl->soundReady) ma_sound_set_looping(&m_impl->sound, looping ? MA_TRUE : MA_FALSE);
+void AudioStream::setLooping(const bool looping) {
+  if (isValid() && m_impl->soundReady) ma_sound_set_looping(&m_impl->sound, looping ? MA_TRUE : MA_FALSE);
 }
 
 // =============================================================================
@@ -1332,7 +1332,7 @@ f32 GetMasterVolume() { return Engine().volume; }
 Wave LoadWave(const std::string_view fileName) {
   Wave wave;
 
-  if (!wave.LoadFromFile(std::string(fileName))) return Wave{};
+  if (!wave.loadFromFile(std::string(fileName))) return Wave{};
 
   return wave;
 }
@@ -1341,24 +1341,24 @@ Wave LoadWaveFromMemory(const std::string_view fileType, const u8 *fileData, con
   Wave wave;
 
   if ((fileData == nullptr) || (dataSize <= 0)) return Wave{};
-  if (!wave.LoadFromMemory(fileData, static_cast<std::size_t>(dataSize), std::string(fileType))) return Wave{};
+  if (!wave.loadFromMemory(fileData, static_cast<std::size_t>(dataSize), std::string(fileType))) return Wave{};
 
   return wave;
 }
 
-bool IsWaveValid(const Wave &wave) { return wave.IsValid(); }
+bool IsWaveValid(const Wave &wave) { return wave.isValid(); }
 
 bool ExportWave(const Wave &wave, const std::string_view fileName) {
-  return wave.SaveToFile(std::string(fileName));
+  return wave.saveToFile(std::string(fileName));
 }
 
 bool ExportWaveAsCode(const Wave &wave, const std::string_view fileName) {
-  return wave.SaveAsCode(std::string(fileName));
+  return wave.saveAsCode(std::string(fileName));
 }
 
-Wave WaveCopy(const Wave &wave) { return wave.Copy(); }
+Wave WaveCopy(const Wave &wave) { return wave.copy(); }
 
-bool WaveCrop(Wave &wave, const i32 initFrame, const i32 finalFrame) { return wave.Crop(initFrame, finalFrame); }
+bool WaveCrop(Wave &wave, const i32 initFrame, const i32 finalFrame) { return wave.crop(initFrame, finalFrame); }
 
 bool WaveFormat(Wave &wave, const i32 sampleRate, const i32 sampleSize, const i32 channels) {
   if (sampleSize != 32) {
@@ -1367,15 +1367,15 @@ bool WaveFormat(Wave &wave, const i32 sampleRate, const i32 sampleSize, const i3
     return false;
   }
 
-  return wave.Convert(sampleRate, channels);
+  return wave.convert(sampleRate, channels);
 }
 
 f32 *LoadWaveSamples(const Wave &wave) {
-  if (!wave.IsValid()) return nullptr;
+  if (!wave.isValid()) return nullptr;
 
-  auto *copy = new f32[wave.Samples().size()];
+  auto *copy = new f32[wave.samples().size()];
 
-  std::memcpy(copy, wave.Samples().data(), wave.Samples().size() * sizeof(f32));
+  std::memcpy(copy, wave.samples().data(), wave.samples().size() * sizeof(f32));
 
   return copy;
 }
@@ -1385,7 +1385,7 @@ void UnloadWaveSamples(f32 *samples) { delete[] samples; }
 Sound LoadSound(const std::string_view fileName) {
   Sound sound;
 
-  if (!sound.LoadFromFile(std::string(fileName))) return Sound{};
+  if (!sound.loadFromFile(std::string(fileName))) return Sound{};
 
   return sound;
 }
@@ -1393,7 +1393,7 @@ Sound LoadSound(const std::string_view fileName) {
 Sound LoadSound(const std::string_view fileName, const i32 voices) {
   Sound sound;
 
-  if (!sound.LoadFromFile(std::string(fileName), voices)) return Sound{};
+  if (!sound.loadFromFile(std::string(fileName), voices)) return Sound{};
 
   return sound;
 }
@@ -1401,7 +1401,7 @@ Sound LoadSound(const std::string_view fileName, const i32 voices) {
 Sound LoadSoundFromWave(const Wave &wave) {
   Sound sound;
 
-  if (!sound.LoadFromWave(wave)) return Sound{};
+  if (!sound.loadFromWave(wave)) return Sound{};
 
   return sound;
 }
@@ -1409,40 +1409,40 @@ Sound LoadSoundFromWave(const Wave &wave) {
 Sound LoadSoundFromWave(const Wave &wave, const i32 voices) {
   Sound sound;
 
-  if (!sound.LoadFromWave(wave, voices)) return Sound{};
+  if (!sound.loadFromWave(wave, voices)) return Sound{};
 
   return sound;
 }
 
 Sound LoadSoundAlias(const Sound &source) {
   // eigene Kopie der Daten (kein geteilter Puffer -- dokumentiert)
-  return LoadSoundFromWave(source.Data());
+  return LoadSoundFromWave(source.data());
 }
 
-bool IsSoundValid(const Sound &sound) { return sound.IsValid(); }
+bool IsSoundValid(const Sound &sound) { return sound.isValid(); }
 
-void UnloadSound(Sound &sound) { sound.Unload(); }
+void UnloadSound(Sound &sound) { sound.unload(); }
 
-void PlaySound(Sound &sound) { sound.Play(); }
+void PlaySound(Sound &sound) { sound.play(); }
 
-void StopSound(Sound &sound) { sound.Stop(); }
+void StopSound(Sound &sound) { sound.stop(); }
 
-void PauseSound(Sound &sound) { sound.Pause(); }
+void PauseSound(Sound &sound) { sound.pause(); }
 
-void ResumeSound(Sound &sound) { sound.Resume(); }
+void ResumeSound(Sound &sound) { sound.resume(); }
 
-bool IsSoundPlaying(const Sound &sound) { return sound.IsPlaying(); }
+bool IsSoundPlaying(const Sound &sound) { return sound.isPlaying(); }
 
-void SetSoundVolume(Sound &sound, const f32 volume) { sound.SetVolume(volume); }
+void SetSoundVolume(Sound &sound, const f32 volume) { sound.setVolume(volume); }
 
-void SetSoundPitch(Sound &sound, const f32 pitch) { sound.SetPitch(pitch); }
+void SetSoundPitch(Sound &sound, const f32 pitch) { sound.setPitch(pitch); }
 
-void SetSoundPan(Sound &sound, const f32 pan) { sound.SetPan(pan); }
+void SetSoundPan(Sound &sound, const f32 pan) { sound.setPan(pan); }
 
 Music LoadMusicStream(const std::string_view fileName) {
   Music music;
 
-  if (!music.LoadFromFile(std::string(fileName))) return Music{};
+  if (!music.loadFromFile(std::string(fileName))) return Music{};
 
   return music;
 }
@@ -1451,38 +1451,38 @@ Music LoadMusicStreamFromMemory(const std::string_view fileType, const u8 *data,
   Music music;
 
   if ((data == nullptr) || (dataSize <= 0)) return Music{};
-  if (!music.LoadFromMemory(data, static_cast<std::size_t>(dataSize), std::string(fileType))) return Music{};
+  if (!music.loadFromMemory(data, static_cast<std::size_t>(dataSize), std::string(fileType))) return Music{};
 
   return music;
 }
 
-bool IsMusicValid(const Music &music) { return music.IsValid(); }
+bool IsMusicValid(const Music &music) { return music.isValid(); }
 
-void UnloadMusicStream(Music &music) { music.Unload(); }
+void UnloadMusicStream(Music &music) { music.unload(); }
 
-void PlayMusicStream(Music &music) { music.Play(); }
+void PlayMusicStream(Music &music) { music.play(); }
 
-bool IsMusicStreamPlaying(const Music &music) { return music.IsPlaying(); }
+bool IsMusicStreamPlaying(const Music &music) { return music.isPlaying(); }
 
-void UpdateMusicStream(Music &music) { music.Update(); }
+void UpdateMusicStream(Music &music) { music.update(); }
 
-void StopMusicStream(Music &music) { music.Stop(); }
+void StopMusicStream(Music &music) { music.stop(); }
 
-void PauseMusicStream(Music &music) { music.Pause(); }
+void PauseMusicStream(Music &music) { music.pause(); }
 
-void ResumeMusicStream(Music &music) { music.Resume(); }
+void ResumeMusicStream(Music &music) { music.resume(); }
 
-void SeekMusicStream(Music &music, const f32 position) { music.Seek(position); }
+void SeekMusicStream(Music &music, const f32 position) { music.seek(position); }
 
-void SetMusicVolume(Music &music, const f32 volume) { music.SetVolume(volume); }
+void SetMusicVolume(Music &music, const f32 volume) { music.setVolume(volume); }
 
-void SetMusicPitch(Music &music, const f32 pitch) { music.SetPitch(pitch); }
+void SetMusicPitch(Music &music, const f32 pitch) { music.setPitch(pitch); }
 
-void SetMusicPan(Music &music, const f32 pan) { music.SetPan(pan); }
+void SetMusicPan(Music &music, const f32 pan) { music.setPan(pan); }
 
-f32 GetMusicTimeLength(const Music &music) { return music.TimeLength(); }
+f32 GetMusicTimeLength(const Music &music) { return music.timeLength(); }
 
-f32 GetMusicTimePlayed(const Music &music) { return music.TimePlayed(); }
+f32 GetMusicTimePlayed(const Music &music) { return music.timePlayed(); }
 
 AudioStream LoadAudioStream(const u32 sampleRate, const u32 sampleSize, const u32 channels) {
   AudioStream stream;
@@ -1493,40 +1493,40 @@ AudioStream LoadAudioStream(const u32 sampleRate, const u32 sampleSize, const u3
     return AudioStream{};
   }
 
-  if (!stream.Load(sampleRate, channels)) return AudioStream{};
+  if (!stream.load(sampleRate, channels)) return AudioStream{};
 
   return stream;
 }
 
-bool IsAudioStreamValid(const AudioStream &stream) { return stream.IsValid(); }
+bool IsAudioStreamValid(const AudioStream &stream) { return stream.isValid(); }
 
-void UnloadAudioStream(AudioStream &stream) { stream.Unload(); }
+void UnloadAudioStream(AudioStream &stream) { stream.unload(); }
 
 void UpdateAudioStream(AudioStream &stream, const void *data, const i32 frameCount) {
   if ((data == nullptr) || (frameCount <= 0)) return;
 
-  stream.Push(static_cast<const f32 *>(data), frameCount);
+  stream.push(static_cast<const f32 *>(data), frameCount);
 }
 
 bool IsAudioStreamProcessed(const AudioStream &stream) {
-  return stream.IsValid() && (stream.QueuedFrames() == 0);
+  return stream.isValid() && (stream.queuedFrames() == 0);
 }
 
-void PlayAudioStream(AudioStream &stream) { stream.Play(); }
+void PlayAudioStream(AudioStream &stream) { stream.play(); }
 
-void PauseAudioStream(AudioStream &stream) { stream.Pause(); }
+void PauseAudioStream(AudioStream &stream) { stream.pause(); }
 
-void ResumeAudioStream(AudioStream &stream) { stream.Resume(); }
+void ResumeAudioStream(AudioStream &stream) { stream.resume(); }
 
-bool IsAudioStreamPlaying(const AudioStream &stream) { return stream.IsPlaying(); }
+bool IsAudioStreamPlaying(const AudioStream &stream) { return stream.isPlaying(); }
 
-void StopAudioStream(AudioStream &stream) { stream.Stop(); }
+void StopAudioStream(AudioStream &stream) { stream.stop(); }
 
-void SetAudioStreamVolume(AudioStream &stream, const f32 volume) { stream.SetVolume(volume); }
+void SetAudioStreamVolume(AudioStream &stream, const f32 volume) { stream.setVolume(volume); }
 
-void SetAudioStreamPitch(AudioStream &stream, const f32 pitch) { stream.SetPitch(pitch); }
+void SetAudioStreamPitch(AudioStream &stream, const f32 pitch) { stream.setPitch(pitch); }
 
-void SetAudioStreamPan(AudioStream &stream, const f32 pan) { stream.SetPan(pan); }
+void SetAudioStreamPan(AudioStream &stream, const f32 pan) { stream.setPan(pan); }
 
 void SetAudioStreamBufferSizeDefault(const i32 size) { (void)size; }
 

@@ -5,14 +5,14 @@
 //
 //   ToString, FileExtension, StageFromName, StageFromExtension, ShaderError
 //   ResolvedSource, SplitStages, ResolveSource, ResolveFile, Shader
-//   fromFile, fromFiles, fromSource, fromSources, reload
-//   unbind, ScopedBind, setUniform, indexedName, setTexture
+//   FromFile, FromFiles, FromSource, FromSources, reload
+//   Unbind, ScopedBind, setUniform, IndexedName, setTexture
 //   setUniformBlockBinding, setStorageBlockBinding, uniformLocation, hasUniform, uniformType
 //   ensureCurrentProgram, build, release, queryActiveUniforms, resetCache
 //
 // Beispiel:
 //
-//   Shader shader = Shader::fromFile("assets/shaders/mesh.vert");
+//   Shader shader = Shader::FromFile("assets/shaders/mesh.vert");
 //   shader.use();
 //   shader.setUniform("uMvp", mvp);
 //   shader.setTexture("uAlbedo", texture.id(), 0);
@@ -50,7 +50,7 @@
 //   options.includePaths = {"assets/shaders"};
 //   options.defines = {{"MAX_LICHTER", "8"}};
 //
-//   sgl::Shader shader = sgl::Shader::fromFile("assets/shaders/lit.glsl", options);
+//   sgl::Shader shader = sgl::Shader::FromFile("assets/shaders/lit.glsl", options);
 //   sgl::Shader::ScopedBind bound(shader);          // bindet und stellt danach wieder her
 //   shader.setUniform("uModel", modelMatrix);          // mat4
 //   shader.setUniform("uLightCount", 4);               // int
@@ -205,20 +205,20 @@ public:
     // ── Erzeugen ─────────────────────────────────────────────────────────────
     // Eine Datei; enthält sie mehrere Stufenabschnitte, werden alle verwendet,
     // sonst entscheidet die Endung (.vert/.frag/.geom/.tesc/.tese/.comp).
-    [[nodiscard]] static Shader fromFile(const std::filesystem::path& file,
+    [[nodiscard]] static Shader FromFile(const std::filesystem::path& file,
                            ShaderSourceOptions options = {});
     // Mehrere Dateien; jede liefert ihre Stufe über Endung bzw. Abschnitte.
-    [[nodiscard]] static Shader fromFiles(std::initializer_list<std::filesystem::path> files,
+    [[nodiscard]] static Shader FromFiles(std::initializer_list<std::filesystem::path> files,
                             ShaderSourceOptions options = {});
     // Quelltext als String, mehrere Stufen über "#pragma stage ..." möglich.
-    [[nodiscard]] static Shader fromSource(std::string_view source,
+    [[nodiscard]] static Shader FromSource(std::string_view source,
                              ShaderSourceOptions options = {});
     // Quelltext als String für genau eine Stufe.
-    [[nodiscard]] static Shader fromSource(ShaderStage stage,
+    [[nodiscard]] static Shader FromSource(ShaderStage stage,
                              std::string_view source,
                              ShaderSourceOptions options = {});
     // Fertig vorbereitete Stufen (Mehrfachstufen-Dateien, eigene Loader).
-    [[nodiscard]] static Shader fromSources(std::vector<StageSource> stages,
+    [[nodiscard]] static Shader FromSources(std::vector<StageSource> stages,
                               ShaderSourceOptions options = {});
 
     // Liest alle Stufen erneut ein (Hot-Reload). Schlägt der Neuaufbau fehl,
@@ -235,7 +235,7 @@ public:
     [[nodiscard]] const std::vector<UniformInfo>& activeUniforms() const noexcept { return m_uniforms; }
 
     void use() const;          // glUseProgram
-    static void unbind();      // glUseProgram(0)
+    static void Unbind();      // glUseProgram(0)
 
     // Bindet das Programm für die Lebenszeit des Objekts und stellt danach das
     // vorher aktive Programm wieder her (RAII).
@@ -325,7 +325,7 @@ public:
     // Einzelnes Array-Element: setUniform("uWeights", 3, 0.5f) -> "uWeights[3]"
     template <class T>
     void setUniform(std::string_view name, std::size_t index, const T& value) const {
-        const std::string indexed = indexedName(name, index);
+        const std::string indexed = IndexedName(name, index);
         setUniform(indexed, value);
     }
 
@@ -346,7 +346,7 @@ public:
     [[nodiscard]] std::size_t uniformCacheSize() const noexcept { return m_uniformCache.size(); }
 
 private:
-    static std::string indexedName(std::string_view name, std::size_t index);
+    static std::string IndexedName(std::string_view name, std::size_t index);
 
     // Bindet das Programm, falls es gerade nicht aktiv ist. glUniform* würde
     // sonst still auf das falsche Programm wirken (GL_INVALID_OPERATION).

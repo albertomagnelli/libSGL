@@ -8,32 +8,32 @@
 
 namespace sgl {
 
-std::expected<void, Error> init(const InitOptions& options) {
-    if (detail::isInitialized()) {
+std::expected<void, Error> Init(const InitOptions& options) {
+    if (detail::IsInitialized()) {
         return {};
     }
 
     Error error;
-    if (!detail::initPlatform(options, error)) {
+    if (!detail::InitPlatform(options, error)) {
         if (!error.isError()) {
-            error = detail::makeError(ErrorCode::PlatformError, "Initialisierung fehlgeschlagen.");
+            error = detail::MakeError(ErrorCode::PlatformError, "Initialisierung fehlgeschlagen.");
         }
         return std::unexpected(std::move(error));
     }
     return {};
 }
 
-void terminate() {
-    detail::terminatePlatform();
+void Terminate() {
+    detail::TerminatePlatform();
 }
 
-void initHint(InitHint hint, i64 value) {
-    if (detail::isInitialized()) {
-        reportError(ErrorCode::InvalidValue, "initHint muss vor sgl::init() aufgerufen werden.");
+void SetInitHint(InitHint hint, i64 value) {
+    if (detail::IsInitialized()) {
+        ReportError(ErrorCode::InvalidValue, "initHint muss vor sgl::Init() aufgerufen werden.");
         return;
     }
 
-    auto& hints = detail::getInitHints();
+    auto& hints = detail::GetInitHints();
     switch (hint) {
     case InitHint::Platform:
         hints.platform = static_cast<Platform>(value);
@@ -54,29 +54,29 @@ void initHint(InitHint hint, i64 value) {
         hints.anglePlatformType = static_cast<AnglePlatformType>(value);
         break;
     default:
-        reportError(ErrorCode::InvalidEnum, "Unbekannter Init-Hint.");
+        ReportError(ErrorCode::InvalidEnum, "Unbekannter Init-Hint.");
         break;
     }
 }
 
-void initHint(InitHint hint, bool value) {
-    initHint(hint, static_cast<i64>(value ? 1 : 0));
+void SetInitHint(InitHint hint, bool value) {
+    SetInitHint(hint, static_cast<i64>(value ? 1 : 0));
 }
 
-Version getVersion() {
+Version GetVersion() {
     return Version{0, 1, 0};
 }
 
-std::string getVersionString() {
+std::string GetVersionString() {
     return "sgl 0.1.0";
 }
 
-Platform getPlatform() {
-    auto* backend = detail::getBackend();
+Platform GetPlatform() {
+    auto* backend = detail::GetBackend();
     return backend ? backend->getPlatform() : Platform::Null;
 }
 
-bool isPlatformSupported(Platform platform) {
+bool IsPlatformSupported(Platform platform) {
     switch (platform) {
     case Platform::Any:
         return true;

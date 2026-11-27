@@ -10,10 +10,10 @@
 //
 // Beispiel:
 //
-//   Image img = ImageIO::load("pfad.png");
+//   Image img = ImageIO::Load("pfad.png");
 //   img.convertTo(ImageFormat::Rgba);
 //   Image half = img.scaled(0.5, Interpolation::Bilinear);
-//   ImageIO::save(img, "out.png");
+//   ImageIO::Save(img, "out.png");
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,8 +40,8 @@
 //
 // Beispiel:
 //
-//   sgl::Image image = sgl::ImageIO::load("assets/tex/dirt.png");
-//   sgl::ImageIO::save(image, "out/dirt_klein.png");
+//   sgl::Image image = sgl::ImageIO::Load("assets/tex/dirt.png");
+//   sgl::ImageIO::Save(image, "out/dirt_klein.png");
 //
 //   const sgl::Image klein   = image.scaled(256, 256, sgl::Interpolation::Bicubic);
 //   const sgl::Image gedreht = image.rotated(90);                 // exakt
@@ -220,22 +220,22 @@ private:
 class ImageIO {
 public:
     /// Lädt ein Bild aus einer Datei.
-    [[nodiscard]] static Image load(const std::filesystem::path& file,
+    [[nodiscard]] static Image Load(const std::filesystem::path& file,
                                     const LoadOptions& options = {});
     /// Dekodiert ein Bild aus einem Speicherpuffer.
-    [[nodiscard]] static Image loadFromMemory(std::span<const u8> data,
+    [[nodiscard]] static Image LoadFromMemory(std::span<const u8> data,
                                               const LoadOptions& options = {});
     /// Speichert ein Bild; Zielformat und Elternverzeichnisse werden abgeleitet
     /// bzw. angelegt.
-    static void save(const Image& image, const std::filesystem::path& file,
+    static void Save(const Image& image, const std::filesystem::path& file,
                      const SaveOptions& options = {});
     /// Kodiert ein Bild in einen Speicherpuffer.
-    [[nodiscard]] static std::vector<u8> encode(const Image& image, ImageFileFormat format,
+    [[nodiscard]] static std::vector<u8> Encode(const Image& image, ImageFileFormat format,
                                                 const SaveOptions& options = {});
     /// Wie encode(), nur als sprechender Name für das Kodieren in den Speicher.
-    [[nodiscard]] static std::vector<u8> saveToMemory(const Image& image, ImageFileFormat format,
+    [[nodiscard]] static std::vector<u8> SaveToMemory(const Image& image, ImageFileFormat format,
                                                       const SaveOptions& options = {}) {
-        return encode(image, format, options);
+        return Encode(image, format, options);
     }
 };
 

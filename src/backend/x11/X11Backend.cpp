@@ -21,20 +21,20 @@ namespace {
 
 State g_state;
 
-Atom intern(Display* display, const char* name) {
+Atom Intern(Display* display, const char* name) {
     return XInternAtom(display, name, False);
 }
 
-int ignoreXError(Display*, XErrorEvent*) {
+int IgnoreXError(Display*, XErrorEvent*) {
     return 0;
 }
 
-RROutput toOutput(const Monitor& monitor) {
-    return static_cast<RROutput>(reinterpret_cast<uintptr_t>(MonitorAccess::native(monitor)));
+RROutput ToOutput(const Monitor& monitor) {
+    return static_cast<RROutput>(reinterpret_cast<uintptr_t>(MonitorAccess::Native(monitor)));
 }
 
-Monitor makeMonitor(RROutput output) {
-    return MonitorAccess::make(reinterpret_cast<void*>(static_cast<uintptr_t>(output)), Platform::X11);
+Monitor MakeMonitor(RROutput output) {
+    return MonitorAccess::Make(reinterpret_cast<void*>(static_cast<uintptr_t>(output)), Platform::X11);
 }
 
 struct XrandrMonitor {
@@ -45,7 +45,7 @@ struct XrandrMonitor {
     int height = 0;
 };
 
-std::vector<XrandrMonitor> queryXrandrMonitors(Display* display, ::Window root) {
+std::vector<XrandrMonitor> QueryXrandrMonitors(Display* display, ::Window root) {
     std::vector<XrandrMonitor> result;
     int count = 0;
     XRRMonitorInfo* monitors = XRRGetMonitors(display, root, True, &count);
@@ -70,11 +70,11 @@ std::vector<XrandrMonitor> queryXrandrMonitors(Display* display, ::Window root) 
 
 } // namespace
 
-State& state() {
+State& GetX11State() {
     return g_state;
 }
 
-void rebuildMonitors(bool notify) {
+void RebuildMonitors(bool notify) {
     State& s = g_state;
     if (!s.display || !s.hasXrandr) {
         return;
@@ -82,20 +82,20 @@ void rebuildMonitors(bool notify) {
 
     std::vector<Monitor> newMonitors;
     std::vector<void*> newHandles;
-    for (const auto& entry : queryXrandrMonitors(s.display, s.root)) {
-        newMonitors.push_back(makeMonitor(entry.output));
+    for (const auto& entry : QueryXrandrMonitors(s.display, s.root)) {
+        newMonitors.push_back(MakeMonitor(entry.output));
         newHandles.push_back(reinterpret_cast<void*>(static_cast<uintptr_t>(entry.output)));
     }
 
     if (notify && s.monitorCallback) {
         for (auto* handle : s.monitorHandles) {
             if (std::find(newHandles.begin(), newHandles.end(), handle) == newHandles.end()) {
-                s.monitorCallback(makeMonitor(static_cast<RROutput>(reinterpret_cast<uintptr_t>(handle))), false);
+                s.monitorCallback(MakeMonitor(static_cast<RROutput>(reinterpret_cast<uintptr_t>(handle))), false);
             }
         }
         for (auto* handle : newHandles) {
             if (std::find(s.monitorHandles.begin(), s.monitorHandles.end(), handle) == s.monitorHandles.end()) {
-                s.monitorCallback(makeMonitor(static_cast<RROutput>(reinterpret_cast<uintptr_t>(handle))), true);
+                s.monitorCallback(MakeMonitor(static_cast<RROutput>(reinterpret_cast<uintptr_t>(handle))), true);
             }
         }
     }
@@ -104,7 +104,7 @@ void rebuildMonitors(bool notify) {
     s.monitorHandles = std::move(newHandles);
 }
 
-void processPendingEvents();
+void ProcessPendingEvents();
 
 class X11Backend final : public Backend {
 public:
@@ -116,16 +116,16 @@ public:
     std::unique_ptr<CursorBackend> createCursor(const WindowIcon& image, ivec2 hotspot, Error& error) override;
     std::unique_ptr<CursorBackend> createStandardCursor(StandardCursor shape, Error& error) override;
 
-    [[nodiscard]] std::vector<Monitor> getMonitors() override { return state().monitors; }
+    [[nodiscard]] std::vector<Monitor> getMonitors() override { return GetX11State().monitors; }
     [[nodiscard]] Monitor getPrimaryMonitor() override {
-        if (state().hasXrandr && state().display) {
-            const RROutput primary = XRRGetOutputPrimary(state().display, state().root);
+        if (GetX11State().hasXrandr && GetX11State().display) {
+            const RROutput primary = XRRGetOutputPrimary(GetX11State().display, GetX11State().root);
             if (primary != 0) {
-                return makeMonitor(primary);
+                return MakeMonitor(primary);
             }
         }
-        if (!state().monitors.empty()) {
-            return state().monitors.front();
+        if (!GetX11State().monitors.empty()) {
+            return GetX11State().monitors.front();
         }
         return {};
     }
@@ -135,51 +135,51 @@ public:
     void postEmptyEvent() override;
 
     [[nodiscard]] bool isJoystickPresent(i32 jid) override {
-        return linuxJoysticks().isPresent(jid);
+        return GetLinuxJoysticks().isPresent(jid);
     }
     [[nodiscard]] std::string getJoystickName(i32 jid) override {
-        return linuxJoysticks().getName(jid);
+        return GetLinuxJoysticks().getName(jid);
     }
     [[nodiscard]] std::string getJoystickGUID(i32 jid) override {
-        return linuxJoysticks().getGuid(jid);
+        return GetLinuxJoysticks().getGuid(jid);
     }
     [[nodiscard]] std::span<const f32> getJoystickAxes(i32 jid) override {
-        return linuxJoysticks().getAxes(jid);
+        return GetLinuxJoysticks().getAxes(jid);
     }
     [[nodiscard]] std::span<const u8> getJoystickButtons(i32 jid) override {
-        return linuxJoysticks().getButtons(jid);
+        return GetLinuxJoysticks().getButtons(jid);
     }
     [[nodiscard]] std::span<const JoystickHat> getJoystickHats(i32 jid) override {
-        return linuxJoysticks().getHats(jid);
+        return GetLinuxJoysticks().getHats(jid);
     }
     void setJoystickUserPointer(i32 jid, void* pointer) override {
-        linuxJoysticks().setUserPointer(jid, pointer);
+        GetLinuxJoysticks().setUserPointer(jid, pointer);
     }
     [[nodiscard]] void* getJoystickUserPointer(i32 jid) override {
-        return linuxJoysticks().getUserPointer(jid);
+        return GetLinuxJoysticks().getUserPointer(jid);
     }
-    [[nodiscard]] bool isGamepad(i32 jid) override { return linuxJoysticks().isGamepad(jid); }
+    [[nodiscard]] bool isGamepad(i32 jid) override { return GetLinuxJoysticks().isGamepad(jid); }
     [[nodiscard]] std::string getGamepadName(i32 jid) override {
-        return linuxJoysticks().getGamepadName(jid);
+        return GetLinuxJoysticks().getGamepadName(jid);
     }
     [[nodiscard]] std::optional<GamepadState> getGamepadState(i32 jid) override {
-        return linuxJoysticks().getGamepadState(jid);
+        return GetLinuxJoysticks().getGamepadState(jid);
     }
     bool updateGamepadMappings(std::string_view mappings) override {
-        return linuxJoysticks().updateGamepadMappings(mappings);
+        return GetLinuxJoysticks().updateGamepadMappings(mappings);
     }
     void setJoystickCallback(std::function<void(i32, bool)> callback) override {
-        linuxJoysticks().setCallback(std::move(callback));
+        GetLinuxJoysticks().setCallback(std::move(callback));
     }
 
     void setMonitorCallback(MonitorCallback callback) override {
-        state().monitorCallback = std::move(callback);
+        GetX11State().monitorCallback = std::move(callback);
     }
 
     [[nodiscard]] bool isMonitorConnected(const Monitor& monitor) override {
-        auto* handle = MonitorAccess::native(monitor);
-        return std::find(state().monitorHandles.begin(), state().monitorHandles.end(), handle) !=
-               state().monitorHandles.end();
+        auto* handle = MonitorAccess::Native(monitor);
+        return std::find(GetX11State().monitorHandles.begin(), GetX11State().monitorHandles.end(), handle) !=
+               GetX11State().monitorHandles.end();
     }
 
     [[nodiscard]] ivec2 getMonitorPosition(const Monitor& monitor) override {
@@ -198,7 +198,7 @@ public:
         unsigned long count = 0;
         unsigned long remaining = 0;
         unsigned char* data = nullptr;
-        if (XGetWindowProperty(state().display, state().root, state().netWorkarea, 0, 4, False,
+        if (XGetWindowProperty(GetX11State().display, GetX11State().root, GetX11State().netWorkarea, 0, 4, False,
                                XA_CARDINAL, &actualType, &actualFormat, &count, &remaining,
                                &data) == Success &&
             data && count >= 4) {
@@ -219,9 +219,9 @@ public:
     }
 
     [[nodiscard]] ivec2 getMonitorPhysicalSize(const Monitor& monitor) override {
-        Display* display = state().display;
+        Display* display = GetX11State().display;
         XRRScreenResources* resources = screenResources();
-        XRROutputInfo* info = resources ? XRRGetOutputInfo(display, resources, toOutput(monitor)) : nullptr;
+        XRROutputInfo* info = resources ? XRRGetOutputInfo(display, resources, ToOutput(monitor)) : nullptr;
         ivec2 size(0, 0);
         if (info) {
             size = ivec2(static_cast<i32>(info->mm_width), static_cast<i32>(info->mm_height));
@@ -238,9 +238,9 @@ public:
     }
 
     [[nodiscard]] std::string getMonitorName(const Monitor& monitor) override {
-        Display* display = state().display;
+        Display* display = GetX11State().display;
         XRRScreenResources* resources = screenResources();
-        XRROutputInfo* info = resources ? XRRGetOutputInfo(display, resources, toOutput(monitor)) : nullptr;
+        XRROutputInfo* info = resources ? XRRGetOutputInfo(display, resources, ToOutput(monitor)) : nullptr;
         std::string name;
         if (info) {
             if (info->name) {
@@ -288,9 +288,9 @@ public:
             return result;
         }
         XRRCrtcInfo* crtc = nullptr;
-        XRROutputInfo* output = XRRGetOutputInfo(state().display, resources, toOutput(monitor));
+        XRROutputInfo* output = XRRGetOutputInfo(GetX11State().display, resources, ToOutput(monitor));
         if (output && output->crtc != 0) {
-            crtc = XRRGetCrtcInfo(state().display, resources, output->crtc);
+            crtc = XRRGetCrtcInfo(GetX11State().display, resources, output->crtc);
         }
         if (crtc) {
             result.size = ivec2(static_cast<i32>(crtc->width), static_cast<i32>(crtc->height));
@@ -322,10 +322,10 @@ public:
 
     void setGamma(const Monitor& monitor, f32 gamma) override {
         if (gamma <= 0.0f) {
-            reportError(ErrorCode::InvalidValue, "Gamma muss groesser als 0 sein.");
+            ReportError(ErrorCode::InvalidValue, "Gamma muss groesser als 0 sein.");
             return;
         }
-        Display* display = state().display;
+        Display* display = GetX11State().display;
         RRCrtc crtcId = 0;
         XRRCrtcInfo* crtc = findCrtc(monitor, crtcId);
         if (!crtc) {
@@ -348,7 +348,7 @@ public:
 
     [[nodiscard]] GammaRamp getGammaRamp(const Monitor& monitor) override {
         GammaRamp result;
-        Display* display = state().display;
+        Display* display = GetX11State().display;
         RRCrtc crtcId = 0;
         XRRCrtcInfo* crtc = findCrtc(monitor, crtcId);
         if (!crtc) {
@@ -370,7 +370,7 @@ public:
     }
 
     void setGammaRamp(const Monitor& monitor, const GammaRamp& ramp) override {
-        Display* display = state().display;
+        Display* display = GetX11State().display;
         RRCrtc crtcId = 0;
         XRRCrtcInfo* crtc = findCrtc(monitor, crtcId);
         if (!crtc) {
@@ -394,8 +394,8 @@ public:
     [[nodiscard]] NativeHandle getMonitorNativeHandle(const Monitor& monitor) override {
         NativeHandle handle;
         handle.platform = NativePlatform::X11;
-        handle.display = state().display;
-        handle.window = MonitorAccess::native(monitor);
+        handle.display = GetX11State().display;
+        handle.window = MonitorAccess::Native(monitor);
         return handle;
     }
 
@@ -421,17 +421,17 @@ public:
 
 private:
     XrandrMonitor findMonitor(const Monitor& monitor) const {
-        const RROutput output = toOutput(monitor);
-        if (state().display) {
-            for (const auto& entry : queryXrandrMonitors(state().display, state().root)) {
+        const RROutput output = ToOutput(monitor);
+        if (GetX11State().display) {
+            for (const auto& entry : QueryXrandrMonitors(GetX11State().display, GetX11State().root)) {
                 if (entry.output == output) {
                     return entry;
                 }
             }
         }
         XrandrMonitor fallback;
-        if (!state().monitors.empty()) {
-            for (const auto& entry : queryXrandrMonitors(state().display, state().root)) {
+        if (!GetX11State().monitors.empty()) {
+            for (const auto& entry : QueryXrandrMonitors(GetX11State().display, GetX11State().root)) {
                 return entry;
             }
         }
@@ -439,7 +439,7 @@ private:
     }
 
     XRRScreenResources* screenResources() {
-        return XRRGetScreenResourcesCurrent(state().display, state().root);
+        return XRRGetScreenResourcesCurrent(GetX11State().display, GetX11State().root);
     }
 
     XRRCrtcInfo* findCrtc(const Monitor& monitor, RRCrtc& crtcId) {
@@ -447,11 +447,11 @@ private:
         if (!resources) {
             return nullptr;
         }
-        XRROutputInfo* output = XRRGetOutputInfo(state().display, resources, toOutput(monitor));
+        XRROutputInfo* output = XRRGetOutputInfo(GetX11State().display, resources, ToOutput(monitor));
         XRRCrtcInfo* crtc = nullptr;
         if (output && output->crtc != 0) {
             crtcId = output->crtc;
-            crtc = XRRGetCrtcInfo(state().display, resources, output->crtc);
+            crtc = XRRGetCrtcInfo(GetX11State().display, resources, output->crtc);
         }
         if (output) {
             XRRFreeOutputInfo(output);
@@ -473,14 +473,14 @@ bool X11Backend::init(const InitOptions&, Error& error) {
 
     s.display = XOpenDisplay(nullptr);
     if (!s.display) {
-        error = makeError(ErrorCode::PlatformUnavailable,
+        error = MakeError(ErrorCode::PlatformUnavailable,
                           "X11-Display konnte nicht geoeffnet werden.");
         return false;
     }
 
     s.screen = DefaultScreen(s.display);
     s.root = RootWindow(s.display, s.screen);
-    XSetErrorHandler(ignoreXError);
+    XSetErrorHandler(IgnoreXError);
 
     int eventBase = 0;
     int errorBase = 0;
@@ -513,41 +513,41 @@ bool X11Backend::init(const InitOptions&, Error& error) {
         }
     }
 
-    s.wmProtocols = intern(s.display, "WM_PROTOCOLS");
-    s.wmDeleteWindow = intern(s.display, "WM_DELETE_WINDOW");
-    s.wmTakeFocus = intern(s.display, "WM_TAKE_FOCUS");
-    s.netWmName = intern(s.display, "_NET_WM_NAME");
-    s.netWmIcon = intern(s.display, "_NET_WM_ICON");
-    s.netWmPid = intern(s.display, "_NET_WM_PID");
-    s.netWmState = intern(s.display, "_NET_WM_STATE");
-    s.netWmStateFullscreen = intern(s.display, "_NET_WM_STATE_FULLSCREEN");
-    s.netWmStateMaximizedVert = intern(s.display, "_NET_WM_STATE_MAXIMIZED_VERT");
-    s.netWmStateMaximizedHorz = intern(s.display, "_NET_WM_STATE_MAXIMIZED_HORZ");
-    s.netWmStateHidden = intern(s.display, "_NET_WM_STATE_HIDDEN");
-    s.netWmStateFocused = intern(s.display, "_NET_WM_STATE_FOCUSED");
-    s.netWmStateAbove = intern(s.display, "_NET_WM_STATE_ABOVE");
-    s.netWmStateDemandsAttention = intern(s.display, "_NET_WM_STATE_DEMANDS_ATTENTION");
-    s.netWmWindowOpacity = intern(s.display, "_NET_WM_WINDOW_OPACITY");
-    s.netFrameExtents = intern(s.display, "_NET_FRAME_EXTENTS");
-    s.netWorkarea = intern(s.display, "_NET_WORKAREA");
-    s.motifWmHints = intern(s.display, "_MOTIF_WM_HINTS");
-    s.utf8String = intern(s.display, "UTF8_STRING");
-    s.clipboard = intern(s.display, "CLIPBOARD");
-    s.targets = intern(s.display, "TARGETS");
-    s.incr = intern(s.display, "INCR");
-    s.atomPair = intern(s.display, "ATOM_PAIR");
-    s.deleteAtom = intern(s.display, "DELETE");
-    s.sglSelection = intern(s.display, "SGL_SELECTION");
-    s.textUriList = intern(s.display, "text/uri-list");
-    s.xdndAware = intern(s.display, "XdndAware");
-    s.xdndEnter = intern(s.display, "XdndEnter");
-    s.xdndPosition = intern(s.display, "XdndPosition");
-    s.xdndStatus = intern(s.display, "XdndStatus");
-    s.xdndLeave = intern(s.display, "XdndLeave");
-    s.xdndDrop = intern(s.display, "XdndDrop");
-    s.xdndFinished = intern(s.display, "XdndFinished");
-    s.xdndSelection = intern(s.display, "XdndSelection");
-    s.xdndTypeList = intern(s.display, "XdndTypeList");
+    s.wmProtocols = Intern(s.display, "WM_PROTOCOLS");
+    s.wmDeleteWindow = Intern(s.display, "WM_DELETE_WINDOW");
+    s.wmTakeFocus = Intern(s.display, "WM_TAKE_FOCUS");
+    s.netWmName = Intern(s.display, "_NET_WM_NAME");
+    s.netWmIcon = Intern(s.display, "_NET_WM_ICON");
+    s.netWmPid = Intern(s.display, "_NET_WM_PID");
+    s.netWmState = Intern(s.display, "_NET_WM_STATE");
+    s.netWmStateFullscreen = Intern(s.display, "_NET_WM_STATE_FULLSCREEN");
+    s.netWmStateMaximizedVert = Intern(s.display, "_NET_WM_STATE_MAXIMIZED_VERT");
+    s.netWmStateMaximizedHorz = Intern(s.display, "_NET_WM_STATE_MAXIMIZED_HORZ");
+    s.netWmStateHidden = Intern(s.display, "_NET_WM_STATE_HIDDEN");
+    s.netWmStateFocused = Intern(s.display, "_NET_WM_STATE_FOCUSED");
+    s.netWmStateAbove = Intern(s.display, "_NET_WM_STATE_ABOVE");
+    s.netWmStateDemandsAttention = Intern(s.display, "_NET_WM_STATE_DEMANDS_ATTENTION");
+    s.netWmWindowOpacity = Intern(s.display, "_NET_WM_WINDOW_OPACITY");
+    s.netFrameExtents = Intern(s.display, "_NET_FRAME_EXTENTS");
+    s.netWorkarea = Intern(s.display, "_NET_WORKAREA");
+    s.motifWmHints = Intern(s.display, "_MOTIF_WM_HINTS");
+    s.utf8String = Intern(s.display, "UTF8_STRING");
+    s.clipboard = Intern(s.display, "CLIPBOARD");
+    s.targets = Intern(s.display, "TARGETS");
+    s.incr = Intern(s.display, "INCR");
+    s.atomPair = Intern(s.display, "ATOM_PAIR");
+    s.deleteAtom = Intern(s.display, "DELETE");
+    s.sglSelection = Intern(s.display, "SGL_SELECTION");
+    s.textUriList = Intern(s.display, "text/uri-list");
+    s.xdndAware = Intern(s.display, "XdndAware");
+    s.xdndEnter = Intern(s.display, "XdndEnter");
+    s.xdndPosition = Intern(s.display, "XdndPosition");
+    s.xdndStatus = Intern(s.display, "XdndStatus");
+    s.xdndLeave = Intern(s.display, "XdndLeave");
+    s.xdndDrop = Intern(s.display, "XdndDrop");
+    s.xdndFinished = Intern(s.display, "XdndFinished");
+    s.xdndSelection = Intern(s.display, "XdndSelection");
+    s.xdndTypeList = Intern(s.display, "XdndTypeList");
 
     Bool supported = False;
     XkbSetDetectableAutoRepeat(s.display, True, &supported);
@@ -586,7 +586,7 @@ bool X11Backend::init(const InitOptions&, Error& error) {
     }
 
     s.initialized = true;
-    rebuildMonitors(false);
+    RebuildMonitors(false);
     return true;
 }
 
@@ -641,17 +641,17 @@ std::unique_ptr<WindowBackend> X11Backend::createWindow(const WindowHints& hints
 std::unique_ptr<CursorBackend> X11Backend::createCursor(const WindowIcon& image, ivec2 hotspot,
                                                             Error& error) {
     if (image.size.x <= 0 || image.size.y <= 0) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
         return nullptr;
     }
     const auto pixelCount = static_cast<std::size_t>(image.size.x) *
                             static_cast<std::size_t>(image.size.y);
     if (image.rgba8.size() < pixelCount * 4) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
         return nullptr;
     }
-    if (!state().hasXcursor) {
-        error = makeError(ErrorCode::FeatureUnavailable,
+    if (!GetX11State().hasXcursor) {
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "Xcursor wird von diesem X-Server nicht unterstuetzt.");
         return nullptr;
     }
@@ -659,7 +659,7 @@ std::unique_ptr<CursorBackend> X11Backend::createCursor(const WindowIcon& image,
     XcursorImage* cursorImage =
         XcursorImageCreate(static_cast<int>(image.size.x), static_cast<int>(image.size.y));
     if (!cursorImage) {
-        error = makeError(ErrorCode::OutOfMemory, "Cursor-Bild konnte nicht angelegt werden.");
+        error = MakeError(ErrorCode::OutOfMemory, "Cursor-Bild konnte nicht angelegt werden.");
         return nullptr;
     }
     cursorImage->xhot = static_cast<XcursorDim>(hotspot.x);
@@ -676,10 +676,10 @@ std::unique_ptr<CursorBackend> X11Backend::createCursor(const WindowIcon& image,
                                  static_cast<XcursorPixel>(b);
     }
 
-    const ::Cursor cursor = XcursorImageLoadCursor(state().display, cursorImage);
+    const ::Cursor cursor = XcursorImageLoadCursor(GetX11State().display, cursorImage);
     XcursorImageDestroy(cursorImage);
     if (cursor == 0) {
-        error = makeError(ErrorCode::PlatformError, "Cursor konnte nicht geladen werden.");
+        error = MakeError(ErrorCode::PlatformError, "Cursor konnte nicht geladen werden.");
         return nullptr;
     }
     return std::make_unique<X11CursorBackend>(cursor, true);
@@ -696,22 +696,22 @@ std::unique_ptr<CursorBackend> X11Backend::createStandardCursor(StandardCursor s
     case StandardCursor::HResize: glyph = XC_sb_h_double_arrow; break;
     case StandardCursor::VResize: glyph = XC_sb_v_double_arrow; break;
     }
-    const ::Cursor cursor = XCreateFontCursor(state().display, glyph);
+    const ::Cursor cursor = XCreateFontCursor(GetX11State().display, glyph);
     if (cursor == 0) {
-        error = makeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht erstellt werden.");
         return nullptr;
     }
     return std::make_unique<X11CursorBackend>(cursor, true);
 }
 
 void X11Backend::pollEvents() {
-    processPendingEvents();
-    linuxJoysticks().poll();
+    ProcessPendingEvents();
+    GetLinuxJoysticks().poll();
 }
 
 void X11Backend::waitEvents(f64 timeout) {
     State& s = g_state;
-    processPendingEvents();
+    ProcessPendingEvents();
     XFlush(s.display);
 
     if (timeout == 0.0) {
@@ -765,8 +765,8 @@ void X11Backend::waitEvents(f64 timeout) {
         }
     }
 
-    processPendingEvents();
-    linuxJoysticks().poll();
+    ProcessPendingEvents();
+    GetLinuxJoysticks().poll();
 }
 
 void X11Backend::postEmptyEvent() {
@@ -778,7 +778,7 @@ void X11Backend::postEmptyEvent() {
     XFlush(s.display);
 }
 
-void processPendingEvents() {
+void ProcessPendingEvents() {
     State& s = g_state;
     if (!s.display) {
         return;
@@ -802,7 +802,7 @@ void processPendingEvents() {
             (event.type == s.rrEventBase + RRScreenChangeNotify ||
              event.type == s.rrEventBase + RRNotify)) {
             XRRUpdateConfiguration(&event);
-            rebuildMonitors(true);
+            RebuildMonitors(true);
             continue;
         }
 
@@ -831,27 +831,27 @@ void processPendingEvents() {
     }
 }
 
-void registerWindow(X11WindowBackend* window, ::Window handle) {
+void RegisterWindow(X11WindowBackend* window, ::Window handle) {
     if (g_backendImpl) {
         g_backendImpl->registerWindow(handle, window);
     }
 }
 
-void unregisterWindow(::Window handle) {
+void UnregisterWindow(::Window handle) {
     if (g_backendImpl) {
         g_backendImpl->unregisterWindow(handle);
     }
 }
 
-X11WindowBackend* findWindow(::Window handle) {
+X11WindowBackend* FindWindow(::Window handle) {
     return g_backendImpl ? g_backendImpl->findWindow(handle) : nullptr;
 }
 
-X11WindowBackend* focusedWindow() {
+X11WindowBackend* FocusedWindow() {
     return g_backendImpl ? g_backendImpl->focusedWindow() : nullptr;
 }
 
-std::unique_ptr<Backend> createX11Backend(Error& error) {
+std::unique_ptr<Backend> CreateX11Backend(Error& error) {
     auto backend = std::make_unique<X11Backend>();
     g_backendImpl = backend.get();
     (void)error;
@@ -862,8 +862,8 @@ std::unique_ptr<Backend> createX11Backend(Error& error) {
 
 namespace sgl::detail {
 
-std::unique_ptr<Backend> createX11Backend(Error& error) {
-    return x11::createX11Backend(error);
+std::unique_ptr<Backend> CreateX11Backend(Error& error) {
+    return x11::CreateX11Backend(error);
 }
 
 } // namespace sgl::detail

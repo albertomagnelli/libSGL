@@ -5,79 +5,79 @@
 namespace sgl {
 namespace {
 
-detail::Backend* requireBackend() {
-    auto* backend = detail::getBackend();
+detail::Backend* RequireBackend() {
+    auto* backend = detail::GetBackend();
     if (!backend) {
-        reportError(ErrorCode::NotInitialized, "sgl ist nicht initialisiert.");
+        ReportError(ErrorCode::NotInitialized, "sgl ist nicht initialisiert.");
     }
     return backend;
 }
 
 } // namespace
 
-bool isJoystickPresent(i32 jid) {
-    auto* backend = requireBackend();
+bool IsJoystickPresent(i32 jid) {
+    auto* backend = RequireBackend();
     return backend && backend->isJoystickPresent(jid);
 }
 
-std::string getJoystickName(i32 jid) {
-    auto* backend = requireBackend();
+std::string GetJoystickName(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getJoystickName(jid) : std::string{};
 }
 
-std::string getJoystickGUID(i32 jid) {
-    auto* backend = requireBackend();
+std::string GetJoystickGuid(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getJoystickGUID(jid) : std::string{};
 }
 
-std::span<const f32> getJoystickAxes(i32 jid) {
-    auto* backend = requireBackend();
+std::span<const f32> GetJoystickAxes(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getJoystickAxes(jid) : std::span<const f32>{};
 }
 
-std::span<const u8> getJoystickButtons(i32 jid) {
-    auto* backend = requireBackend();
+std::span<const u8> GetJoystickButtons(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getJoystickButtons(jid) : std::span<const u8>{};
 }
 
-std::span<const JoystickHat> getJoystickHats(i32 jid) {
-    auto* backend = requireBackend();
+std::span<const JoystickHat> GetJoystickHats(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getJoystickHats(jid) : std::span<const JoystickHat>{};
 }
 
-void setJoystickUserPointer(i32 jid, void* pointer) {
-    if (auto* backend = requireBackend()) {
+void SetJoystickUserPointer(i32 jid, void* pointer) {
+    if (auto* backend = RequireBackend()) {
         backend->setJoystickUserPointer(jid, pointer);
     }
 }
 
-void* getJoystickUserPointer(i32 jid) {
-    auto* backend = requireBackend();
+void* GetJoystickUserPointer(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getJoystickUserPointer(jid) : nullptr;
 }
 
-bool isGamepad(i32 jid) {
-    auto* backend = requireBackend();
+bool IsGamepad(i32 jid) {
+    auto* backend = RequireBackend();
     return backend && backend->isGamepad(jid);
 }
 
-std::string getGamepadName(i32 jid) {
-    auto* backend = requireBackend();
+std::string GetGamepadName(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getGamepadName(jid) : std::string{};
 }
 
-std::optional<GamepadState> getGamepadState(i32 jid) {
-    auto* backend = requireBackend();
+std::optional<GamepadState> GetGamepadState(i32 jid) {
+    auto* backend = RequireBackend();
     return backend ? backend->getGamepadState(jid) : std::nullopt;
 }
 
-bool updateGamepadMappings(std::string_view mappings) {
-    auto* backend = requireBackend();
+bool UpdateGamepadMappings(std::string_view mappings) {
+    auto* backend = RequireBackend();
     return backend && backend->updateGamepadMappings(mappings);
 }
 
-void setJoystickCallback(std::function<void(i32, bool)> callback) {
-    if (auto* backend = requireBackend()) {
+void SetJoystickCallback(std::function<void(i32, bool)> callback) {
+    if (auto* backend = RequireBackend()) {
         backend->setJoystickCallback(std::move(callback));
     }
 }

@@ -24,22 +24,22 @@ WaylandState g_state;
 extern const wl_pointer_listener pointerListener;
 extern const wl_keyboard_listener keyboardListener;
 
-Monitor makeMonitor(WaylandOutput* output) {
-    return MonitorAccess::make(output, Platform::Wayland);
+Monitor MakeMonitor(WaylandOutput* output) {
+    return MonitorAccess::Make(output, Platform::Wayland);
 }
 
-void outputGeometry(void*, wl_output* output, int32_t x, int32_t y, int32_t physicalWidth,
+void OutputGeometry(void*, wl_output* output, int32_t x, int32_t y, int32_t physicalWidth,
                     int32_t physicalHeight, int32_t, const char*, const char*, int32_t transform) {
-    if (auto* entry = findOutput(output)) {
+    if (auto* entry = FindOutput(output)) {
         entry->position = ivec2(x, y);
         entry->physicalSize = ivec2(physicalWidth, physicalHeight);
         entry->transform = transform;
     }
 }
 
-void outputMode(void*, wl_output* output, uint32_t flags, int32_t width, int32_t height,
+void OutputMode(void*, wl_output* output, uint32_t flags, int32_t width, int32_t height,
                 int32_t refresh) {
-    if (auto* entry = findOutput(output)) {
+    if (auto* entry = FindOutput(output)) {
         if ((flags & WL_OUTPUT_MODE_CURRENT) != 0 || !entry->hasMode) {
             entry->logicalSize = ivec2(width, height);
             entry->refreshRate = static_cast<i32>(refresh / 1000);
@@ -48,31 +48,31 @@ void outputMode(void*, wl_output* output, uint32_t flags, int32_t width, int32_t
     }
 }
 
-void outputDone(void*, wl_output*) {}
+void OutputDone(void*, wl_output*) {}
 
-void outputScale(void*, wl_output* output, int32_t factor) {
-    if (auto* entry = findOutput(output)) {
+void OutputScale(void*, wl_output* output, int32_t factor) {
+    if (auto* entry = FindOutput(output)) {
         entry->scale = std::max(factor, 1);
     }
 }
 
-void outputName(void*, wl_output* output, const char* name) {
-    if (auto* entry = findOutput(output)) {
+void OutputName(void*, wl_output* output, const char* name) {
+    if (auto* entry = FindOutput(output)) {
         entry->name = name ? name : "";
     }
 }
 
-void outputDescription(void*, wl_output* output, const char* description) {
-    if (auto* entry = findOutput(output)) {
+void OutputDescription(void*, wl_output* output, const char* description) {
+    if (auto* entry = FindOutput(output)) {
         entry->description = description ? description : "";
     }
 }
 
 const wl_output_listener outputListener = {
-    outputGeometry, outputMode, outputDone, outputScale, outputName, outputDescription,
+    OutputGeometry, OutputMode, OutputDone, OutputScale, OutputName, OutputDescription,
 };
 
-void xdgOutputLogicalPosition(void*, zxdg_output_v1* output, int32_t x, int32_t y) {
+void XdgOutputLogicalPosition(void*, zxdg_output_v1* output, int32_t x, int32_t y) {
     for (auto& entry : g_state.outputs) {
         if (entry->xdgOutput == output) {
             entry->position = ivec2(x, y);
@@ -81,7 +81,7 @@ void xdgOutputLogicalPosition(void*, zxdg_output_v1* output, int32_t x, int32_t 
     }
 }
 
-void xdgOutputLogicalSize(void*, zxdg_output_v1* output, int32_t width, int32_t height) {
+void XdgOutputLogicalSize(void*, zxdg_output_v1* output, int32_t width, int32_t height) {
     for (auto& entry : g_state.outputs) {
         if (entry->xdgOutput == output) {
             entry->logicalSize = ivec2(width, height);
@@ -90,9 +90,9 @@ void xdgOutputLogicalSize(void*, zxdg_output_v1* output, int32_t width, int32_t 
     }
 }
 
-void xdgOutputDone(void*, zxdg_output_v1*) {}
+void XdgOutputDone(void*, zxdg_output_v1*) {}
 
-void xdgOutputName(void*, zxdg_output_v1* output, const char* name) {
+void XdgOutputName(void*, zxdg_output_v1* output, const char* name) {
     for (auto& entry : g_state.outputs) {
         if (entry->xdgOutput == output) {
             entry->name = name ? name : "";
@@ -101,7 +101,7 @@ void xdgOutputName(void*, zxdg_output_v1* output, const char* name) {
     }
 }
 
-void xdgOutputDescription(void*, zxdg_output_v1* output, const char* description) {
+void XdgOutputDescription(void*, zxdg_output_v1* output, const char* description) {
     for (auto& entry : g_state.outputs) {
         if (entry->xdgOutput == output) {
             entry->description = description ? description : "";
@@ -111,11 +111,11 @@ void xdgOutputDescription(void*, zxdg_output_v1* output, const char* description
 }
 
 const zxdg_output_v1_listener xdgOutputListener = {
-    xdgOutputLogicalPosition, xdgOutputLogicalSize, xdgOutputDone, xdgOutputName,
-    xdgOutputDescription,
+    XdgOutputLogicalPosition, XdgOutputLogicalSize, XdgOutputDone, XdgOutputName,
+    XdgOutputDescription,
 };
 
-void seatCapabilities(void*, wl_seat* seat, uint32_t capabilities) {
+void SeatCapabilities(void*, wl_seat* seat, uint32_t capabilities) {
     WaylandState& s = g_state;
     if ((capabilities & WL_SEAT_CAPABILITY_POINTER) && !s.pointer) {
         s.pointer = wl_seat_get_pointer(seat);
@@ -130,17 +130,17 @@ void seatCapabilities(void*, wl_seat* seat, uint32_t capabilities) {
     }
 }
 
-void seatName(void*, wl_seat*, const char*) {}
+void SeatName(void*, wl_seat*, const char*) {}
 
-const wl_seat_listener seatListener = {seatCapabilities, seatName};
+const wl_seat_listener seatListener = {SeatCapabilities, SeatName};
 
-void wmBasePing(void*, xdg_wm_base* base, uint32_t serial) {
+void WmBasePing(void*, xdg_wm_base* base, uint32_t serial) {
     xdg_wm_base_pong(base, serial);
 }
 
-const xdg_wm_base_listener wmBaseListener = {wmBasePing};
+const xdg_wm_base_listener wmBaseListener = {WmBasePing};
 
-void registryGlobal(void*, wl_registry* registry, uint32_t name, const char* interface,
+void RegistryGlobal(void*, wl_registry* registry, uint32_t name, const char* interface,
                     uint32_t version) {
     WaylandState& s = g_state;
 
@@ -180,18 +180,18 @@ void registryGlobal(void*, wl_registry* registry, uint32_t name, const char* int
             zxdg_output_v1_add_listener(entry->xdgOutput, &xdgOutputListener, nullptr);
         }
         s.outputs.push_back(std::move(entry));
-        rebuildMonitors(true);
+        RebuildMonitors(true);
     }
 }
 
-void registryGlobalRemove(void*, wl_registry*, uint32_t name) {
+void RegistryGlobalRemove(void*, wl_registry*, uint32_t name) {
     WaylandState& s = g_state;
     for (auto it = s.outputs.begin(); it != s.outputs.end(); ++it) {
         if ((*it)->output &&
             wl_proxy_get_id(reinterpret_cast<wl_proxy*>((*it)->output)) == name) {
             WaylandOutput* removed = it->get();
             if (s.monitorCallback) {
-                s.monitorCallback(makeMonitor(removed), false);
+                s.monitorCallback(MakeMonitor(removed), false);
             }
             if (removed->xdgOutput) {
                 zxdg_output_v1_destroy(removed->xdgOutput);
@@ -205,19 +205,19 @@ void registryGlobalRemove(void*, wl_registry*, uint32_t name) {
     }
 }
 
-const wl_registry_listener registryListener = {registryGlobal, registryGlobalRemove};
+const wl_registry_listener registryListener = {RegistryGlobal, RegistryGlobalRemove};
 
-void dataOfferOffer(void*, wl_data_offer*, const char*) {}
-void dataOfferSourceActions(void*, wl_data_offer*, uint32_t) {}
-void dataOfferAction(void*, wl_data_offer*, uint32_t) {}
+void DataOfferOffer(void*, wl_data_offer*, const char*) {}
+void DataOfferSourceActions(void*, wl_data_offer*, uint32_t) {}
+void DataOfferAction(void*, wl_data_offer*, uint32_t) {}
 
 const wl_data_offer_listener dataOfferListener = {
-    dataOfferOffer, dataOfferSourceActions, dataOfferAction,
+    DataOfferOffer, DataOfferSourceActions, DataOfferAction,
 };
 
-void dataSourceTarget(void*, wl_data_source*, const char*) {}
+void DataSourceTarget(void*, wl_data_source*, const char*) {}
 
-void dataSourceSend(void*, wl_data_source*, const char* mimeType, int32_t fd) {
+void DataSourceSend(void*, wl_data_source*, const char* mimeType, int32_t fd) {
     WaylandState& s = g_state;
     (void)mimeType;
     const std::string& text = s.clipboardText;
@@ -235,22 +235,22 @@ void dataSourceSend(void*, wl_data_source*, const char* mimeType, int32_t fd) {
     ::close(fd);
 }
 
-void dataSourceCancelled(void*, wl_data_source* source) {
+void DataSourceCancelled(void*, wl_data_source* source) {
     if (g_state.clipboardSource == source) {
         g_state.clipboardSource = nullptr;
     }
 }
 
-void dataSourceDndDropPerformed(void*, wl_data_source*) {}
-void dataSourceDndFinished(void*, wl_data_source*) {}
-void dataSourceAction(void*, wl_data_source*, uint32_t) {}
+void DataSourceDndDropPerformed(void*, wl_data_source*) {}
+void DataSourceDndFinished(void*, wl_data_source*) {}
+void DataSourceAction(void*, wl_data_source*, uint32_t) {}
 
 const wl_data_source_listener dataSourceListener = {
-    dataSourceTarget, dataSourceSend, dataSourceCancelled, dataSourceDndDropPerformed,
-    dataSourceDndFinished, dataSourceAction,
+    DataSourceTarget, DataSourceSend, DataSourceCancelled, DataSourceDndDropPerformed,
+    DataSourceDndFinished, DataSourceAction,
 };
 
-void dataDeviceDataOffer(void*, wl_data_device*, wl_data_offer* offer) {
+void DataDeviceDataOffer(void*, wl_data_device*, wl_data_offer* offer) {
     if (g_state.clipboardOffer && g_state.clipboardOffer != offer) {
         wl_data_offer_destroy(g_state.clipboardOffer);
     }
@@ -260,7 +260,7 @@ void dataDeviceDataOffer(void*, wl_data_device*, wl_data_offer* offer) {
     }
 }
 
-void dataDeviceEnter(void*, wl_data_device*, uint32_t, wl_surface*, wl_fixed_t, wl_fixed_t,
+void DataDeviceEnter(void*, wl_data_device*, uint32_t, wl_surface*, wl_fixed_t, wl_fixed_t,
                      wl_data_offer* offer) {
     if (g_state.dropOffer) {
         wl_data_offer_destroy(g_state.dropOffer);
@@ -272,16 +272,16 @@ void dataDeviceEnter(void*, wl_data_device*, uint32_t, wl_surface*, wl_fixed_t, 
     }
 }
 
-void dataDeviceLeave(void*, wl_data_device*) {
+void DataDeviceLeave(void*, wl_data_device*) {
     if (g_state.dropOffer) {
         wl_data_offer_destroy(g_state.dropOffer);
         g_state.dropOffer = nullptr;
     }
 }
 
-void dataDeviceMotion(void*, wl_data_device*, uint32_t, wl_fixed_t, wl_fixed_t) {}
+void DataDeviceMotion(void*, wl_data_device*, uint32_t, wl_fixed_t, wl_fixed_t) {}
 
-void dataDeviceDrop(void*, wl_data_device*) {
+void DataDeviceDrop(void*, wl_data_device*) {
     WaylandState& s = g_state;
     if (!s.dropOffer || !s.pointerFocus) {
         return;
@@ -342,7 +342,7 @@ void dataDeviceDrop(void*, wl_data_device*) {
     s.dropOffer = nullptr;
 }
 
-void dataDeviceSelection(void*, wl_data_device*, wl_data_offer* offer) {
+void DataDeviceSelection(void*, wl_data_device*, wl_data_offer* offer) {
     if (g_state.clipboardOffer && g_state.clipboardOffer != offer) {
         wl_data_offer_destroy(g_state.clipboardOffer);
     }
@@ -353,16 +353,16 @@ void dataDeviceSelection(void*, wl_data_device*, wl_data_offer* offer) {
 }
 
 const wl_data_device_listener dataDeviceListener = {
-    dataDeviceDataOffer, dataDeviceEnter, dataDeviceLeave, dataDeviceMotion, dataDeviceDrop,
-    dataDeviceSelection,
+    DataDeviceDataOffer, DataDeviceEnter, DataDeviceLeave, DataDeviceMotion, DataDeviceDrop,
+    DataDeviceSelection,
 };
 
-void pointerEnter(void*, wl_pointer*, uint32_t serial, wl_surface* surface, wl_fixed_t x,
+void PointerEnter(void*, wl_pointer*, uint32_t serial, wl_surface* surface, wl_fixed_t x,
                   wl_fixed_t y) {
     WaylandState& s = g_state;
     s.pointerEnterSerial = serial;
     s.lastSerial = serial;
-    s.pointerFocus = windowForSurface(surface);
+    s.pointerFocus = WindowForSurface(surface);
     if (s.pointerFocus) {
         s.pointerFocus->handlePointerEnter(serial, surface,
                                            vec2(static_cast<f32>(wl_fixed_to_double(x)),
@@ -371,7 +371,7 @@ void pointerEnter(void*, wl_pointer*, uint32_t serial, wl_surface* surface, wl_f
     }
 }
 
-void pointerLeave(void*, wl_pointer*, uint32_t serial, wl_surface*) {
+void PointerLeave(void*, wl_pointer*, uint32_t serial, wl_surface*) {
     WaylandState& s = g_state;
     s.lastSerial = serial;
     if (s.pointerFocus) {
@@ -380,7 +380,7 @@ void pointerLeave(void*, wl_pointer*, uint32_t serial, wl_surface*) {
     }
 }
 
-void pointerMotion(void*, wl_pointer*, uint32_t, wl_fixed_t x, wl_fixed_t y) {
+void PointerMotion(void*, wl_pointer*, uint32_t, wl_fixed_t x, wl_fixed_t y) {
     if (g_state.pointerFocus) {
         g_state.pointerFocus->handlePointerMotion(
             vec2(static_cast<f32>(wl_fixed_to_double(x)),
@@ -388,7 +388,7 @@ void pointerMotion(void*, wl_pointer*, uint32_t, wl_fixed_t x, wl_fixed_t y) {
     }
 }
 
-void pointerButton(void*, wl_pointer*, uint32_t serial, uint32_t, uint32_t button,
+void PointerButton(void*, wl_pointer*, uint32_t serial, uint32_t, uint32_t button,
                    uint32_t state) {
     g_state.lastSerial = serial;
     if (g_state.pointerFocus) {
@@ -397,7 +397,7 @@ void pointerButton(void*, wl_pointer*, uint32_t serial, uint32_t, uint32_t butto
     }
 }
 
-void pointerAxis(void*, wl_pointer*, uint32_t, uint32_t axis, wl_fixed_t value) {
+void PointerAxis(void*, wl_pointer*, uint32_t, uint32_t axis, wl_fixed_t value) {
     if (!g_state.pointerFocus) {
         return;
     }
@@ -409,20 +409,20 @@ void pointerAxis(void*, wl_pointer*, uint32_t, uint32_t axis, wl_fixed_t value) 
     }
 }
 
-void pointerFrame(void*, wl_pointer*) {}
-void pointerAxisSource(void*, wl_pointer*, uint32_t) {}
-void pointerAxisStop(void*, wl_pointer*, uint32_t, uint32_t) {}
-void pointerAxisDiscrete(void*, wl_pointer*, uint32_t, int32_t) {}
-void pointerAxisValue120(void*, wl_pointer*, uint32_t, int32_t) {}
-void pointerAxisRelativeDirection(void*, wl_pointer*, uint32_t, uint32_t) {}
+void PointerFrame(void*, wl_pointer*) {}
+void PointerAxisSource(void*, wl_pointer*, uint32_t) {}
+void PointerAxisStop(void*, wl_pointer*, uint32_t, uint32_t) {}
+void PointerAxisDiscrete(void*, wl_pointer*, uint32_t, int32_t) {}
+void PointerAxisValue120(void*, wl_pointer*, uint32_t, int32_t) {}
+void PointerAxisRelativeDirection(void*, wl_pointer*, uint32_t, uint32_t) {}
 
 extern const wl_pointer_listener pointerListener = {
-    pointerEnter, pointerLeave, pointerMotion, pointerButton, pointerAxis, pointerFrame,
-    pointerAxisSource, pointerAxisStop, pointerAxisDiscrete, pointerAxisValue120,
-    pointerAxisRelativeDirection,
+    PointerEnter, PointerLeave, PointerMotion, PointerButton, PointerAxis, PointerFrame,
+    PointerAxisSource, PointerAxisStop, PointerAxisDiscrete, PointerAxisValue120,
+    PointerAxisRelativeDirection,
 };
 
-void keyboardKeymap(void*, wl_keyboard*, uint32_t format, int32_t fd, uint32_t size) {
+void KeyboardKeymap(void*, wl_keyboard*, uint32_t format, int32_t fd, uint32_t size) {
     if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1) {
         ::close(fd);
         return;
@@ -435,16 +435,16 @@ void keyboardKeymap(void*, wl_keyboard*, uint32_t format, int32_t fd, uint32_t s
     ::close(fd);
 }
 
-void keyboardEnter(void*, wl_keyboard*, uint32_t serial, wl_surface* surface, wl_array* keys) {
+void KeyboardEnter(void*, wl_keyboard*, uint32_t serial, wl_surface* surface, wl_array* keys) {
     WaylandState& s = g_state;
     s.lastSerial = serial;
-    s.keyboardFocus = windowForSurface(surface);
+    s.keyboardFocus = WindowForSurface(surface);
     if (s.keyboardFocus) {
         s.keyboardFocus->handleKeyboardEnter(serial, keys);
     }
 }
 
-void keyboardLeave(void*, wl_keyboard*, uint32_t serial, wl_surface*) {
+void KeyboardLeave(void*, wl_keyboard*, uint32_t serial, wl_surface*) {
     WaylandState& s = g_state;
     s.lastSerial = serial;
     if (s.keyboardFocus) {
@@ -453,7 +453,7 @@ void keyboardLeave(void*, wl_keyboard*, uint32_t serial, wl_surface*) {
     }
 }
 
-void keyboardKey(void*, wl_keyboard*, uint32_t serial, uint32_t time, uint32_t key,
+void KeyboardKey(void*, wl_keyboard*, uint32_t serial, uint32_t time, uint32_t key,
                  uint32_t state) {
     g_state.lastSerial = serial;
     if (g_state.keyboardFocus) {
@@ -461,7 +461,7 @@ void keyboardKey(void*, wl_keyboard*, uint32_t serial, uint32_t time, uint32_t k
     }
 }
 
-void keyboardModifiers(void*, wl_keyboard*, uint32_t serial, uint32_t depressed,
+void KeyboardModifiers(void*, wl_keyboard*, uint32_t serial, uint32_t depressed,
                        uint32_t latched, uint32_t locked, uint32_t group) {
     g_state.lastSerial = serial;
     if (g_state.keyboardFocus) {
@@ -469,24 +469,24 @@ void keyboardModifiers(void*, wl_keyboard*, uint32_t serial, uint32_t depressed,
     }
 }
 
-void keyboardRepeatInfo(void*, wl_keyboard*, int32_t, int32_t) {}
+void KeyboardRepeatInfo(void*, wl_keyboard*, int32_t, int32_t) {}
 
 extern const wl_keyboard_listener keyboardListener = {
-    keyboardKeymap, keyboardEnter, keyboardLeave, keyboardKey, keyboardModifiers,
-    keyboardRepeatInfo,
+    KeyboardKeymap, KeyboardEnter, KeyboardLeave, KeyboardKey, KeyboardModifiers,
+    KeyboardRepeatInfo,
 };
 
-void decorationConfigure(void*, zxdg_toplevel_decoration_v1*, uint32_t) {}
+void DecorationConfigure(void*, zxdg_toplevel_decoration_v1*, uint32_t) {}
 
-const zxdg_toplevel_decoration_v1_listener decorationListener = {decorationConfigure};
+const zxdg_toplevel_decoration_v1_listener decorationListener = {DecorationConfigure};
 
 } // namespace
 
-WaylandState& state() {
+WaylandState& State() {
     return g_state;
 }
 
-WaylandOutput* findOutput(wl_output* output) {
+WaylandOutput* FindOutput(wl_output* output) {
     for (auto& candidate : g_state.outputs) {
         if (candidate->output == output) {
             return candidate.get();
@@ -495,25 +495,25 @@ WaylandOutput* findOutput(wl_output* output) {
     return nullptr;
 }
 
-WaylandWindowBackend* windowForSurface(wl_surface* surface) {
+WaylandWindowBackend* WindowForSurface(wl_surface* surface) {
     const auto it = g_state.windows.find(surface);
     return it == g_state.windows.end() ? nullptr : it->second;
 }
 
-const wl_data_source_listener* dataSourceListenerPtr() {
+const wl_data_source_listener* DataSourceListenerPtr() {
     return &dataSourceListener;
 }
 
-void rebuildMonitors(bool notify) {
+void RebuildMonitors(bool notify) {
     WaylandState& s = g_state;
     if (notify && s.monitorCallback) {
         for (const auto& output : s.outputs) {
-            s.monitorCallback(makeMonitor(output.get()), true);
+            s.monitorCallback(MakeMonitor(output.get()), true);
         }
     }
 }
 
-void dispatchEvents(bool block, f64 timeout) {
+void DispatchEvents(bool block, f64 timeout) {
     WaylandState& s = g_state;
     if (!s.display) {
         return;
@@ -569,81 +569,81 @@ public:
 
     [[nodiscard]] std::vector<Monitor> getMonitors() override {
         std::vector<Monitor> monitors;
-        monitors.reserve(state().outputs.size());
-        for (const auto& output : state().outputs) {
-            monitors.push_back(makeMonitor(output.get()));
+        monitors.reserve(State().outputs.size());
+        for (const auto& output : State().outputs) {
+            monitors.push_back(MakeMonitor(output.get()));
         }
         return monitors;
     }
 
     [[nodiscard]] Monitor getPrimaryMonitor() override {
-        if (!state().outputs.empty()) {
-            return makeMonitor(state().outputs.front().get());
+        if (!State().outputs.empty()) {
+            return MakeMonitor(State().outputs.front().get());
         }
         return {};
     }
 
     void pollEvents() override {
-        dispatchEvents(false, 0.0);
-        linuxJoysticks().poll();
+        DispatchEvents(false, 0.0);
+        GetLinuxJoysticks().poll();
     }
     void waitEvents(f64 timeout) override {
-        dispatchEvents(true, timeout);
-        linuxJoysticks().poll();
+        DispatchEvents(true, timeout);
+        GetLinuxJoysticks().poll();
     }
     void postEmptyEvent() override {
-        if (state().pipeFds[1] >= 0) {
+        if (State().pipeFds[1] >= 0) {
             const char byte = 1;
-            (void)!::write(state().pipeFds[1], &byte, 1);
+            (void)!::write(State().pipeFds[1], &byte, 1);
         }
-        wl_display_flush(state().display);
+        wl_display_flush(State().display);
     }
 
     void setMonitorCallback(MonitorCallback callback) override {
-        state().monitorCallback = std::move(callback);
+        State().monitorCallback = std::move(callback);
     }
 
     [[nodiscard]] bool isJoystickPresent(i32 jid) override {
-        return linuxJoysticks().isPresent(jid);
+        return GetLinuxJoysticks().isPresent(jid);
     }
     [[nodiscard]] std::string getJoystickName(i32 jid) override {
-        return linuxJoysticks().getName(jid);
+        return GetLinuxJoysticks().getName(jid);
     }
     [[nodiscard]] std::string getJoystickGUID(i32 jid) override {
-        return linuxJoysticks().getGuid(jid);
+        return GetLinuxJoysticks().getGuid(jid);
     }
     [[nodiscard]] std::span<const f32> getJoystickAxes(i32 jid) override {
-        return linuxJoysticks().getAxes(jid);
+        return GetLinuxJoysticks().getAxes(jid);
     }
     [[nodiscard]] std::span<const u8> getJoystickButtons(i32 jid) override {
-        return linuxJoysticks().getButtons(jid);
+        return GetLinuxJoysticks().getButtons(jid);
     }
     [[nodiscard]] std::span<const JoystickHat> getJoystickHats(i32 jid) override {
-        return linuxJoysticks().getHats(jid);
+        return GetLinuxJoysticks().getHats(jid);
     }
     void setJoystickUserPointer(i32 jid, void* pointer) override {
-        linuxJoysticks().setUserPointer(jid, pointer);
+        GetLinuxJoysticks().setUserPointer(jid, pointer);
     }
     [[nodiscard]] void* getJoystickUserPointer(i32 jid) override {
-        return linuxJoysticks().getUserPointer(jid);
+        return GetLinuxJoysticks().getUserPointer(jid);
     }
-    [[nodiscard]] bool isGamepad(i32 jid) override { return linuxJoysticks().isGamepad(jid); }
+    [[nodiscard]] bool isGamepad(i32 jid) override { return GetLinuxJoysticks().isGamepad(jid); }
     [[nodiscard]] std::string getGamepadName(i32 jid) override {
-        return linuxJoysticks().getGamepadName(jid);
+        return GetLinuxJoysticks().getGamepadName(jid);
     }
     [[nodiscard]] std::optional<GamepadState> getGamepadState(i32 jid) override {
-        return linuxJoysticks().getGamepadState(jid);
+        return GetLinuxJoysticks().getGamepadState(jid);
     }
     bool updateGamepadMappings(std::string_view mappings) override {
-        return linuxJoysticks().updateGamepadMappings(mappings);
+        return GetLinuxJoysticks().updateGamepadMappings(mappings);
     }
     void setJoystickCallback(std::function<void(i32, bool)> callback) override {
-        linuxJoysticks().setCallback(std::move(callback));
+        GetLinuxJoysticks().setCallback(std::move(callback));
     }
 
     [[nodiscard]] bool isMonitorConnected(const Monitor& monitor) override {
-        auto* handle = MonitorAccess::native(monitor);
-        for (const auto& output : state().outputs) {
+        auto* handle = MonitorAccess::Native(monitor);
+        for (const auto& output : State().outputs) {
             if (output.get() == handle) {
                 return true;
             }
@@ -652,12 +652,12 @@ public:
     }
 
     [[nodiscard]] ivec2 getMonitorPosition(const Monitor& monitor) override {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         return output ? output->position : ivec2(0, 0);
     }
 
     [[nodiscard]] Monitor::Workarea getMonitorWorkarea(const Monitor& monitor) override {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         Monitor::Workarea area;
         if (output) {
             area.position = output->position;
@@ -667,23 +667,23 @@ public:
     }
 
     [[nodiscard]] ivec2 getMonitorPhysicalSize(const Monitor& monitor) override {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         return output ? output->physicalSize : ivec2(0, 0);
     }
 
     [[nodiscard]] vec2 getMonitorContentScale(const Monitor& monitor) override {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         const float scale = output ? static_cast<float>(output->scale) : 1.0f;
         return {scale, scale};
     }
 
     [[nodiscard]] std::string getMonitorName(const Monitor& monitor) override {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         return output ? output->name : std::string{};
     }
 
     [[nodiscard]] std::vector<VideoMode> getVideoModes(const Monitor& monitor) override {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         std::vector<VideoMode> modes;
         if (output && output->hasMode) {
             VideoMode mode;
@@ -695,7 +695,7 @@ public:
     }
 
     [[nodiscard]] VideoMode getVideoMode(const Monitor& monitor) override {
-        auto* output = static_cast<WaylandOutput*>(MonitorAccess::native(monitor));
+        auto* output = static_cast<WaylandOutput*>(MonitorAccess::Native(monitor));
         VideoMode mode;
         if (output && output->hasMode) {
             mode.size = output->logicalSize;
@@ -707,8 +707,8 @@ public:
     [[nodiscard]] NativeHandle getMonitorNativeHandle(const Monitor& monitor) override {
         NativeHandle handle;
         handle.platform = NativePlatform::Wayland;
-        handle.display = state().display;
-        handle.window = MonitorAccess::native(monitor);
+        handle.display = State().display;
+        handle.window = MonitorAccess::Native(monitor);
         return handle;
     }
 };
@@ -724,7 +724,7 @@ bool WaylandBackendImpl::init(const InitOptions&, Error& error) {
 
     s.display = wl_display_connect(nullptr);
     if (!s.display) {
-        error = makeError(ErrorCode::PlatformUnavailable,
+        error = MakeError(ErrorCode::PlatformUnavailable,
                           "Wayland-Display konnte nicht verbunden werden.");
         return false;
     }
@@ -733,15 +733,15 @@ bool WaylandBackendImpl::init(const InitOptions&, Error& error) {
     wl_registry_add_listener(s.registry, &registryListener, nullptr);
 
     if (wl_display_roundtrip(s.display) < 0) {
-        error = makeError(ErrorCode::PlatformError, "Wayland-Registry konnte nicht gelesen werden.");
+        error = MakeError(ErrorCode::PlatformError, "Wayland-Registry konnte nicht gelesen werden.");
         return false;
     }
     if (wl_display_roundtrip(s.display) < 0) {
-        error = makeError(ErrorCode::PlatformError, "Wayland-Objekte konnten nicht gelesen werden.");
+        error = MakeError(ErrorCode::PlatformError, "Wayland-Objekte konnten nicht gelesen werden.");
         return false;
     }
     if (!s.compositor || !s.shm || !s.wmBase) {
-        error = makeError(ErrorCode::PlatformUnavailable,
+        error = MakeError(ErrorCode::PlatformUnavailable,
                           "Der Wayland-Compositor bietet die benoetigten Protokolle nicht an.");
         return false;
     }
@@ -882,7 +882,7 @@ std::unique_ptr<WindowBackend> WaylandBackendImpl::createWindow(const WindowHint
 
 namespace {
 
-wl_buffer* createShmBuffer(ivec2 size, const u8* rgba, ivec2 hotspot, int* fdOut,
+wl_buffer* CreateShmBuffer(ivec2 size, const u8* rgba, ivec2 hotspot, int* fdOut,
                            std::size_t* sizeOut) {
     (void)hotspot;
     const int stride = size.x * 4;
@@ -910,7 +910,7 @@ wl_buffer* createShmBuffer(ivec2 size, const u8* rgba, ivec2 hotspot, int* fdOut
         data[i * 4 + 3] = rgba[i * 4 + 3];
     }
 
-    wl_shm_pool* pool = wl_shm_create_pool(state().shm, fd, static_cast<int>(bytes));
+    wl_shm_pool* pool = wl_shm_create_pool(State().shm, fd, static_cast<int>(bytes));
     wl_buffer* buffer = wl_shm_pool_create_buffer(pool, 0, size.x, size.y, stride,
                                                   WL_SHM_FORMAT_ARGB8888);
     wl_shm_pool_destroy(pool);
@@ -925,28 +925,28 @@ wl_buffer* createShmBuffer(ivec2 size, const u8* rgba, ivec2 hotspot, int* fdOut
 
 std::unique_ptr<CursorBackend> WaylandBackendImpl::createCursor(const WindowIcon& image, ivec2 hotspot,
                                                                 Error& error) {
-    WaylandState& s = state();
+    WaylandState& s = State();
     if (image.size.x <= 0 || image.size.y <= 0) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild hat eine ungueltige Groesse.");
         return nullptr;
     }
     const auto pixels = static_cast<std::size_t>(image.size.x) *
                         static_cast<std::size_t>(image.size.y);
     if (image.rgba8.size() < pixels * 4) {
-        error = makeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
+        error = MakeError(ErrorCode::InvalidValue, "Cursor-Bild enthaelt zu wenige Pixel.");
         return nullptr;
     }
     if (!s.compositor || !s.shm) {
-        error = makeError(ErrorCode::FeatureUnavailable,
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "Wayland-Compositor unterstuetzt keine Cursor.");
         return nullptr;
     }
 
     int fd = -1;
     std::size_t bytes = 0;
-    wl_buffer* buffer = createShmBuffer(image.size, image.rgba8.data(), hotspot, &fd, &bytes);
+    wl_buffer* buffer = CreateShmBuffer(image.size, image.rgba8.data(), hotspot, &fd, &bytes);
     if (!buffer) {
-        error = makeError(ErrorCode::OutOfMemory, "Cursor-Puffer konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::OutOfMemory, "Cursor-Puffer konnte nicht erstellt werden.");
         return nullptr;
     }
     if (fd >= 0) {
@@ -961,9 +961,9 @@ std::unique_ptr<CursorBackend> WaylandBackendImpl::createCursor(const WindowIcon
 
 std::unique_ptr<CursorBackend> WaylandBackendImpl::createStandardCursor(StandardCursor shape,
                                                                         Error& error) {
-    WaylandState& s = state();
+    WaylandState& s = State();
     if (!s.cursorTheme) {
-        error = makeError(ErrorCode::FeatureUnavailable,
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "Kein Wayland-Cursor-Theme verfuegbar.");
         return nullptr;
     }
@@ -979,7 +979,7 @@ std::unique_ptr<CursorBackend> WaylandBackendImpl::createStandardCursor(Standard
 
     wl_cursor* cursor = wl_cursor_theme_get_cursor(s.cursorTheme, name);
     if (!cursor || cursor->image_count == 0) {
-        error = makeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht geladen werden.");
+        error = MakeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht geladen werden.");
         return nullptr;
     }
     wl_cursor_image* image = cursor->images[0];
@@ -994,7 +994,7 @@ std::unique_ptr<CursorBackend> WaylandBackendImpl::createStandardCursor(Standard
 
 namespace sgl::detail {
 
-std::unique_ptr<Backend> createWaylandBackend(Error& error) {
+std::unique_ptr<Backend> CreateWaylandBackend(Error& error) {
     auto backend = std::make_unique<wayland::WaylandBackendImpl>();
 
     (void)error;

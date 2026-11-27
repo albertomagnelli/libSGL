@@ -13,8 +13,8 @@ struct InitHintsState {
     AnglePlatformType anglePlatformType = AnglePlatformType::None;
 };
 
-InitHintsState& getInitHints();
-bool isInitialized();
-void resetTimeBase();
+InitHintsState& GetInitHints();
+bool IsInitialized();
+void ResetTimeBase();
 
 } // namespace sgl::detail

@@ -8,7 +8,7 @@
 
 namespace {
 
-const char* actionName(sgl::KeyAction action) {
+const char* ActionName(sgl::KeyAction action) {
     switch (action) {
     case sgl::KeyAction::Press: return "press";
     case sgl::KeyAction::Release: return "release";
@@ -20,7 +20,7 @@ const char* actionName(sgl::KeyAction action) {
 } // namespace
 
 int main() {
-    auto window = example::createWindow("sgl – Input", 900, 600);
+    auto window = example::CreateWindow("sgl – Input", 900, 600);
     if (!window) {
         return 1;
     }
@@ -34,7 +34,7 @@ int main() {
         }
         const std::string name = window->getKeyName(key, scancode);
         SLOGI("key %-12s scancode=%d action=%-7s mods=0x%x\n", name.c_str(),
-                    static_cast<int>(scancode), actionName(action),
+                    static_cast<int>(scancode), ActionName(action),
                     static_cast<unsigned>(modifiers));
     });
 
@@ -45,7 +45,7 @@ int main() {
     window->setMouseButtonCallback(
         [](sgl::MouseButton button, sgl::KeyAction action, sgl::Modifiers modifiers) {
             SLOGI("mouse button=%d action=%-7s mods=0x%x\n", static_cast<int>(button),
-                        actionName(action), static_cast<unsigned>(modifiers));
+                        ActionName(action), static_cast<unsigned>(modifiers));
         });
 
     window->setCursorPosCallback([&cursorPosition](vec2 position) {
@@ -70,25 +70,25 @@ int main() {
                     static_cast<double>(scale.y));
     });
 
-    example::printKeyHelp("Eingabe-Events werden auf der Konsole ausgegeben; ESC beendet.");
+    example::PrintKeyHelp("Eingabe-Events werden auf der Konsole ausgegeben; ESC beendet.");
 
     while (!window->isCloseRequested()) {
         const ivec2 framebuffer = window->getFramebufferSize();
-        example::clearBackground(0.05f, 0.06f, 0.08f);
+        example::ClearBackground(0.05f, 0.06f, 0.08f);
 
         const ivec2 position(static_cast<i32>(cursorPosition.x), static_cast<i32>(cursorPosition.y));
-        example::drawRectTopLeft(ivec2(position.x - 10, position.y - 10), ivec2(20, 20),
+        example::DrawRectTopLeft(ivec2(position.x - 10, position.y - 10), ivec2(20, 20),
                                  framebuffer, 0.2f, 0.8f, 1.0f);
-        example::drawRectTopLeft(ivec2(position.x - 1, 0), ivec2(2, framebuffer.y), framebuffer,
+        example::DrawRectTopLeft(ivec2(position.x - 1, 0), ivec2(2, framebuffer.y), framebuffer,
                                  0.3f, 0.35f, 0.45f);
-        example::drawRectTopLeft(ivec2(0, position.y - 1), ivec2(framebuffer.x, 2), framebuffer,
+        example::DrawRectTopLeft(ivec2(0, position.y - 1), ivec2(framebuffer.x, 2), framebuffer,
                                  0.3f, 0.35f, 0.45f);
 
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

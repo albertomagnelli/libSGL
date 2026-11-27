@@ -12,22 +12,22 @@ ErrorCallback g_errorCallback;
 
 } // namespace
 
-void setErrorCallback(ErrorCallback callback) {
+void SetErrorCallback(ErrorCallback callback) {
     std::lock_guard lock(g_callbackMutex);
     g_errorCallback = std::move(callback);
 }
 
-Error getError() {
+Error GetError() {
     Error error = std::move(t_lastError);
     t_lastError = {};
     return error;
 }
 
-void clearError() {
+void ClearError() {
     t_lastError = {};
 }
 
-void reportError(ErrorCode code, std::string message) {
+void ReportError(ErrorCode code, std::string message) {
     Error error{code, std::move(message)};
     t_lastError = error;
 

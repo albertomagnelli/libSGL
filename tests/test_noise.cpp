@@ -14,7 +14,7 @@ TEST_CASE("Noise erzeugt eine Rauschtextur", "[noise][gl]") {
         SKIP("DISPLAY ist nicht gesetzt.");
     }
 
-    if (auto result = sgl::init(); !result) {
+    if (auto result = sgl::Init(); !result) {
         SKIP("sgl konnte nicht initialisiert werden.");
     }
 
@@ -27,14 +27,14 @@ TEST_CASE("Noise erzeugt eine Rauschtextur", "[noise][gl]") {
     hints.contextVersionMinor = 6;
     hints.contextProfile = sgl::ContextProfile::Core;
 
-    auto windowResult = sgl::Window::create(hints);
+    auto windowResult = sgl::Window::Create(hints);
     if (!windowResult) {
-        sgl::terminate();
+        sgl::Terminate();
         SKIP("Kein OpenGL-Kontext verfuegbar.");
     }
     std::unique_ptr<sgl::Window> window = std::move(*windowResult);
     window->makeContextCurrent();
-    GL::load();
+    GL::Load();
 
     {
         NoiseConfig config;
@@ -60,5 +60,5 @@ TEST_CASE("Noise erzeugt eine Rauschtextur", "[noise][gl]") {
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
 }

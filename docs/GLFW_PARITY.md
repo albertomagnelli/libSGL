@@ -10,23 +10,23 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 
 | GLFW 3.4 | sgl |
 |---|---|
-| `glfwInit` | `sgl::init()` |
-| `glfwTerminate` | `sgl::terminate()` |
-| `glfwInitHint` | `sgl::initHint()` |
+| `glfwInit` | `sgl::Init()` |
+| `glfwTerminate` | `sgl::Terminate()` |
+| `glfwInitHint` | `sgl::SetInitHint()` |
 | `glfwInitAllocator` | `sgl::InitOptions::allocator` |
-| `glfwGetVersion` | `sgl::getVersion()` |
-| `glfwGetVersionString` | `sgl::getVersionString()` |
-| `glfwGetError` | `sgl::getError()` |
-| `glfwSetErrorCallback` | `sgl::setErrorCallback()` |
-| `glfwGetPlatform` | `sgl::getPlatform()` |
-| `glfwPlatformSupported` | `sgl::isPlatformSupported()` |
+| `glfwGetVersion` | `sgl::GetVersion()` |
+| `glfwGetVersionString` | `sgl::GetVersionString()` |
+| `glfwGetError` | `sgl::GetError()` |
+| `glfwSetErrorCallback` | `sgl::SetErrorCallback()` |
+| `glfwGetPlatform` | `sgl::GetPlatform()` |
+| `glfwPlatformSupported` | `sgl::IsPlatformSupported()` |
 
 ## Monitore
 
 | GLFW 3.4 | sgl |
 |---|---|
-| `glfwGetMonitors` | `sgl::getMonitors()` |
-| `glfwGetPrimaryMonitor` | `sgl::getPrimaryMonitor()` |
+| `glfwGetMonitors` | `sgl::GetMonitors()` |
+| `glfwGetPrimaryMonitor` | `sgl::GetPrimaryMonitor()` |
 | `glfwGetMonitorPos` | `Monitor::getPosition()` |
 | `glfwGetMonitorWorkarea` | `Monitor::getWorkarea()` |
 | `glfwGetMonitorPhysicalSize` | `Monitor::getPhysicalSize()` |
@@ -34,7 +34,7 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 | `glfwGetMonitorName` | `Monitor::getName()` |
 | `glfwSetMonitorUserPointer` | `Monitor::setUserPointer()` |
 | `glfwGetMonitorUserPointer` | `Monitor::getUserPointer()` |
-| `glfwSetMonitorCallback` | `sgl::setMonitorCallback()` |
+| `glfwSetMonitorCallback` | `sgl::SetMonitorCallback()` |
 | `glfwGetVideoModes` | `Monitor::getVideoModes()` |
 | `glfwGetVideoMode` | `Monitor::getVideoMode()` |
 | `glfwSetGamma` | `Monitor::setGamma()` |
@@ -45,10 +45,10 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 
 | GLFW 3.4 | sgl |
 |---|---|
-| `glfwDefaultWindowHints` | `sgl::getDefaultWindowHints()` |
+| `glfwDefaultWindowHints` | `sgl::GetDefaultWindowHints()` |
 | `glfwWindowHint` | `WindowHints`-Feld |
 | `glfwWindowHintString` | `WindowHints`-Stringfeld |
-| `glfwCreateWindow` | `Window::create()` |
+| `glfwCreateWindow` | `Window::Create()` |
 | `glfwDestroyWindow` | `Window`-Destruktor |
 | `glfwWindowShouldClose` | `Window::isCloseRequested()` |
 | `glfwSetWindowShouldClose` | `Window::setCloseRequested()` |
@@ -101,15 +101,15 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 |---|---|
 | `glfwGetInputMode` | `Window::getInputMode()` |
 | `glfwSetInputMode` | `Window::setInputMode()` |
-| `glfwRawMouseMotionSupported` | `Window::isRawMouseMotionSupported()` / `sgl::isRawMouseMotionSupported()` |
-| `glfwGetKeyName` | `Window::getKeyName()` / `sgl::getKeyName()` |
-| `glfwGetKeyScancode` | `Window::getKeyScancode()` / `sgl::getKeyScancode()` |
+| `glfwRawMouseMotionSupported` | `Window::isRawMouseMotionSupported()` / `sgl::IsRawMouseMotionSupported()` |
+| `glfwGetKeyName` | `Window::getKeyName()` / `sgl::GetKeyName()` |
+| `glfwGetKeyScancode` | `Window::getKeyScancode()` / `sgl::GetKeyScancode()` |
 | `glfwGetKey` | `Window::isKeyPressed()` |
 | `glfwGetMouseButton` | `Window::isMouseButtonPressed()` |
 | `glfwGetCursorPos` | `Window::getCursorPos()` |
 | `glfwSetCursorPos` | `Window::setCursorPos()` |
-| `glfwCreateCursor` | `Cursor::create()` |
-| `glfwCreateStandardCursor` | `Cursor::createStandard()` |
+| `glfwCreateCursor` | `Cursor::Create()` |
+| `glfwCreateStandardCursor` | `Cursor::CreateStandard()` |
 | `glfwDestroyCursor` | `Cursor`-Destruktor |
 | `glfwSetCursor` | `Window::setCursor()` |
 | `glfwSetKeyCallback` | `Window::setKeyCallback()` |
@@ -125,19 +125,19 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 
 | GLFW 3.4 | sgl |
 |---|---|
-| `glfwJoystickPresent` | `sgl::isJoystickPresent()` |
-| `glfwGetJoystickAxes` | `sgl::getJoystickAxes()` |
-| `glfwGetJoystickButtons` | `sgl::getJoystickButtons()` |
-| `glfwGetJoystickHats` | `sgl::getJoystickHats()` |
-| `glfwGetJoystickName` | `sgl::getJoystickName()` |
-| `glfwGetJoystickGUID` | `sgl::getJoystickGUID()` |
-| `glfwSetJoystickUserPointer` | `sgl::setJoystickUserPointer()` |
-| `glfwGetJoystickUserPointer` | `sgl::getJoystickUserPointer()` |
-| `glfwJoystickIsGamepad` | `sgl::isGamepad()` |
-| `glfwGetGamepadName` | `sgl::getGamepadName()` |
-| `glfwGetGamepadState` | `sgl::getGamepadState()` |
-| `glfwUpdateGamepadMappings` | `sgl::updateGamepadMappings()` |
-| `glfwSetJoystickCallback` | `sgl::setJoystickCallback()` |
+| `glfwJoystickPresent` | `sgl::IsJoystickPresent()` |
+| `glfwGetJoystickAxes` | `sgl::GetJoystickAxes()` |
+| `glfwGetJoystickButtons` | `sgl::GetJoystickButtons()` |
+| `glfwGetJoystickHats` | `sgl::GetJoystickHats()` |
+| `glfwGetJoystickName` | `sgl::GetJoystickName()` |
+| `glfwGetJoystickGUID` | `sgl::GetJoystickGuid()` |
+| `glfwSetJoystickUserPointer` | `sgl::SetJoystickUserPointer()` |
+| `glfwGetJoystickUserPointer` | `sgl::GetJoystickUserPointer()` |
+| `glfwJoystickIsGamepad` | `sgl::IsGamepad()` |
+| `glfwGetGamepadName` | `sgl::GetGamepadName()` |
+| `glfwGetGamepadState` | `sgl::GetGamepadState()` |
+| `glfwUpdateGamepadMappings` | `sgl::UpdateGamepadMappings()` |
+| `glfwSetJoystickCallback` | `sgl::SetJoystickCallback()` |
 
 ## Zwischenablage, Zeit, Kontext, Ereignisse
 
@@ -145,41 +145,41 @@ in `sgl`. Die sechs Vulkan-Funktionen (`glfwVulkanSupported`,
 |---|---|
 | `glfwGetClipboardString` | `Window::getClipboardString()` |
 | `glfwSetClipboardString` | `Window::setClipboardString()` |
-| `glfwGetTime` | `sgl::getTime()` |
-| `glfwSetTime` | `sgl::setTime()` |
-| `glfwGetTimerValue` | `sgl::getTimerValue()` |
-| `glfwGetTimerFrequency` | `sgl::getTimerFrequency()` |
+| `glfwGetTime` | `sgl::GetTime()` |
+| `glfwSetTime` | `sgl::SetTime()` |
+| `glfwGetTimerValue` | `sgl::GetTimerValue()` |
+| `glfwGetTimerFrequency` | `sgl::GetTimerFrequency()` |
 | `glfwMakeContextCurrent` | `Window::makeContextCurrent()` |
-| `glfwGetCurrentContext` | `sgl::getCurrentWindow()` |
+| `glfwGetCurrentContext` | `sgl::GetCurrentWindow()` |
 | `glfwSwapBuffers` | `Window::swapBuffers()` |
 | `glfwSwapInterval` | `Window::setSwapInterval()` |
-| `glfwExtensionSupported` | `Window::isExtensionSupported()` / `sgl::isExtensionSupported()` |
-| `glfwGetProcAddress` | `sgl::getProcAddress()` |
-| `glfwPollEvents` | `sgl::pollEvents()` |
-| `glfwWaitEvents` | `sgl::waitEvents()` |
-| `glfwWaitEventsTimeout` | `sgl::waitEventsTimeout()` |
-| `glfwPostEmptyEvent` | `sgl::postEmptyEvent()` |
+| `glfwExtensionSupported` | `Window::isExtensionSupported()` / `sgl::IsExtensionSupported()` |
+| `glfwGetProcAddress` | `sgl::GetProcAddress()` |
+| `glfwPollEvents` | `sgl::PollEvents()` |
+| `glfwWaitEvents` | `sgl::WaitEvents()` |
+| `glfwWaitEventsTimeout` | `sgl::WaitEventsTimeout()` |
+| `glfwPostEmptyEvent` | `sgl::PostEmptyEvent()` |
 
 ## Native Zugriffe
 
 | GLFW 3.4 | sgl |
 |---|---|
-| `glfwGetX11Display` | `sgl::native::x11::getDisplay()` |
-| `glfwGetX11Window` | `sgl::native::x11::getWindow()` |
-| `glfwGetGLXContext` | `sgl::native::x11::getGLXContext()` |
-| `glfwGetGLXWindow` | `sgl::native::x11::getGLXWindow()` |
-| `glfwGetX11Monitor` | `sgl::native::x11::getMonitor()` |
-| `glfwGetWaylandDisplay` | `sgl::native::wayland::getDisplay()` |
-| `glfwGetWaylandWindow` | `sgl::native::wayland::getSurface()` |
-| `glfwGetEGLDisplay` | `sgl::native::wayland::getEGLDisplay()` |
-| `glfwGetEGLSurface` | `sgl::native::wayland::getEGLSurface()` |
-| `glfwGetEGLContext` | `sgl::native::wayland::getEGLContext()` |
-| `glfwGetWin32Window` | `sgl::native::win32::getHWND()` |
-| `glfwGetWGLContext` | `sgl::native::win32::getHGLRC()` |
-| `glfwGetWin32Monitor` | `sgl::native::win32::getMonitor()` |
-| `glfwGetCocoaWindow` | `sgl::native::cocoa::getNSWindow()` |
-| `glfwGetNSGLContext` | `sgl::native::cocoa::getNSGLContext()` |
-| `glfwGetCocoaMonitor` | `sgl::native::cocoa::getNSScreen()` |
+| `glfwGetX11Display` | `sgl::native::x11::GetDisplay()` |
+| `glfwGetX11Window` | `sgl::native::x11::GetWindow()` |
+| `glfwGetGLXContext` | `sgl::native::x11::GetGlxContext()` |
+| `glfwGetGLXWindow` | `sgl::native::x11::GetGlxWindow()` |
+| `glfwGetX11Monitor` | `sgl::native::x11::GetMonitor()` |
+| `glfwGetWaylandDisplay` | `sgl::native::wayland::GetDisplay()` |
+| `glfwGetWaylandWindow` | `sgl::native::wayland::GetSurface()` |
+| `glfwGetEGLDisplay` | `sgl::native::wayland::GetEglDisplay()` |
+| `glfwGetEGLSurface` | `sgl::native::wayland::GetEglSurface()` |
+| `glfwGetEGLContext` | `sgl::native::wayland::GetEglContext()` |
+| `glfwGetWin32Window` | `sgl::native::win32::GetHwnd()` |
+| `glfwGetWGLContext` | `sgl::native::win32::GetHglrc()` |
+| `glfwGetWin32Monitor` | `sgl::native::win32::GetMonitor()` |
+| `glfwGetCocoaWindow` | `sgl::native::cocoa::GetNsWindow()` |
+| `glfwGetNSGLContext` | `sgl::native::cocoa::GetNsglContext()` |
+| `glfwGetCocoaMonitor` | `sgl::native::cocoa::GetNsScreen()` |
 
 ## Achsen-Konvention
 
@@ -211,4 +211,4 @@ Kalibrierung:
 - OSMesa: nur wenn `libosmesa` installiert ist.
 - Gamepad-Mapping: Die SDL_GameControllerDB ist eingebettet (zlib). Geräte
   ohne passenden Eintrag gelten nicht als Gamepad. Eigene Mappings können
-  über `sgl::updateGamepadMappings()` ergänzt werden.
+  über `sgl::UpdateGamepadMappings()` ergänzt werden.

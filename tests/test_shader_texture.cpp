@@ -16,8 +16,8 @@ namespace {
 
 struct GlTestContext {
     GlTestContext() {
-        sgl::initHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
-        if (auto result = sgl::init(); !result) {
+        sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
+        if (auto result = sgl::Init(); !result) {
             return;
         }
         sgl::WindowHints hints;
@@ -28,19 +28,19 @@ struct GlTestContext {
         hints.contextVersionMajor = 4;
         hints.contextVersionMinor = 6;
         hints.contextProfile = sgl::ContextProfile::Core;
-        auto window = sgl::Window::create(hints);
+        auto window = sgl::Window::Create(hints);
         if (!window) {
-            sgl::terminate();
+            sgl::Terminate();
             return;
         }
         this->window = std::move(*window);
         this->window->makeContextCurrent();
-        GL::load();
+        GL::Load();
     }
 
     ~GlTestContext() {
         window.reset();
-        sgl::terminate();
+        sgl::Terminate();
     }
 
     std::unique_ptr<sgl::Window> window;
@@ -76,7 +76,7 @@ void main() {
 }
 )";
 
-        Shader shader = Shader::fromSource(source);
+        Shader shader = Shader::FromSource(source);
         REQUIRE(shader.isValid());
         REQUIRE(shader.hasUniform("uColor"));
         shader.use();
@@ -91,7 +91,7 @@ void main() {
 
         TextureOptions options;
         options.mipmaps = MipmapMode::None;
-        Texture2d texture = Texture2d::fromImage(image, options);
+        Texture2d texture = Texture2d::FromImage(image, options);
         REQUIRE(texture.isValid());
         REQUIRE(texture.width() == 2);
         REQUIRE(texture.height() == 2);

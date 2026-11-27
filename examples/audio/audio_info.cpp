@@ -33,15 +33,15 @@ int main() {
         const auto path = audiodemo::Resource(name);
 
         Wave wave;
-        if (!wave.LoadFromFile(path.string())) {
+        if (!wave.loadFromFile(path.string())) {
             SLOGW << name << ": nicht dekodierbar (Format wird nicht unterstuetzt)";
             continue;
         }
 
         ++loaded;
-        SLOGI << name << ": " << wave.SampleRate() << " Hz, " << wave.Channels()
-              << " Kanal/Kanaele, " << wave.FrameCount() << " Rahmen, "
-              << audiodemo::FormatTime(wave.Duration());
+        SLOGI << name << ": " << wave.sampleRate() << " Hz, " << wave.channels()
+              << " Kanal/Kanaele, " << wave.frameCount() << " Rahmen, "
+              << audiodemo::FormatTime(wave.duration());
     }
 
     SLOGI << loaded << " von " << files.size()

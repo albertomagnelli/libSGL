@@ -28,7 +28,7 @@
 // Beispiel:
 //
 //   Material material;
-//   material.setAlbedo(ImageIO::load("assets/tex/albedo.png"));
+//   material.setAlbedo(ImageIO::Load("assets/tex/albedo.png"));
 //   material.setMetallic(1.0f);          // 1x1-Bild
 //   material.setRoughness(0.35f);        // 1x1-Bild
 //   material.setAmbientOcclusion(1.0f);  // 1x1-Bild

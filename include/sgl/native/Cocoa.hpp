@@ -6,8 +6,8 @@
 
 namespace sgl::native::cocoa {
 
-void* getNSWindow(const Window& window);
-void* getNSGLContext(const Window& window);
-void* getNSScreen(const Monitor& monitor);
+void* GetNsWindow(const Window& window);
+void* GetNsglContext(const Window& window);
+void* GetNsScreen(const Monitor& monitor);
 
 } // namespace sgl::native::cocoa

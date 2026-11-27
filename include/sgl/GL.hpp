@@ -4207,7 +4207,7 @@ typedef void (GL_APIENTRY *GLVULKANPROCNV)(void);
 namespace GL {
 
 /**
- * Ergebnis von GL::load().
+ * Ergebnis von GL::Load().
  */
 struct LoadReport {
     std::size_t total = 0;   // Anzahl der Entry-Points, die geladen werden sollten
@@ -4217,14 +4217,14 @@ struct LoadReport {
 };
 
 /**
- * Lädt alle Funktionszeiger über sgl::getProcAddress().
+ * Lädt alle Funktionszeiger über sgl::GetProcAddress().
  *
  * Muss nach Window::makeContextCurrent() aufgerufen werden. Ein zweiter Aufruf
  * überschreibt die Zeiger (z. B. nach einem Kontextwechsel).
  *
  * \return Anzahl aller bzw. erfolgreich geladenen Funktionen.
  */
-LoadReport load();
+LoadReport Load();
 
 // ---------------------------------------------------------------------------
 // Funktionszeiger

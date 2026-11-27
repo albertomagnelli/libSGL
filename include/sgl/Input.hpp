@@ -110,13 +110,13 @@ constexpr Modifiers& operator|=(Modifiers& a, Modifiers b) {
     a = a | b;
     return a;
 }
-constexpr bool hasModifier(Modifiers value, Modifiers flag) {
+constexpr bool HasModifier(Modifiers value, Modifiers flag) {
     return (static_cast<i32>(value) & static_cast<i32>(flag)) != 0;
 }
 
-std::string getKeyName(Key key, i32 scancode);
-i32 getKeyScancode(Key key);
-bool isRawMouseMotionSupported();
+std::string GetKeyName(Key key, i32 scancode);
+i32 GetKeyScancode(Key key);
+bool IsRawMouseMotionSupported();
 
 enum class InputMode : i32 {
     Cursor = 0x00033001,

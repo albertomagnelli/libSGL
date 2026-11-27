@@ -462,12 +462,12 @@ private:
 // Monitor helpers
 // ---------------------------------------------------------------------------
 
-Monitor makeMonitor(NSScreen* screen) {
-    return MonitorAccess::make(screen, Platform::Cocoa);
+Monitor MakeMonitor(NSScreen* screen) {
+    return MonitorAccess::Make(screen, Platform::Cocoa);
 }
 
 NSScreen* screenFromMonitor(const Monitor& monitor) {
-    return static_cast<NSScreen*>(MonitorAccess::native(monitor));
+    return static_cast<NSScreen*>(MonitorAccess::Native(monitor));
 }
 
 void rebuildMonitors(bool notify) {
@@ -475,19 +475,19 @@ void rebuildMonitors(bool notify) {
     std::vector<Monitor> monitors;
     std::vector<void*> handles;
     for (NSScreen* screen in [NSScreen screens]) {
-        monitors.push_back(makeMonitor(screen));
+        monitors.push_back(MakeMonitor(screen));
         handles.push_back(screen);
     }
     if (notify && s.monitorCallback) {
         for (void* handle : s.monitorHandles) {
             if (std::find(handles.begin(), handles.end(), handle) == handles.end()) {
-                s.monitorCallback(makeMonitor(static_cast<NSScreen*>(handle)), false);
+                s.monitorCallback(MakeMonitor(static_cast<NSScreen*>(handle)), false);
             }
         }
         for (void* handle : handles) {
             if (std::find(s.monitorHandles.begin(), s.monitorHandles.end(), handle) ==
                 s.monitorHandles.end()) {
-                s.monitorCallback(makeMonitor(static_cast<NSScreen*>(handle)), true);
+                s.monitorCallback(MakeMonitor(static_cast<NSScreen*>(handle)), true);
             }
         }
     }
@@ -540,7 +540,7 @@ public:
     }
 
     [[nodiscard]] bool isMonitorConnected(const Monitor& monitor) override {
-        void* handle = MonitorAccess::native(monitor);
+        void* handle = MonitorAccess::Native(monitor);
         return std::find(g_state.monitorHandles.begin(), g_state.monitorHandles.end(), handle) !=
                g_state.monitorHandles.end();
     }
@@ -682,7 +682,7 @@ public:
     [[nodiscard]] NativeHandle getMonitorNativeHandle(const Monitor& monitor) override {
         NativeHandle handle;
         handle.platform = NativePlatform::Cocoa;
-        handle.window = MonitorAccess::native(monitor);
+        handle.window = MonitorAccess::Native(monitor);
         return handle;
     }
 
@@ -734,10 +734,10 @@ public:
     }
 
     bool updateGamepadMappings(std::string_view mappings) override {
-        const bool added = GamepadMappingDatabase::instance().addMappings(mappings);
+        const bool added = GamepadMappingDatabase::Instance().addMappings(mappings);
         for (auto& device : g_state.joysticks) {
             device.mapping =
-                GamepadMappingDatabase::instance().find(device.guid, "Mac OS X");
+                GamepadMappingDatabase::Instance().find(device.guid, "Mac OS X");
             device.gamepad = device.mapping.has_value();
         }
         return added;
@@ -939,7 +939,7 @@ bool openJoystick(IOHIDDeviceRef device, JoystickDevice& joystick) {
         joystick.hatElements.push_back(hat);
     }
 
-    joystick.mapping = GamepadMappingDatabase::instance().find(joystick.guid, "Mac OS X");
+    joystick.mapping = GamepadMappingDatabase::Instance().find(joystick.guid, "Mac OS X");
     joystick.gamepad = joystick.mapping.has_value();
     readJoystick(joystick);
     return true;
@@ -1601,7 +1601,7 @@ Monitor CocoaWindowBackend::getMonitor() const {
     if (!screen) {
         screen = [NSScreen screens].firstObject;
     }
-    return screen ? makeMonitor(screen) : Monitor{};
+    return screen ? MakeMonitor(screen) : Monitor{};
 }
 
 void CocoaWindowBackend::setInputMode(InputMode mode, i32 value) {

@@ -5,22 +5,22 @@
 
 namespace sgl {
 
-std::string getKeyName(Key key, i32 scancode) {
-    if (Window* window = getCurrentWindow()) {
+std::string GetKeyName(Key key, i32 scancode) {
+    if (Window* window = GetCurrentWindow()) {
         return window->getKeyName(key, scancode);
     }
     return {};
 }
 
-i32 getKeyScancode(Key key) {
-    if (Window* window = getCurrentWindow()) {
+i32 GetKeyScancode(Key key) {
+    if (Window* window = GetCurrentWindow()) {
         return window->getKeyScancode(key);
     }
     return -1;
 }
 
-bool isRawMouseMotionSupported() {
-    if (Window* window = getCurrentWindow()) {
+bool IsRawMouseMotionSupported() {
+    if (Window* window = GetCurrentWindow()) {
         return window->isRawMouseMotionSupported();
     }
     return false;

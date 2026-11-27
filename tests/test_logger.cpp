@@ -12,11 +12,11 @@ namespace {
 
 struct LoggerGuard {
     LoggerGuard()
-        : output(Logger::outputStream()), level(Logger::maxLogLevel()) {}
+        : output(Logger::OutputStream()), level(Logger::MaxLogLevel()) {}
 
     ~LoggerGuard() {
-        Logger::setOutputStream(output);
-        Logger::setMaxLogLevel(level);
+        Logger::SetOutputStream(output);
+        Logger::SetMaxLogLevel(level);
     }
 
     std::ostream* output;
@@ -26,16 +26,16 @@ struct LoggerGuard {
 } // namespace
 
 TEST_CASE("basename liefert den Dateinamen", "[logger]") {
-    REQUIRE(detail::basename("a/b/c.cpp") == "c.cpp");
-    REQUIRE(detail::basename("a\\b\\c.cpp") == "c.cpp");
-    REQUIRE(detail::basename("c.cpp") == "c.cpp");
+    REQUIRE(detail::Basename("a/b/c.cpp") == "c.cpp");
+    REQUIRE(detail::Basename("a\\b\\c.cpp") == "c.cpp");
+    REQUIRE(detail::Basename("c.cpp") == "c.cpp");
 }
 
 TEST_CASE("Logger schreibt Zeitstempel, Level, Datei und Nachricht", "[logger]") {
     LoggerGuard guard;
     std::ostringstream stream;
-    Logger::setOutputStream(&stream);
-    Logger::setMaxLogLevel(Logger::LogLevel::TRACE);
+    Logger::SetOutputStream(&stream);
+    Logger::SetMaxLogLevel(Logger::LogLevel::TRACE);
 
     const int line = __LINE__ + 1;
     SLOGI("value %d", 42);
@@ -61,8 +61,8 @@ TEST_CASE("Logger schreibt Zeitstempel, Level, Datei und Nachricht", "[logger]")
 TEST_CASE("Logger filtert nach Maximallevel", "[logger]") {
     LoggerGuard guard;
     std::ostringstream stream;
-    Logger::setOutputStream(&stream);
-    Logger::setMaxLogLevel(Logger::LogLevel::WARNING);
+    Logger::SetOutputStream(&stream);
+    Logger::SetMaxLogLevel(Logger::LogLevel::WARNING);
 
     SLOGI("wird gefiltert");
     REQUIRE(stream.str().empty());
@@ -76,8 +76,8 @@ TEST_CASE("Logger filtert nach Maximallevel", "[logger]") {
 TEST_CASE("Logger unterstützt Stream-Operatoren und std::endl", "[logger]") {
     LoggerGuard guard;
     std::ostringstream stream;
-    Logger::setOutputStream(&stream);
-    Logger::setMaxLogLevel(Logger::LogLevel::TRACE);
+    Logger::SetOutputStream(&stream);
+    Logger::SetMaxLogLevel(Logger::LogLevel::TRACE);
 
     SLOGD << "x=" << 7 << " flag=" << true << std::endl;
     SLOGE << std::string_view{"zweite Zeile"};

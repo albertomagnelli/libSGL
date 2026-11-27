@@ -9,7 +9,7 @@
 
 namespace sgl::detail::x11 {
 
-Key translateKeysym(KeySym keysym) {
+Key TranslateKeysym(KeySym keysym) {
     switch (keysym) {
     case XK_space: return Key::Space;
     case XK_apostrophe: return Key::Apostrophe;
@@ -135,7 +135,7 @@ Key translateKeysym(KeySym keysym) {
     }
 }
 
-KeySym keysymForKey(Key key) {
+KeySym KeysymForKey(Key key) {
     if (key >= Key::A && key <= Key::Z) {
         return XK_a + (static_cast<int>(key) - static_cast<int>(Key::A));
     }
@@ -202,18 +202,18 @@ KeySym keysymForKey(Key key) {
     }
 }
 
-int scancodeForKey(Key key) {
-    if (!state().display) {
+int ScancodeForKey(Key key) {
+    if (!GetX11State().display) {
         return -1;
     }
-    const KeySym keysym = keysymForKey(key);
+    const KeySym keysym = KeysymForKey(key);
     if (keysym == NoSymbol) {
         return -1;
     }
-    return static_cast<int>(XKeysymToKeycode(state().display, keysym));
+    return static_cast<int>(XKeysymToKeycode(GetX11State().display, keysym));
 }
 
-std::string keyName(Key key, i32 scancode) {
+std::string KeyName(Key key, i32 scancode) {
     (void)scancode;
     static const char* const names[] = {
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
@@ -288,22 +288,22 @@ void X11WindowBackend::updateModifiers(unsigned int xstate, Modifiers& mods) con
     if (xstate & Mod2Mask) mods |= Modifiers::NumLock;
 
     if (!m_lockKeyMods) {
-        if (hasModifier(mods, Modifiers::CapsLock)) {
+        if (HasModifier(mods, Modifiers::CapsLock)) {
             mods = static_cast<Modifiers>(static_cast<int>(mods) & ~static_cast<int>(Modifiers::CapsLock));
         }
-        if (hasModifier(mods, Modifiers::NumLock)) {
+        if (HasModifier(mods, Modifiers::NumLock)) {
             mods = static_cast<Modifiers>(static_cast<int>(mods) & ~static_cast<int>(Modifiers::NumLock));
         }
     }
 }
 
 void X11WindowBackend::warpCursorToCenter() {
-    XWarpPointer(state().display, X11None, m_window, 0, 0, 0, 0, m_size.x / 2, m_size.y / 2);
+    XWarpPointer(GetX11State().display, X11None, m_window, 0, 0, 0, 0, m_size.x / 2, m_size.y / 2);
     m_lastCursorPos = vec2(static_cast<f32>(m_size.x) * 0.5f, static_cast<f32>(m_size.y) * 0.5f);
 }
 
 void X11WindowBackend::updateCursorMode() {
-    State& s = state();
+    State& s = GetX11State();
     const ::Cursor cursor = m_cursor ? m_cursor->getCursor() : 0;
 
     switch (m_cursorMode) {
@@ -372,7 +372,7 @@ void X11WindowBackend::handleRawMotion(XIRawEvent& event) {
 }
 
 void X11WindowBackend::handleClientMessage(XClientMessageEvent& event) {
-    State& s = state();
+    State& s = GetX11State();
     if (event.message_type == s.wmProtocols && event.data.l[0] == static_cast<long>(s.wmDeleteWindow)) {
         m_closeRequested = true;
         if (m_events) {
@@ -412,7 +412,7 @@ void X11WindowBackend::handleClientMessage(XClientMessageEvent& event) {
 }
 
 void X11WindowBackend::handleEvent(XEvent& event) {
-    State& s = state();
+    State& s = GetX11State();
     switch (event.type) {
     case ClientMessage:
         handleClientMessage(event.xclient);
@@ -604,7 +604,7 @@ void X11WindowBackend::handleEvent(XEvent& event) {
         if (m_stickyMouseButtons) {
             if (pressed) {
                 const Modifiers flag = static_cast<Modifiers>(1 << index);
-                m_stickyButtons = hasModifier(m_stickyButtons, flag)
+                m_stickyButtons = HasModifier(m_stickyButtons, flag)
                                       ? static_cast<Modifiers>(static_cast<int>(m_stickyButtons) &
                                                                ~static_cast<int>(flag))
                                       : m_stickyButtons | flag;
@@ -623,11 +623,11 @@ void X11WindowBackend::handleEvent(XEvent& event) {
     case KeyRelease: {
         const bool pressed = event.type == KeyPress;
         KeySym keysym = XLookupKeysym(&event.xkey, 0);
-        Key key = translateKeysym(keysym);
+        Key key = TranslateKeysym(keysym);
         if (key == Key::Unknown) {
             for (int level = 1; level <= 3 && key == Key::Unknown; ++level) {
                 keysym = XLookupKeysym(&event.xkey, level);
-                key = translateKeysym(keysym);
+                key = TranslateKeysym(keysym);
             }
         }
 
@@ -648,8 +648,8 @@ void X11WindowBackend::handleEvent(XEvent& event) {
             if (pressed) {
                 for (Modifiers flag : {Modifiers::Shift, Modifiers::Control, Modifiers::Alt,
                                        Modifiers::Super}) {
-                    if (hasModifier(mods, flag)) {
-                        m_stickyMods = hasModifier(m_stickyMods, flag)
+                    if (HasModifier(mods, flag)) {
+                        m_stickyMods = HasModifier(m_stickyMods, flag)
                                            ? static_cast<Modifiers>(static_cast<int>(m_stickyMods) &
                                                                     ~static_cast<int>(flag))
                                            : m_stickyMods | flag;
@@ -756,19 +756,19 @@ void X11WindowBackend::setInputMode(InputMode mode, i32 value) {
 }
 
 bool X11WindowBackend::isRawMouseMotionSupported() const {
-    return state().hasXi2;
+    return GetX11State().hasXi2;
 }
 
 std::string X11WindowBackend::getKeyName(Key key, i32 scancode) const {
-    return keyName(key, scancode);
+    return KeyName(key, scancode);
 }
 
 i32 X11WindowBackend::getKeyScancode(Key key) const {
-    return scancodeForKey(key);
+    return ScancodeForKey(key);
 }
 
 bool X11WindowBackend::isKeyPressed(Key key) const {
-    const int keycode = scancodeForKey(key);
+    const int keycode = ScancodeForKey(key);
     return keycode > 0 && m_pressedKeys.contains(keycode);
 }
 
@@ -786,7 +786,7 @@ vec2 X11WindowBackend::getCursorPos() const {
         int windowX = 0;
         int windowY = 0;
         unsigned int mask = 0;
-        if (XQueryPointer(state().display, m_window, &rootReturn, &childReturn, &rootX, &rootY,
+        if (XQueryPointer(GetX11State().display, m_window, &rootReturn, &childReturn, &rootX, &rootY,
                           &windowX, &windowY, &mask)) {
             m_cursorPos = vec2(static_cast<f32>(windowX), static_cast<f32>(windowY));
             m_cursorTracked = true;
@@ -796,7 +796,7 @@ vec2 X11WindowBackend::getCursorPos() const {
 }
 
 void X11WindowBackend::setCursorPos(vec2 position) {
-    XWarpPointer(state().display, X11None, m_window, 0, 0, 0, 0,
+    XWarpPointer(GetX11State().display, X11None, m_window, 0, 0, 0, 0,
                  static_cast<int>(std::lround(position.x)),
                  static_cast<int>(std::lround(position.y)));
     m_cursorPos = position;
@@ -806,7 +806,7 @@ void X11WindowBackend::setCursorPos(vec2 position) {
 void X11WindowBackend::setCursor(CursorBackend* cursor) {
     m_cursor = dynamic_cast<X11CursorBackend*>(cursor);
     if (m_cursorMode == CursorMode::Normal) {
-        XDefineCursor(state().display, m_window, m_cursor ? m_cursor->getCursor() : 0);
+        XDefineCursor(GetX11State().display, m_window, m_cursor ? m_cursor->getCursor() : 0);
     }
 }
 

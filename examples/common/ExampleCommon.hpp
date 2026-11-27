@@ -10,19 +10,19 @@
 
 namespace example {
 
-inline void errorCallback(const sgl::Error& error) {
+inline void ErrorCallback(const sgl::Error& error) {
     SLOGE("sgl-Fehler %d: %s\n", static_cast<int>(error.code),
                  error.message.c_str());
 }
 
 /// Initialisiert sgl, erzeugt ein Fenster und lädt die OpenGL-Funktionen.
 /// Falls kein 4.6-Kontext verfügbar ist, wird auf 3.3 zurückgefallen.
-inline std::unique_ptr<sgl::Window> createWindow(std::string_view title, int width, int height,
+inline std::unique_ptr<sgl::Window> CreateWindow(std::string_view title, int width, int height,
                                                  sgl::WindowHints hints = {}) {
-    sgl::setErrorCallback(errorCallback);
+    sgl::SetErrorCallback(ErrorCallback);
 
-    if (auto result = sgl::init(); !result) {
-        SLOGE("sgl::init() fehlgeschlagen: %s\n", result.error().message.c_str());
+    if (auto result = sgl::Init(); !result) {
+        SLOGE("sgl::Init() fehlgeschlagen: %s\n", result.error().message.c_str());
         return nullptr;
     }
 
@@ -34,13 +34,13 @@ inline std::unique_ptr<sgl::Window> createWindow(std::string_view title, int wid
     hints.contextProfile = sgl::ContextProfile::Core;
     hints.contextForwardCompat = true;
 
-    auto result = sgl::Window::create(hints);
+    auto result = sgl::Window::Create(hints);
     if (!result) {
         // Ältere Treiber / macOS: konservativerer Kontext.
         sgl::WindowHints fallback = hints;
         fallback.contextVersionMajor = 3;
         fallback.contextVersionMinor = 3;
-        result = sgl::Window::create(fallback);
+        result = sgl::Window::Create(fallback);
     }
     if (!result) {
         // Letzter Versuch: klassischer Kompatibilitätskontext.
@@ -49,12 +49,12 @@ inline std::unique_ptr<sgl::Window> createWindow(std::string_view title, int wid
         fallback.contextVersionMinor = 1;
         fallback.contextProfile = sgl::ContextProfile::Any;
         fallback.contextForwardCompat = false;
-        result = sgl::Window::create(fallback);
+        result = sgl::Window::Create(fallback);
     }
     if (!result) {
         SLOGE("Fenster konnte nicht erzeugt werden: %s\n",
                      result.error().message.c_str());
-        sgl::terminate();
+        sgl::Terminate();
         return nullptr;
     }
 
@@ -62,7 +62,7 @@ inline std::unique_ptr<sgl::Window> createWindow(std::string_view title, int wid
     window->makeContextCurrent();
     window->setSwapInterval(1);
 
-    const GL::LoadReport report = GL::load();
+    const GL::LoadReport report = GL::Load();
     if (!report.complete()) {
         SLOGE("%zu/%zu OpenGL-Funktionen geladen.\n", report.loaded, report.total);
     }
@@ -77,7 +77,7 @@ inline std::unique_ptr<sgl::Window> createWindow(std::string_view title, int wid
 }
 
 /// Beendet die Schleife bei ESC.
-inline void closeOnEscape(sgl::Window& window) {
+inline void CloseOnEscape(sgl::Window& window) {
     window.setKeyCallback([&window](sgl::Key key, i32, sgl::KeyAction action,
                                    sgl::Modifiers) {
         if (key == sgl::Key::Escape && action == sgl::KeyAction::Press) {
@@ -86,7 +86,7 @@ inline void closeOnEscape(sgl::Window& window) {
     });
 }
 
-inline void printGLInfo() {
+inline void PrintGlInfo() {
     if (!GL::glGetString) {
         return;
     }
@@ -98,14 +98,14 @@ inline void printGLInfo() {
 }
 
 /// Zeichnet einen farbigen Hintergrund.
-inline void clearBackground(float red, float green, float blue) {
+inline void ClearBackground(float red, float green, float blue) {
     GL::glClearColor(red, green, blue, 1.0f);
     GL::glClear(GL_COLOR_BUFFER_BIT);
 }
 
 /// Zeichnet ein Rechteck per Scissor-Test (ohne Shader).
 /// Koordinaten: Ursprung oben links, y nach unten – wie bei sgl-Cursorpos.
-inline void drawRectTopLeft(ivec2 topLeft, ivec2 size, ivec2 framebufferSize, float red,
+inline void DrawRectTopLeft(ivec2 topLeft, ivec2 size, ivec2 framebufferSize, float red,
                             float green, float blue) {
     GL::glEnable(GL_SCISSOR_TEST);
     GL::glScissor(topLeft.x, framebufferSize.y - topLeft.y - size.y, size.x, size.y);
@@ -114,7 +114,7 @@ inline void drawRectTopLeft(ivec2 topLeft, ivec2 size, ivec2 framebufferSize, fl
     GL::glDisable(GL_SCISSOR_TEST);
 }
 
-inline void printAttribs(const sgl::Window& window) {
+inline void PrintAttribs(const sgl::Window& window) {
     SLOGI("visible=%d decorated=%d resizable=%d floating=%d maximized=%d iconified=%d "
                 "focused=%d hovered=%d opacity=%.2f\n",
                 window.isVisible() ? 1 : 0, window.isDecorated() ? 1 : 0,
@@ -124,7 +124,7 @@ inline void printAttribs(const sgl::Window& window) {
                 static_cast<double>(window.getOpacity()));
 }
 
-inline void printKeyHelp(std::string_view text) {
+inline void PrintKeyHelp(std::string_view text) {
     SLOGI("%s\n", std::string(text).c_str());
 }
 

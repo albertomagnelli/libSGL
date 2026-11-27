@@ -69,7 +69,7 @@ TEST_CASE("Rectangle-Kollisionen und Rotation", "[geometry]") {
     REQUIRE(corners.width == 60.0f);
     REQUIRE(corners.height == 40.0f);
 
-    const vec2 rotated = Rectangle::rotate(vec2(1.0f, 0.0f), 90.0f);
+    const vec2 rotated = Rectangle::Rotate(vec2(1.0f, 0.0f), 90.0f);
     REQUIRE(rotated.x == Catch::Approx(0.0f).margin(0.001f));
     REQUIRE(rotated.y == Catch::Approx(1.0f).margin(0.001f));
 }

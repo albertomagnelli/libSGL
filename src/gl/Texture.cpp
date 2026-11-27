@@ -255,7 +255,7 @@ void Texture2d::release() noexcept {
     m_height = 0;
 }
 
-Texture2d Texture2d::createStorage(const i32 width, const i32 height, ImageFormat format,
+Texture2d Texture2d::CreateStorage(const i32 width, const i32 height, ImageFormat format,
                                   const TextureOptions& options) {
     if (width <= 0 || height <= 0) {
         throw TextureError("Texture2d: Maße müssen positiv sein (" + std::to_string(width) + "x" +
@@ -284,7 +284,7 @@ Texture2d Texture2d::createStorage(const i32 width, const i32 height, ImageForma
     return texture;
 }
 
-Texture2d Texture2d::fromMemory(const i32 width, const i32 height, const ImageFormat format,
+Texture2d Texture2d::FromMemory(const i32 width, const i32 height, const ImageFormat format,
                                 std::span<const u8> pixels, const TextureOptions& options) {
     if (width <= 0 || height <= 0) {
         throw TextureError("Texture2d: Maße müssen positiv sein (" + std::to_string(width) + "x" +
@@ -326,11 +326,11 @@ Texture2d Texture2d::fromMemory(const i32 width, const i32 height, const ImageFo
     return texture;
 }
 
-Texture2d Texture2d::fromImage(const Image& image, const TextureOptions& options) {
+Texture2d Texture2d::FromImage(const Image& image, const TextureOptions& options) {
     if (image.isEmpty()) {
         throw TextureError("Texture2d: Bild ist leer");
     }
-    return fromMemory(image.width(), image.height(), image.format(),
+    return FromMemory(image.width(), image.height(), image.format(),
                       std::span<const u8>(image.data(), image.byteSize()), options);
 }
 
@@ -473,7 +473,7 @@ void Texture2d::use(const i32 unit) const {
     glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), m_id);
 }
 
-void Texture2d::unbind(const i32 unit) {
+void Texture2d::Unbind(const i32 unit) {
     glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), 0);
 }
 
@@ -513,7 +513,7 @@ struct BindlessApi {
 
 template <class Function>
 Function LoadProcedure(const char* name) {
-    return reinterpret_cast<Function>(sgl::getProcAddress(name));
+    return reinterpret_cast<Function>(sgl::GetProcAddress(name));
 }
 
 bool HasExtension(const char* wanted) {
@@ -548,7 +548,7 @@ BindlessApi& Bindless() {
 
 }  // namespace
 
-bool Texture2d::isResidencySupported() {
+bool Texture2d::IsResidencySupported() {
     return Bindless().isSupported;
 }
 
@@ -600,7 +600,7 @@ bool Texture2d::isResident() const {
     return m_isResident;
 }
 
-bool CubeMap::isResidencySupported() {
+bool CubeMap::IsResidencySupported() {
     return Bindless().isSupported;
 }
 
@@ -706,7 +706,7 @@ void CubeMap::applyParameters() {
     ApplyAnisotropy(m_id, m_options.anisotropy);
 }
 
-CubeMap CubeMap::fromImages(const std::array<Image, 6>& faces, const TextureOptions& options) {
+CubeMap CubeMap::FromImages(const std::array<Image, 6>& faces, const TextureOptions& options) {
     for (std::size_t index = 0; index < faces.size(); ++index) {
         if (faces[index].isEmpty()) {
             throw TextureError("CubeMap: Gesicht " + std::to_string(index) + " ist leer");
@@ -752,7 +752,7 @@ CubeMap CubeMap::fromImages(const std::array<Image, 6>& faces, const TextureOpti
     return cubeMap;
 }
 
-CubeMap CubeMap::fromCrossLayout(const Image& cross, const TextureOptions& options) {
+CubeMap CubeMap::FromCrossLayout(const Image& cross, const TextureOptions& options) {
     if (cross.isEmpty()) {
         throw TextureError("CubeMap: Kreuz-Layout ist leer");
     }
@@ -801,7 +801,7 @@ CubeMap CubeMap::fromCrossLayout(const Image& cross, const TextureOptions& optio
         faces[index] = cross.cropped(static_cast<i32>(area.x), static_cast<i32>(area.y), cell,
                                      cell);
     }
-    return fromImages(faces, options);
+    return FromImages(faces, options);
 }
 
 void CubeMap::use(const i32 unit) const {
@@ -811,7 +811,7 @@ void CubeMap::use(const i32 unit) const {
     glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), m_id);
 }
 
-void CubeMap::unbind(const i32 unit) {
+void CubeMap::Unbind(const i32 unit) {
     glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), 0);
 }
 

@@ -10,7 +10,7 @@
 #include <fstream>
 #include <sstream>
 
-/* Fuer die eingebettete Standardschrift (Font::loadDefault). */
+/* Fuer die eingebettete Standardschrift (Font::LoadDefault). */
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
@@ -30,7 +30,7 @@ constexpr auto kMissingAdvanceRatio = 0.25f;
 
 // ─── Erzeugen ───────────────────────────────────────────────────────────────
 
-Font Font::fromBitmap(Image atlas, const FontMetrics metrics) {
+Font Font::FromBitmap(Image atlas, const FontMetrics metrics) {
   Font font;
   font.m_atlas = std::move(atlas);
   font.m_metrics = metrics;
@@ -38,7 +38,7 @@ Font Font::fromBitmap(Image atlas, const FontMetrics metrics) {
   return font;
 }
 
-Font Font::fromSdf(Image atlas, const FontMetrics metrics, const f32 spread) {
+Font Font::FromSdf(Image atlas, const FontMetrics metrics, const f32 spread) {
   Font font;
   font.m_atlas = std::move(atlas);
   font.m_metrics = metrics;
@@ -83,7 +83,7 @@ f32 Font::missingAdvance() const noexcept {
 }
 
 f32 Font::kerning(const u32 left, const u32 right) const {
-  const auto found = m_kerning.find(kerningKey(left, right));
+  const auto found = m_kerning.find(KerningKey(left, right));
   return found != m_kerning.end() ? found->second : 0.0f;
 }
 
@@ -101,7 +101,7 @@ void Font::addGlyphs(std::span<const Glyph> glyphs) {
 }
 
 void Font::addKerning(const u32 left, const u32 right, const f32 adjustment) {
-  m_kerning[kerningKey(left, right)] = adjustment;
+  m_kerning[KerningKey(left, right)] = adjustment;
 }
 
 void Font::setFallback(const u32 codepoint) { m_fallback = codepoint; }
@@ -145,7 +145,7 @@ f32 Font::measure(const std::string_view utf8, const f32 pixelSize) const {
   return std::max(widest, current);
 }
 
-i32 Font::lineCount(const std::string_view utf8) {
+i32 Font::LineCount(const std::string_view utf8) {
   if (utf8.empty()) {
     return 0;
   }
@@ -164,7 +164,7 @@ Rectangle Font::bounds(const std::string_view utf8, const vec2 &position,
     return Rectangle{position.x, position.y, 0.0f, 0.0f};
   }
   const f32 scale = pixelSize / m_metrics.size;
-  const i32 lines = lineCount(utf8);
+  const i32 lines = LineCount(utf8);
   const f32 width = measure(utf8, pixelSize);
   const f32 height = lines <= 0
                          ? 0.0f
@@ -184,7 +184,7 @@ void Font::save(const std::filesystem::path &file) const {
   atlasName += ".png";
   const std::filesystem::path atlasPath =
       file.parent_path().empty() ? atlasName : file.parent_path() / atlasName;
-  ImageIO::save(m_atlas, atlasPath);
+  ImageIO::Save(m_atlas, atlasPath);
 
   std::ofstream output(file, std::ios::trunc);
   if (!output) {
@@ -221,7 +221,7 @@ void Font::save(const std::filesystem::path &file) const {
        << " Glyphen)";
 }
 
-Font Font::load(const std::filesystem::path &file) {
+Font Font::Load(const std::filesystem::path &file) {
   std::ifstream input(file);
   if (!input) {
     throw FontError("Schriftdatei konnte nicht geöffnet werden: " +
@@ -309,7 +309,7 @@ Font Font::load(const std::filesystem::path &file) {
         ThrowFontError(file.string(), lineNumber,
                        "kerning erwartet: linke rechte anpassung");
       }
-      font.m_kerning[kerningKey(left, right)] = adjustment;
+      font.m_kerning[KerningKey(left, right)] = adjustment;
     } else {
       ThrowFontError(file.string(), lineNumber,
                      "unbekannter Schlüssel '" + keyword + "'");
@@ -327,7 +327,7 @@ Font Font::load(const std::filesystem::path &file) {
                                               ? std::filesystem::path(atlasName)
                                               : file.parent_path() / atlasName;
   try {
-    font.m_atlas = ImageIO::load(atlasPath);
+    font.m_atlas = ImageIO::Load(atlasPath);
   } catch (const ImageError &error) {
     throw FontError(std::string("Atlas konnte nicht geladen werden: ") +
                     error.what());
@@ -381,7 +381,7 @@ struct RasterGlyph {
 
 } // namespace
 
-Font Font::loadDefault() {
+Font Font::LoadDefault() {
   stbtt_fontinfo info{};
   if (const i32 offset = stbtt_GetFontOffsetForIndex(detail::g_defaultFontData, 0);
       stbtt_InitFont(&info, detail::g_defaultFontData, offset) == 0) {
@@ -494,7 +494,7 @@ Font Font::loadDefault() {
     }
   }
 
-  Font font = Font::fromBitmap(std::move(atlas), metrics);
+  Font font = Font::FromBitmap(std::move(atlas), metrics);
   for (const RasterGlyph &entry : raster) {
     Glyph glyph;
     glyph.codepoint = entry.codepoint;

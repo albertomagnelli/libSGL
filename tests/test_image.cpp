@@ -54,10 +54,10 @@ TEST_CASE("Image als PNG kodieren und wieder laden", "[image]") {
     Image image(3, 2, ImageFormat::Rgba);
     image.fill(std::array<u8, 4>{10, 20, 30, 255});
 
-    const std::vector<u8> encoded = ImageIO::encode(image, ImageFileFormat::Png);
+    const std::vector<u8> encoded = ImageIO::Encode(image, ImageFileFormat::Png);
     REQUIRE_FALSE(encoded.empty());
 
-    const Image loaded = ImageIO::loadFromMemory(encoded);
+    const Image loaded = ImageIO::LoadFromMemory(encoded);
     REQUIRE(loaded.width() == 3);
     REQUIRE(loaded.height() == 2);
     REQUIRE(loaded.channelCount() == 4);
@@ -72,10 +72,10 @@ TEST_CASE("ImageIO speichert und lädt Dateien", "[image][io]") {
         std::filesystem::temp_directory_path() / "sgl-imageio-test.png";
     std::filesystem::remove(file);
 
-    ImageIO::save(image, file);
+    ImageIO::Save(image, file);
     REQUIRE(std::filesystem::exists(file));
 
-    const Image loaded = ImageIO::load(file);
+    const Image loaded = ImageIO::Load(file);
     REQUIRE(loaded.width() == 3);
     REQUIRE(loaded.height() == 2);
     REQUIRE(loaded.pixelAt(0, 0) == std::array<u8, 4>{10, 20, 30, 255});

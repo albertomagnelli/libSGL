@@ -9,21 +9,21 @@
 
 namespace fontdemo {
 
-inline void errorCallback(const sgl::Error& error) {
+inline void ErrorCallback(const sgl::Error& error) {
     SLOGE("sgl-Fehler %d: %s", static_cast<int>(error.code), error.message.c_str());
 }
 
-inline bool initialize() {
-    sgl::setErrorCallback(errorCallback);
-    if (auto result = sgl::init(); !result) {
-        SLOGE("sgl::init() fehlgeschlagen: %s", result.error().message.c_str());
+inline bool Initialize() {
+    sgl::SetErrorCallback(ErrorCallback);
+    if (auto result = sgl::Init(); !result) {
+        SLOGE("sgl::Init() fehlgeschlagen: %s", result.error().message.c_str());
         return false;
     }
-    sgl::Logger::setMaxLogLevel(sgl::Logger::LogLevel::WARNING);
+    sgl::Logger::SetMaxLogLevel(sgl::Logger::LogLevel::WARNING);
     return true;
 }
 
-inline std::unique_ptr<sgl::Window> createWindow(int width, int height, std::string_view title,
+inline std::unique_ptr<sgl::Window> CreateWindow(int width, int height, std::string_view title,
                                                  int samples = 0, bool visible = true) {
     sgl::WindowHints hints;
     hints.width = width;
@@ -36,7 +36,7 @@ inline std::unique_ptr<sgl::Window> createWindow(int width, int height, std::str
     hints.contextProfile = sgl::ContextProfile::Core;
     hints.contextForwardCompat = true;
 
-    auto result = sgl::Window::create(hints);
+    auto result = sgl::Window::Create(hints);
     if (!result) {
         SLOGE("Fenster konnte nicht erzeugt werden: %s", result.error().message.c_str());
         return nullptr;
@@ -45,7 +45,7 @@ inline std::unique_ptr<sgl::Window> createWindow(int width, int height, std::str
     std::unique_ptr<sgl::Window> window = std::move(*result);
     window->makeContextCurrent();
     window->setSwapInterval(visible ? 1 : 0);
-    GL::load();
+    GL::Load();
     if (GL::glCreateProgram == nullptr || GL::glCreateShader == nullptr) {
         SLOGE("OpenGL-Funktionen konnten nicht geladen werden.");
         return nullptr;
@@ -53,7 +53,7 @@ inline std::unique_ptr<sgl::Window> createWindow(int width, int height, std::str
     return window;
 }
 
-inline vec4 hsvToRgb(f32 hue, f32 saturation, f32 value) {
+inline vec4 HsvToRgb(f32 hue, f32 saturation, f32 value) {
     hue = std::fmod(hue, 360.0f);
     if (hue < 0.0f) {
         hue += 360.0f;

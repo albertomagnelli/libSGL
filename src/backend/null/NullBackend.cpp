@@ -132,12 +132,12 @@ public:
             }
             return window;
 #else
-            error = makeError(ErrorCode::FeatureUnavailable,
+            error = MakeError(ErrorCode::FeatureUnavailable,
                               "Dieser Build enthaelt keine OSMesa-Unterstuetzung.");
             return nullptr;
 #endif
         }
-        error = makeError(ErrorCode::FeatureUnavailable,
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "Die Null-Plattform kann keine Fenster erstellen.");
         return nullptr;
     }
@@ -157,7 +157,7 @@ public:
 
 } // namespace
 
-std::unique_ptr<Backend> createNullBackend(Error&) {
+std::unique_ptr<Backend> CreateNullBackend(Error&) {
     return std::make_unique<NullBackend>();
 }
 

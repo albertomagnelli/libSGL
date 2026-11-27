@@ -52,19 +52,19 @@ namespace {
 
   // Ein Rahmen aus einem Eintrag: {"frame":{x,y,w,h},"duration":ms} oder flach
   AnimationFrame ReadFrame(const Json &entry, const i32 fallbackWidth, const i32 fallbackHeight) {
-    const Json *box = entry.Find("frame");
+    const Json *box = entry.find("frame");
 
-    if ((box == nullptr) || !box->IsObject()) box = &entry;
+    if ((box == nullptr) || !box->isObject()) box = &entry;
 
     AnimationFrame frame;
-    frame.x      = box->Find("x") ? box->Find("x")->Int() : 0;
-    frame.y      = box->Find("y") ? box->Find("y")->Int() : 0;
-    frame.width  = box->Find("w") ? box->Find("w")->Int() : fallbackWidth;
-    frame.height = box->Find("h") ? box->Find("h")->Int() : fallbackHeight;
+    frame.x      = box->find("x") ? box->find("x")->intValue() : 0;
+    frame.y      = box->find("y") ? box->find("y")->intValue() : 0;
+    frame.width  = box->find("w") ? box->find("w")->intValue() : fallbackWidth;
+    frame.height = box->find("h") ? box->find("h")->intValue() : fallbackHeight;
 
     // Aseprite: Dauer in Millisekunden. Fehlt sie, gilt die Standarddauer.
-    const Json *duration = entry.Find("duration");
-    frame.duration       = (duration != nullptr) ? SanitizeDuration(duration->Float(DefaultDuration * 1000.0f) *
+    const Json *duration = entry.find("duration");
+    frame.duration       = (duration != nullptr) ? SanitizeDuration(duration->floatValue(DefaultDuration * 1000.0f) *
                                                                    MillisecondToSecond)
                                                  : DefaultDuration;
 
@@ -72,9 +72,9 @@ namespace {
   }
 
   AnimationDirection ReadDirection(const Json *tag) {
-    if ((tag == nullptr) || !tag->IsString()) return ANIMATION_FORWARD;
+    if ((tag == nullptr) || !tag->isString()) return ANIMATION_FORWARD;
 
-    const std::string &value = tag->String();
+    const std::string &value = tag->string();
 
     if (value == "reverse") return ANIMATION_REVERSE;
     if (value == "pingpong") return ANIMATION_PINGPONG;
@@ -83,20 +83,20 @@ namespace {
   }
 }  // namespace
 
-AnimatedSprite::~AnimatedSprite() { Unload(); }
+AnimatedSprite::~AnimatedSprite() { unload(); }
 
-AnimatedSprite::AnimatedSprite(AnimatedSprite &&other) noexcept { MoveFrom(other); }
+AnimatedSprite::AnimatedSprite(AnimatedSprite &&other) noexcept { moveFrom(other); }
 
 AnimatedSprite &AnimatedSprite::operator=(AnimatedSprite &&other) noexcept {
   if (this == &other) return *this;
 
-  Unload();
-  MoveFrom(other);
+  unload();
+  moveFrom(other);
 
   return *this;
 }
 
-void AnimatedSprite::MoveFrom(AnimatedSprite &other) {
+void AnimatedSprite::moveFrom(AnimatedSprite &other) {
   m_sprite            = std::move(other.m_sprite);
   m_animations        = std::move(other.m_animations);
   m_steps             = std::move(other.m_steps);
@@ -124,8 +124,8 @@ void AnimatedSprite::MoveFrom(AnimatedSprite &other) {
   other.m_stepIndex      = 0;
 }
 
-void AnimatedSprite::Unload() {
-  m_sprite.Unload();
+void AnimatedSprite::unload() {
+  m_sprite.unload();
   m_animations.clear();
   m_steps.clear();
   m_shapes.clear();
@@ -143,10 +143,10 @@ void AnimatedSprite::Unload() {
 // -----------------------------------------------------------------------------
 // Laden
 // -----------------------------------------------------------------------------
-bool AnimatedSprite::LoadFromFile(const std::string &imagePath, const std::string &jsonPath) {
+bool AnimatedSprite::loadFromFile(const std::string &imagePath, const std::string &jsonPath) {
   Image sheet;
   try {
-    sheet = ImageIO::load(imagePath);
+    sheet = ImageIO::Load(imagePath);
   } catch (const std::exception &error) {
     SLOGE << "AnimatedSprite: Bild \"" << imagePath << "\" nicht ladbar (" << error.what() << ")";
 
@@ -162,8 +162,8 @@ bool AnimatedSprite::LoadFromFile(const std::string &imagePath, const std::strin
   const std::string metadataPath = jsonPath.empty() ? ReplaceExtension(imagePath, ".json") : jsonPath;
 
   const Json document = Json::ParseFile(metadataPath);
-  if (!document.IsValid()) {
-    SLOGW << "AnimatedSprite: keine brauchbaren Metadaten (" << document.Error()
+  if (!document.isValid()) {
+    SLOGW << "AnimatedSprite: keine brauchbaren Metadaten (" << document.error()
           << "), nehme das ganze Blatt als eine Animation";
 
     Animation animation;
@@ -178,11 +178,11 @@ bool AnimatedSprite::LoadFromFile(const std::string &imagePath, const std::strin
 
     animation.frames.push_back(frame);
 
-    return Build(sheet, {std::move(animation)}, m_threshold);
+    return build(sheet, {std::move(animation)}, m_threshold);
   }
 
   // ----- Rahmen -----------------------------------------------------------
-  const Json *framesJson = document.Find("frames");
+  const Json *framesJson = document.find("frames");
 
   if (framesJson == nullptr) {
     SLOGE << "AnimatedSprite: \"" << metadataPath << "\" enthaelt keine Rahmen";
@@ -194,15 +194,15 @@ bool AnimatedSprite::LoadFromFile(const std::string &imagePath, const std::strin
   const i32 fallbackHeight = 0;
 
   std::vector<AnimationFrame> frames;
-  frames.reserve(static_cast<std::size_t>(framesJson->Size()));
+  frames.reserve(static_cast<std::size_t>(framesJson->size()));
 
-  if (framesJson->IsArray()) {
-    for (i32 i = 0; i < framesJson->Size(); ++i) {
-      frames.push_back(ReadFrame(framesJson->At(i), fallbackWidth, fallbackHeight));
+  if (framesJson->isArray()) {
+    for (i32 i = 0; i < framesJson->size(); ++i) {
+      frames.push_back(ReadFrame(framesJson->at(i), fallbackWidth, fallbackHeight));
     }
-  } else if (framesJson->IsObject()) {
-    for (i32 i = 0; i < framesJson->Size(); ++i) {
-      const Json *entry = framesJson->Find(framesJson->KeyAt(i));
+  } else if (framesJson->isObject()) {
+    for (i32 i = 0; i < framesJson->size(); ++i) {
+      const Json *entry = framesJson->find(framesJson->keyAt(i));
 
       if (entry == nullptr) continue;
 
@@ -219,21 +219,21 @@ bool AnimatedSprite::LoadFromFile(const std::string &imagePath, const std::strin
   // ----- Animationen ------------------------------------------------------
   std::vector<Animation> animations;
 
-  const Json *meta = document.Find("meta");
-  const Json *tags = (meta != nullptr) ? meta->Find("frameTags") : nullptr;
+  const Json *meta = document.find("meta");
+  const Json *tags = (meta != nullptr) ? meta->find("frameTags") : nullptr;
 
-  if ((tags != nullptr) && tags->IsArray() && (tags->Size() > 0)) {
-    for (i32 t = 0; t < tags->Size(); ++t) {
-      const Json &tag = tags->At(t);
+  if ((tags != nullptr) && tags->isArray() && (tags->size() > 0)) {
+    for (i32 t = 0; t < tags->size(); ++t) {
+      const Json &tag = tags->at(t);
 
       Animation animation;
-      animation.name = tag.Find("name") ? tag.Find("name")->String() : ("animation" + std::to_string(t));
-      animation.loop = tag.Find("repeat") ? (tag.Find("repeat")->Int() != 0) : true;
-      animation.direction = ReadDirection(tag.Find("direction"));
+      animation.name = tag.find("name") ? tag.find("name")->string() : ("animation" + std::to_string(t));
+      animation.loop = tag.find("repeat") ? (tag.find("repeat")->intValue() != 0) : true;
+      animation.direction = ReadDirection(tag.find("direction"));
 
-      const i32 from = std::clamp(tag.Find("from") ? tag.Find("from")->Int() : 0, 0,
+      const i32 from = std::clamp(tag.find("from") ? tag.find("from")->intValue() : 0, 0,
                                   static_cast<i32>(frames.size()) - 1);
-      const i32 to   = std::clamp(tag.Find("to") ? tag.Find("to")->Int() : (static_cast<i32>(frames.size()) - 1),
+      const i32 to   = std::clamp(tag.find("to") ? tag.find("to")->intValue() : (static_cast<i32>(frames.size()) - 1),
                                   from, static_cast<i32>(frames.size()) - 1);
 
       for (i32 i = from; i <= to; ++i) animation.frames.push_back(frames[static_cast<std::size_t>(i)]);
@@ -253,17 +253,17 @@ bool AnimatedSprite::LoadFromFile(const std::string &imagePath, const std::strin
     animations.push_back(std::move(animation));
   }
 
-  return Build(sheet, std::move(animations), m_threshold);
+  return build(sheet, std::move(animations), m_threshold);
 }
 
-bool AnimatedSprite::LoadFromImage(const Image &sheet, std::vector<Animation> animations,
+bool AnimatedSprite::loadFromImage(const Image &sheet, std::vector<Animation> animations,
                                    const u8 collisionThreshold) {
   m_threshold = collisionThreshold;
 
-  return Build(sheet, std::move(animations), collisionThreshold);
+  return build(sheet, std::move(animations), collisionThreshold);
 }
 
-bool AnimatedSprite::LoadFromGrid(const Image &sheet, const i32 frameWidth, const i32 frameHeight,
+bool AnimatedSprite::loadFromGrid(const Image &sheet, const i32 frameWidth, const i32 frameHeight,
                                   const f32 frameDuration, const u8 collisionThreshold) {
   if (sheet.isEmpty() || (frameWidth <= 0) || (frameHeight <= 0)) {
     SLOGE << "AnimatedSprite: ungueltiges Blatt oder Rahmengroesse";
@@ -291,17 +291,17 @@ bool AnimatedSprite::LoadFromGrid(const Image &sheet, const i32 frameWidth, cons
 
   m_threshold = collisionThreshold;
 
-  return Build(sheet, {std::move(animation)}, collisionThreshold);
+  return build(sheet, {std::move(animation)}, collisionThreshold);
 }
 
-bool AnimatedSprite::Build(const Image &sheet, std::vector<Animation> animations, const u8 collisionThreshold) {
+bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations, const u8 collisionThreshold) {
   if (sheet.isEmpty() || animations.empty()) {
     SLOGE << "AnimatedSprite: Blatt oder Animationen fehlen";
 
     return false;
   }
 
-  Unload();
+  unload();
 
   m_threshold = collisionThreshold;
 
@@ -310,7 +310,7 @@ bool AnimatedSprite::Build(const Image &sheet, std::vector<Animation> animations
   m_sheetWidth  = sheet.width();
   m_sheetHeight = sheet.height();
 
-  if ((getCurrentWindow() != nullptr) && (GL::glCreateTextures != nullptr)) {
+  if ((GetCurrentWindow() != nullptr) && (GL::glCreateTextures != nullptr)) {
     try {
       TextureOptions options;
       options.mipmaps   = MipmapMode::None;
@@ -320,10 +320,10 @@ bool AnimatedSprite::Build(const Image &sheet, std::vector<Animation> animations
       options.minFilter = m_smooth ? TextureFilter::Linear : TextureFilter::Nearest;
       options.magFilter = options.minFilter;
 
-      Texture2d texture = Texture2d::fromImage(sheet, options);
-      m_sprite.LoadFromTexture(std::move(texture), sheet.width(), sheet.height());
-      m_sprite.SetOrigin(m_origin);
-      m_sprite.SetSmooth(m_smooth);
+      Texture2d texture = Texture2d::FromImage(sheet, options);
+      m_sprite.loadFromTexture(std::move(texture), sheet.width(), sheet.height());
+      m_sprite.setOrigin(m_origin);
+      m_sprite.setSmooth(m_smooth);
     } catch (const std::exception &error) {
       SLOGW << "AnimatedSprite: Textur laesst sich nicht anlegen (" << error.what() << ", Zeichnen entfaellt)";
     }
@@ -400,10 +400,10 @@ bool AnimatedSprite::Build(const Image &sheet, std::vector<Animation> animations
   m_stepTime       = 0.0f;
   m_finished       = false;
 
-  ApplyOriginToShapes();
-  ApplyFrame();
+  applyOriginToShapes();
+  applyFrame();
 
-  SLOGD << "AnimatedSprite: " << m_animations.size() << " Animation(en), " << TotalFrameCount()
+  SLOGD << "AnimatedSprite: " << m_animations.size() << " Animation(en), " << totalFrameCount()
         << " Rahmen, Blatt " << sheet.width() << "x" << sheet.height();
 
   return true;
@@ -412,19 +412,19 @@ bool AnimatedSprite::Build(const Image &sheet, std::vector<Animation> animations
 // -----------------------------------------------------------------------------
 // Animationen und Wiedergabe
 // -----------------------------------------------------------------------------
-bool AnimatedSprite::IsValid() const { return !m_animations.empty(); }
+bool AnimatedSprite::isValid() const { return !m_animations.empty(); }
 
-bool AnimatedSprite::HasTexture() const { return m_sprite.IsValid(); }
+bool AnimatedSprite::hasTexture() const { return m_sprite.isValid(); }
 
-bool AnimatedSprite::HasShape() const {
-  const CollisionShape &shape = CurrentShape();
+bool AnimatedSprite::hasShape() const {
+  const CollisionShape &shape = currentShape();
 
-  return shape.IsValid();
+  return shape.isValid();
 }
 
-i32 AnimatedSprite::AnimationCount() const { return static_cast<i32>(m_animations.size()); }
+i32 AnimatedSprite::animationCount() const { return static_cast<i32>(m_animations.size()); }
 
-const std::string &AnimatedSprite::AnimationName(const i32 index) const {
+const std::string &AnimatedSprite::animationName(const i32 index) const {
   static const std::string empty;
 
   if ((index < 0) || (index >= static_cast<i32>(m_animations.size()))) return empty;
@@ -432,9 +432,9 @@ const std::string &AnimatedSprite::AnimationName(const i32 index) const {
   return m_animations[static_cast<std::size_t>(index)].name;
 }
 
-bool AnimatedSprite::HasAnimation(const std::string &name) const { return FindAnimation(name) >= 0; }
+bool AnimatedSprite::hasAnimation(const std::string &name) const { return findAnimation(name) >= 0; }
 
-i32 AnimatedSprite::FindAnimation(const std::string &name) const {
+i32 AnimatedSprite::findAnimation(const std::string &name) const {
   for (std::size_t i = 0; i < m_animations.size(); ++i) {
     if (m_animations[i].name == name) return static_cast<i32>(i);
   }
@@ -442,15 +442,15 @@ i32 AnimatedSprite::FindAnimation(const std::string &name) const {
   return -1;
 }
 
-const Animation *AnimatedSprite::AnimationAt(const i32 index) const {
+const Animation *AnimatedSprite::animationAt(const i32 index) const {
   if ((index < 0) || (index >= static_cast<i32>(m_animations.size()))) return nullptr;
 
   return &m_animations[static_cast<std::size_t>(index)];
 }
 
-const Animation *AnimatedSprite::Current() const { return AnimationAt(m_animationIndex); }
+const Animation *AnimatedSprite::current() const { return animationAt(m_animationIndex); }
 
-const std::vector<AnimatedSprite::Step> &AnimatedSprite::CurrentSteps() const {
+const std::vector<AnimatedSprite::Step> &AnimatedSprite::currentSteps() const {
   static const std::vector<Step> empty;
 
   if ((m_animationIndex < 0) || (m_animationIndex >= static_cast<i32>(m_steps.size()))) return empty;
@@ -458,8 +458,8 @@ const std::vector<AnimatedSprite::Step> &AnimatedSprite::CurrentSteps() const {
   return m_steps[static_cast<std::size_t>(m_animationIndex)];
 }
 
-bool AnimatedSprite::Play(const std::string &name, const bool restart) {
-  const i32 index = FindAnimation(name);
+bool AnimatedSprite::play(const std::string &name, const bool restart) {
+  const i32 index = findAnimation(name);
 
   if (index < 0) {
     SLOGW << "AnimatedSprite: Animation \"" << name << "\" gibt es nicht";
@@ -474,31 +474,31 @@ bool AnimatedSprite::Play(const std::string &name, const bool restart) {
   m_stepTime       = 0.0f;
   m_finished       = false;
 
-  ApplyFrame();
+  applyFrame();
 
   return true;
 }
 
-void AnimatedSprite::Restart() {
+void AnimatedSprite::restart() {
   m_stepIndex = 0;
   m_stepTime  = 0.0f;
   m_finished  = false;
 
-  ApplyFrame();
+  applyFrame();
 }
 
-void AnimatedSprite::Pause() { m_paused = true; }
+void AnimatedSprite::pause() { m_paused = true; }
 
-void AnimatedSprite::Resume() { m_paused = false; }
+void AnimatedSprite::resume() { m_paused = false; }
 
-bool AnimatedSprite::IsPaused() const { return m_paused; }
+bool AnimatedSprite::isPaused() const { return m_paused; }
 
-void AnimatedSprite::SetSpeed(const f32 multiplier) { m_speed = std::max(0.0f, multiplier); }
+void AnimatedSprite::setSpeed(const f32 multiplier) { m_speed = std::max(0.0f, multiplier); }
 
-f32 AnimatedSprite::Speed() const { return m_speed; }
+f32 AnimatedSprite::speed() const { return m_speed; }
 
-void AnimatedSprite::SetAnimationSpeed(const std::string &name, const f32 multiplier) {
-  const i32 index = FindAnimation(name);
+void AnimatedSprite::setAnimationSpeed(const std::string &name, const f32 multiplier) {
+  const i32 index = findAnimation(name);
 
   if (index < 0) {
     SLOGW << "AnimatedSprite: Animation \"" << name << "\" gibt es nicht";
@@ -509,15 +509,15 @@ void AnimatedSprite::SetAnimationSpeed(const std::string &name, const f32 multip
   m_animationSpeeds[static_cast<std::size_t>(index)] = std::max(0.0f, multiplier);
 }
 
-f32 AnimatedSprite::AnimationSpeed(const std::string &name) const {
-  const i32 index = FindAnimation(name);
+f32 AnimatedSprite::animationSpeed(const std::string &name) const {
+  const i32 index = findAnimation(name);
 
   if ((index < 0) || (index >= static_cast<i32>(m_animationSpeeds.size()))) return 1.0f;
 
   return m_animationSpeeds[static_cast<std::size_t>(index)];
 }
 
-f32 AnimatedSprite::EffectiveSpeed() const {
+f32 AnimatedSprite::effectiveSpeed() const {
   if (m_paused) return 0.0f;
 
   const f32 animationSpeed = ((m_animationIndex >= 0) && (m_animationIndex < static_cast<i32>(m_animationSpeeds.size())))
@@ -527,13 +527,13 @@ f32 AnimatedSprite::EffectiveSpeed() const {
   return m_speed * animationSpeed;
 }
 
-void AnimatedSprite::SetFrameDuration(const f32 seconds) {
+void AnimatedSprite::setFrameDuration(const f32 seconds) {
   m_frameDuration = (seconds > 0.0f) ? seconds : 0.0f;
 }
 
-f32 AnimatedSprite::FrameDurationOverride() const { return m_frameDuration; }
+f32 AnimatedSprite::frameDurationOverride() const { return m_frameDuration; }
 
-void AnimatedSprite::SetLooping(const bool loop) {
+void AnimatedSprite::setLooping(const bool loop) {
   if (m_animationIndex < 0) return;
 
   if (static_cast<std::size_t>(m_animationIndex) < m_animations.size()) {
@@ -541,14 +541,14 @@ void AnimatedSprite::SetLooping(const bool loop) {
   }
 }
 
-bool AnimatedSprite::IsLooping() const {
-  const Animation *animation = Current();
+bool AnimatedSprite::isLooping() const {
+  const Animation *animation = current();
 
   return (animation != nullptr) && animation->loop;
 }
 
-void AnimatedSprite::SetFrame(const i32 index) {
-  const std::vector<Step> &steps = CurrentSteps();
+void AnimatedSprite::setFrame(const i32 index) {
+  const std::vector<Step> &steps = currentSteps();
 
   if (steps.empty()) return;
 
@@ -560,20 +560,20 @@ void AnimatedSprite::SetFrame(const i32 index) {
     m_stepTime  = 0.0f;
     m_finished  = false;
 
-    ApplyFrame();
+    applyFrame();
 
     return;
   }
 }
 
-void AnimatedSprite::Update(const f32 deltaTime) {
-  if (!IsValid()) return;
+void AnimatedSprite::update(const f32 deltaTime) {
+  if (!isValid()) return;
 
-  const f32 speed = EffectiveSpeed();
+  const f32 speed = effectiveSpeed();
 
   if (speed <= 0.0f) return;
 
-  const std::vector<Step> &steps = CurrentSteps();
+  const std::vector<Step> &steps = currentSteps();
 
   if (steps.empty()) return;
 
@@ -581,7 +581,7 @@ void AnimatedSprite::Update(const f32 deltaTime) {
 
   // mehrere Rahmen pro Bild durchlaufen (hohes Tempo, grosse deltaTime)
   for (i32 guard = 0; guard < 4096; ++guard) {
-    const f32 duration = CurrentFrameDuration();
+    const f32 duration = currentFrameDuration();
 
     if (m_stepTime < duration) break;
 
@@ -590,18 +590,18 @@ void AnimatedSprite::Update(const f32 deltaTime) {
     if ((m_stepIndex + 1) < static_cast<i32>(steps.size())) {
       ++m_stepIndex;
 
-      ApplyFrame();
+      applyFrame();
 
       continue;
     }
 
-    const Animation *animation = Current();
+    const Animation *animation = current();
 
     if ((animation != nullptr) && animation->loop) {
       m_stepIndex = 0;
       m_stepTime  = std::fmod(m_stepTime, duration); // Restzeit behalten, nicht verlieren
 
-      ApplyFrame();
+      applyFrame();
 
       continue;
     }
@@ -618,33 +618,33 @@ void AnimatedSprite::Update(const f32 deltaTime) {
 // -----------------------------------------------------------------------------
 // Zustand
 // -----------------------------------------------------------------------------
-const std::string &AnimatedSprite::CurrentAnimation() const {
+const std::string &AnimatedSprite::currentAnimation() const {
   static const std::string empty;
 
-  const Animation *animation = Current();
+  const Animation *animation = current();
 
   return (animation != nullptr) ? animation->name : empty;
 }
 
-i32 AnimatedSprite::CurrentAnimationIndex() const { return m_animationIndex; }
+i32 AnimatedSprite::currentAnimationIndex() const { return m_animationIndex; }
 
-i32 AnimatedSprite::FrameIndex() const {
-  const std::vector<Step> &steps = CurrentSteps();
+i32 AnimatedSprite::frameIndex() const {
+  const std::vector<Step> &steps = currentSteps();
 
   if (steps.empty()) return 0;
 
   return steps[static_cast<std::size_t>(std::clamp(m_stepIndex, 0, static_cast<i32>(steps.size()) - 1))].frame;
 }
 
-i32 AnimatedSprite::StepIndex() const { return m_stepIndex; }
+i32 AnimatedSprite::stepIndex() const { return m_stepIndex; }
 
-i32 AnimatedSprite::FrameCount() const {
-  const Animation *animation = Current();
+i32 AnimatedSprite::frameCount() const {
+  const Animation *animation = current();
 
   return (animation != nullptr) ? static_cast<i32>(animation->frames.size()) : 0;
 }
 
-i32 AnimatedSprite::TotalFrameCount() const {
+i32 AnimatedSprite::totalFrameCount() const {
   i32 total = 0;
 
   for (const Animation &animation : m_animations) total += static_cast<i32>(animation.frames.size());
@@ -652,49 +652,49 @@ i32 AnimatedSprite::TotalFrameCount() const {
   return total;
 }
 
-f32 AnimatedSprite::FrameTime() const { return m_stepTime; }
+f32 AnimatedSprite::frameTime() const { return m_stepTime; }
 
-f32 AnimatedSprite::CurrentFrameDuration() const {
+f32 AnimatedSprite::currentFrameDuration() const {
   if (m_frameDuration > 0.0f) return m_frameDuration;
 
-  const std::vector<Step> &steps = CurrentSteps();
+  const std::vector<Step> &steps = currentSteps();
 
   if (steps.empty()) return DefaultDuration;
 
   return steps[static_cast<std::size_t>(std::clamp(m_stepIndex, 0, static_cast<i32>(steps.size()) - 1))].duration;
 }
 
-f32 AnimatedSprite::Duration() const {
+f32 AnimatedSprite::duration() const {
   f32 total = 0.0f;
 
-  for (const Step &step : CurrentSteps()) total += (m_frameDuration > 0.0f) ? m_frameDuration : step.duration;
+  for (const Step &step : currentSteps()) total += (m_frameDuration > 0.0f) ? m_frameDuration : step.duration;
 
   return total;
 }
 
-f32 AnimatedSprite::Progress() const {
-  const f32 duration = Duration();
+f32 AnimatedSprite::progress() const {
+  const f32 totalDuration = duration();
 
-  if (duration <= 0.0f) return 0.0f;
+  if (totalDuration <= 0.0f) return 0.0f;
 
   f32 elapsed = m_stepTime;
 
-  const std::vector<Step> &steps = CurrentSteps();
+  const std::vector<Step> &steps = currentSteps();
 
   for (i32 step = 0; (step < m_stepIndex) && (step < static_cast<i32>(steps.size())); ++step) {
     elapsed += (m_frameDuration > 0.0f) ? m_frameDuration : steps[static_cast<std::size_t>(step)].duration;
   }
 
-  return std::clamp(elapsed / duration, 0.0f, 1.0f);
+  return std::clamp(elapsed / totalDuration, 0.0f, 1.0f);
 }
 
-bool AnimatedSprite::IsFinished() const { return m_finished; }
+bool AnimatedSprite::isFinished() const { return m_finished; }
 
-Sprite &AnimatedSprite::Frame() { return m_sprite; }
+Sprite &AnimatedSprite::frame() { return m_sprite; }
 
-const Sprite &AnimatedSprite::Frame() const { return m_sprite; }
+const Sprite &AnimatedSprite::frame() const { return m_sprite; }
 
-const CollisionShape &AnimatedSprite::CurrentShape() const {
+const CollisionShape &AnimatedSprite::currentShape() const {
   static const CollisionShape empty;
 
   if ((m_animationIndex < 0) || (m_animationIndex >= static_cast<i32>(m_shapes.size()))) return empty;
@@ -703,81 +703,81 @@ const CollisionShape &AnimatedSprite::CurrentShape() const {
 
   if (shapes.empty()) return empty;
 
-  const i32 index = std::clamp(FrameIndex(), 0, static_cast<i32>(shapes.size()) - 1);
+  const i32 index = std::clamp(frameIndex(), 0, static_cast<i32>(shapes.size()) - 1);
 
   return shapes[static_cast<std::size_t>(index)];
 }
 
-const CollisionShape &AnimatedSprite::Shape() const { return CurrentShape(); }
+const CollisionShape &AnimatedSprite::shape() const { return currentShape(); }
 
-vec2 AnimatedSprite::Size() const {
-  return vec2(static_cast<f32>(m_sprite.Width()), static_cast<f32>(m_sprite.Height()));
+vec2 AnimatedSprite::size() const {
+  return vec2(static_cast<f32>(m_sprite.width()), static_cast<f32>(m_sprite.height()));
 }
 
-void AnimatedSprite::ApplyFrame() {
-  const Animation *animation = Current();
+void AnimatedSprite::applyFrame() {
+  const Animation *animation = current();
 
   if (animation == nullptr) return;
 
-  const i32 index = FrameIndex();
+  const i32 index = frameIndex();
 
   if ((index < 0) || (index >= static_cast<i32>(animation->frames.size()))) return;
 
   const AnimationFrame &frame = animation->frames[static_cast<std::size_t>(index)];
 
   // Ausschnitt tauschen, Deckungsform bleibt (sie ist bereits vorberechnet)
-  m_sprite.SetSourceRect(frame.x, frame.y, frame.width, frame.height, false);
+  m_sprite.setSourceRect(frame.x, frame.y, frame.width, frame.height, false);
 }
 
-void AnimatedSprite::ApplyOriginToShapes() {
+void AnimatedSprite::applyOriginToShapes() {
   for (std::vector<CollisionShape> &shapes : m_shapes) {
     for (CollisionShape &shape : shapes) {
-      if (!shape.IsValid()) continue;
+      if (!shape.isValid()) continue;
 
-      shape.SetPivot(vec2(m_origin.x * static_cast<f32>(shape.Width()), m_origin.y * static_cast<f32>(shape.Height())));
+      shape.setPivot(vec2(m_origin.x * static_cast<f32>(shape.width()), m_origin.y * static_cast<f32>(shape.height())));
     }
   }
 
-  m_sprite.SetOrigin(m_origin);
+  m_sprite.setOrigin(m_origin);
 }
 
 // -----------------------------------------------------------------------------
 // Darstellung
 // -----------------------------------------------------------------------------
-void AnimatedSprite::SetOrigin(const vec2 &normalized) {
+void AnimatedSprite::setOrigin(const vec2 &normalized) {
   m_origin = vec2(std::clamp(normalized.x, 0.0f, 1.0f), std::clamp(normalized.y, 0.0f, 1.0f));
 
-  ApplyOriginToShapes();
+  applyOriginToShapes();
 }
 
-vec2 AnimatedSprite::Origin() const { return m_origin; }
+vec2 AnimatedSprite::origin() const { return m_origin; }
 
-void AnimatedSprite::SetTint(const Color &tint) { m_sprite.SetTint(tint); }
+void AnimatedSprite::setTint(const Color &tint) { m_sprite.setTint(tint); }
 
-const Color &AnimatedSprite::Tint() const { return m_sprite.Tint(); }
+const Color &AnimatedSprite::tint() const { return m_sprite.tint(); }
 
-void AnimatedSprite::SetSmooth(const bool smooth) {
+void AnimatedSprite::setSmooth(const bool smooth) {
   m_smooth = smooth;
 
-  m_sprite.SetSmooth(smooth);
+  m_sprite.setSmooth(smooth);
 }
 
 // -----------------------------------------------------------------------------
 // Kollision (ueber die vorberechneten Formen des jeweils aktuellen Rahmens)
 // -----------------------------------------------------------------------------
-bool AnimatedSprite::ContainsPoint(const vec2 &worldPoint, const vec2 &position, const f32 rotationDegrees) const {
-  return CurrentShape().ContainsWorldPoint(worldPoint, position, rotationDegrees);
+bool AnimatedSprite::containsPoint(const vec2 &worldPoint, const vec2 &position, const f32 rotationDegrees) const {
+  return currentShape().containsWorldPoint(worldPoint, position, rotationDegrees);
 }
 
-bool AnimatedSprite::CollidesWith(const AnimatedSprite &other, const vec2 &position, const f32 rotationDegrees,
+bool AnimatedSprite::collidesWith(const AnimatedSprite &other, const vec2 &position, const f32 rotationDegrees,
                                   const vec2 &otherPosition, const f32 otherRotationDegrees) const {
-  return CurrentShape().Overlaps(other.CurrentShape(), position, rotationDegrees, otherPosition,
+  return currentShape().overlaps(other.currentShape(), position, rotationDegrees, otherPosition,
                                  otherRotationDegrees);
 }
 
-bool AnimatedSprite::CollidesWith(const Sprite &other, const vec2 &position, const f32 rotationDegrees,
+bool AnimatedSprite::collidesWith(const Sprite &other, const vec2 &position, const f32 rotationDegrees,
                                   const vec2 &otherPosition, const f32 otherRotationDegrees) const {
-  return CurrentShape().Overlaps(other.Shape(), position, rotationDegrees, otherPosition, otherRotationDegrees);
+  return currentShape().overlaps(other.shape(), position, rotationDegrees, otherPosition, otherRotationDegrees);
 }
 
 // -----------------------------------------------------------------------------
@@ -786,15 +786,15 @@ bool AnimatedSprite::CollidesWith(const Sprite &other, const vec2 &position, con
 AnimatedSprite LoadAnimatedSprite(const std::string_view imagePath, const std::string_view jsonPath) {
   AnimatedSprite sprite;
 
-  if (!sprite.LoadFromFile(std::string(imagePath), std::string(jsonPath))) return AnimatedSprite{};
+  if (!sprite.loadFromFile(std::string(imagePath), std::string(jsonPath))) return AnimatedSprite{};
 
   return sprite;
 }
 
 void DrawAnimatedSprite(const AnimatedSprite &sprite, const vec2 position, const f32 rotationAngle) {
-  if (!sprite.IsValid() || !sprite.HasTexture()) return;
+  if (!sprite.isValid() || !sprite.hasTexture()) return;
 
-  DrawSprite(sprite.Frame(), position, rotationAngle);
+  DrawSprite(sprite.frame(), position, rotationAngle);
 }
 
 }  // namespace sgl

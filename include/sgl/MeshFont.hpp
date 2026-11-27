@@ -5,15 +5,15 @@
 //
 // Schriften als Dreiecksnetze (Font2d, Font3d). Öffentliche Schnittstelle dieses Headers:
 //
-//   MeshFontError, Font2d, fromFile, fromMemory, ascent
+//   MeshFontError, Font2d, FromFile, FromMemory, ascent
 //   descent, lineHeight, advance, kerning, measure
-//   lineCount, Font3d, FindSystemFont
+//   LineCount, Font3d, FindSystemFont
 //
 // Beispiel:
 //
-//   Font2d font = Font2d::fromFile("DejaVuSans.ttf");
+//   Font2d font = Font2d::FromFile("DejaVuSans.ttf");
 //   GlyphMesh mesh = font.glyphMesh('A', MeshQuality::High);
-//   Font3d font3d = Font3d::fromFile("DejaVuSans.ttf");
+//   Font3d font3d = Font3d::FromFile("DejaVuSans.ttf");
 //   GlyphMesh3d solid = font3d.glyphMesh3d('A', 0.2f);
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -43,11 +43,11 @@
 //
 // Beispiel:
 //
-//   const Font2d font = Font2d::fromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+//   const Font2d font = Font2d::FromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 //   const f32 breite = font.measure("Hallo Welt", 32.0f);
 //   const GlyphMesh mesh = font.glyphMesh('A', MeshQuality::High);
 //
-//   const Font3d font3d = Font3d::fromFile(...);
+//   const Font3d font3d = Font3d::FromFile(...);
 //   const GlyphMesh3d lit = font3d.glyphMesh3d('A', 0.15f, MeshQuality::Normal);
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -110,8 +110,8 @@ public:
     Font2d(const Font2d&) = delete;
     Font2d& operator=(const Font2d&) = delete;
 
-    [[nodiscard]] static Font2d fromFile(const std::filesystem::path& file);
-    [[nodiscard]] static Font2d fromMemory(std::span<const u8> data);
+    [[nodiscard]] static Font2d FromFile(const std::filesystem::path& file);
+    [[nodiscard]] static Font2d FromMemory(std::span<const u8> data);
 
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept { return m_font != nullptr; }
@@ -132,7 +132,7 @@ public:
     // Breite der breitesten Zeile in Pixeln
     [[nodiscard]] f32 measure(std::string_view text, f32 pixelSize) const;
     // Anzahl der Zeilen (Trennung an '\n')
-    [[nodiscard]] static u32 lineCount(std::string_view text);
+    [[nodiscard]] static u32 LineCount(std::string_view text);
 
     // ── Netze ────────────────────────────────────────────────────────────────
     [[nodiscard]] GlyphMesh glyphMesh(u32 codepoint, MeshQuality quality = MeshQuality::Normal) const;
@@ -156,8 +156,8 @@ public:
     Font3d(const Font3d&) = delete;
     Font3d& operator=(const Font3d&) = delete;
 
-    [[nodiscard]] static Font3d fromFile(const std::filesystem::path& file);
-    [[nodiscard]] static Font3d fromMemory(std::span<const u8> data);
+    [[nodiscard]] static Font3d FromFile(const std::filesystem::path& file);
+    [[nodiscard]] static Font3d FromMemory(std::span<const u8> data);
 
     [[nodiscard]] bool isValid() const noexcept { return m_font != nullptr; }
     [[nodiscard]] u32 glyphCount() const noexcept;

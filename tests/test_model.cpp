@@ -35,7 +35,7 @@ TEST_CASE("ModelIO laedt ein skinned glTF-Modell", "[model][gltf]") {
     const auto path = CharacterModel();
     REQUIRE(std::filesystem::exists(path));
 
-    const auto result = ModelIO::load(path);
+    const auto result = ModelIO::Load(path);
     REQUIRE(result);
 
     const Model& model = *result;
@@ -73,7 +73,7 @@ TEST_CASE("ModelAnimationIO laedt Animationsdaten", "[model][animation]") {
     const auto path = CharacterModel();
     REQUIRE(std::filesystem::exists(path));
 
-    const auto result = ModelAnimationIO::load(path);
+    const auto result = ModelAnimationIO::Load(path);
     REQUIRE(result);
     REQUIRE_FALSE(result->empty());
 
@@ -101,11 +101,11 @@ TEST_CASE("ModelIO und ModelAnimationIO laden aus dem Speicher", "[model][gltf]"
     const std::vector<u8> bytes = ReadBytes(path);
     REQUIRE_FALSE(bytes.empty());
 
-    const auto model = ModelIO::loadFromMemory(bytes, path.parent_path());
+    const auto model = ModelIO::LoadFromMemory(bytes, path.parent_path());
     REQUIRE(model);
     REQUIRE(model->isValid());
 
-    const auto animations = ModelAnimationIO::loadFromMemory(bytes, path.parent_path());
+    const auto animations = ModelAnimationIO::LoadFromMemory(bytes, path.parent_path());
     REQUIRE(animations);
     REQUIRE_FALSE(animations->empty());
 }
@@ -116,7 +116,7 @@ TEST_CASE("ModelIO und ModelAnimationIO laden FBX", "[model][fbx]") {
         std::filesystem::path(SGL_TEST_MODEL_RESOURCES) / "zombie.fbx";
     REQUIRE(std::filesystem::exists(path));
 
-    const auto result = ModelIO::load(path);
+    const auto result = ModelIO::Load(path);
     REQUIRE(result);
 
     const Model& model = *result;
@@ -148,7 +148,7 @@ TEST_CASE("ModelIO und ModelAnimationIO laden FBX", "[model][fbx]") {
                     [](const MeshVertex& vertex) { return vertex.hasSkinning(); });
     REQUIRE(hasSkinning);
 
-    const auto animations = ModelAnimationIO::load(path);
+    const auto animations = ModelAnimationIO::Load(path);
     REQUIRE(animations);
     REQUIRE_FALSE(animations->empty());
 
@@ -159,7 +159,7 @@ TEST_CASE("ModelIO und ModelAnimationIO laden FBX", "[model][fbx]") {
 
     ModelLoadOptions rawOptions;
     rawOptions.flipFbxV = false;
-    const auto raw = ModelIO::load(path, rawOptions);
+    const auto raw = ModelIO::Load(path, rawOptions);
     REQUIRE(raw);
     REQUIRE(raw->meshes.size() == model.meshes.size());
     REQUIRE(raw->meshes[0].vertices.size() == mesh.vertices.size());
@@ -168,7 +168,7 @@ TEST_CASE("ModelIO und ModelAnimationIO laden FBX", "[model][fbx]") {
 
     // walk.fbx enthält nur das Skelett und die Animation; die Kanäle müssen
     // sich über die Node-Namen auf das Zombie-Skelett übertragen lassen.
-    const auto walk = ModelAnimationIO::load(
+    const auto walk = ModelAnimationIO::Load(
         std::filesystem::path(SGL_TEST_MODEL_RESOURCES) / "walk.fbx");
     REQUIRE(walk);
     REQUIRE_FALSE(walk->empty());
@@ -184,7 +184,7 @@ TEST_CASE("ModelIO und ModelAnimationIO laden FBX", "[model][fbx]") {
 }
 
 TEST_CASE("ModelIO meldet fehlende Dateien", "[model][gltf]") {
-    const auto result = ModelIO::load(
+    const auto result = ModelIO::Load(
         std::filesystem::path(SGL_TEST_MODEL_RESOURCES) / "does-not-exist.glb");
     REQUIRE_FALSE(result);
     REQUIRE(result.error().what() != nullptr);

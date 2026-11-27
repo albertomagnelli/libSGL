@@ -17,51 +17,51 @@ TEST_CASE("Wave haelt PCM-Daten und rechnet sie um", "[audio][wave]") {
     std::vector<f32> samples(200, 0.25f);
 
     Wave wave;
-    REQUIRE(wave.SetSamples(std::move(samples), 48000, 2));
-    REQUIRE(wave.IsValid());
-    REQUIRE(wave.FrameCount() == 100);
-    REQUIRE(wave.SampleCount() == 200);
-    REQUIRE(wave.SampleRate() == 48000);
-    REQUIRE(wave.Channels() == 2);
-    REQUIRE(wave.SampleSize() == static_cast<i32>(sizeof(f32)));
-    REQUIRE(wave.Duration() == Catch::Approx(100.0f / 48000.0f));
+    REQUIRE(wave.setSamples(std::move(samples), 48000, 2));
+    REQUIRE(wave.isValid());
+    REQUIRE(wave.frameCount() == 100);
+    REQUIRE(wave.sampleCount() == 200);
+    REQUIRE(wave.sampleRate() == 48000);
+    REQUIRE(wave.channels() == 2);
+    REQUIRE(wave.sampleSize() == static_cast<i32>(sizeof(f32)));
+    REQUIRE(wave.duration() == Catch::Approx(100.0f / 48000.0f));
 
-    REQUIRE(wave.Crop(10, 19));
-    REQUIRE(wave.FrameCount() == 10);
-    REQUIRE(wave.SampleCount() == 20);
+    REQUIRE(wave.crop(10, 19));
+    REQUIRE(wave.frameCount() == 10);
+    REQUIRE(wave.sampleCount() == 20);
 
-    REQUIRE(wave.Convert(24000, 1));
-    REQUIRE(wave.SampleRate() == 24000);
-    REQUIRE(wave.Channels() == 1);
-    REQUIRE(wave.FrameCount() == 5);
+    REQUIRE(wave.convert(24000, 1));
+    REQUIRE(wave.sampleRate() == 24000);
+    REQUIRE(wave.channels() == 1);
+    REQUIRE(wave.frameCount() == 5);
 
-    const Wave copy = wave.Copy();
-    REQUIRE(copy.IsValid());
-    REQUIRE(copy.FrameCount() == wave.FrameCount());
+    const Wave copy = wave.copy();
+    REQUIRE(copy.isValid());
+    REQUIRE(copy.frameCount() == wave.frameCount());
 }
 
 TEST_CASE("Wave schreibt und liest eine WAV-Datei", "[audio][wave][io]") {
     Wave wave;
-    REQUIRE(wave.SetSamples(std::vector<f32>(100, 0.5f), 22050, 1));
+    REQUIRE(wave.setSamples(std::vector<f32>(100, 0.5f), 22050, 1));
 
     const std::filesystem::path file =
         std::filesystem::temp_directory_path() / "sgl-audio-test.wav";
     std::filesystem::remove(file);
 
-    REQUIRE(wave.SaveToFile(file.string()));
+    REQUIRE(wave.saveToFile(file.string()));
     REQUIRE(std::filesystem::exists(file));
 
     Wave loaded;
-    REQUIRE(loaded.LoadFromFile(file.string()));
-    REQUIRE(loaded.IsValid());
-    REQUIRE(loaded.SampleRate() == 22050);
-    REQUIRE(loaded.Channels() == 1);
-    REQUIRE(loaded.FrameCount() == 100);
+    REQUIRE(loaded.loadFromFile(file.string()));
+    REQUIRE(loaded.isValid());
+    REQUIRE(loaded.sampleRate() == 22050);
+    REQUIRE(loaded.channels() == 1);
+    REQUIRE(loaded.frameCount() == 100);
 
     const std::filesystem::path codeFile =
         std::filesystem::temp_directory_path() / "sgl-audio-test.h";
     std::filesystem::remove(codeFile);
-    REQUIRE(wave.SaveAsCode(codeFile.string(), "sglTestSamples"));
+    REQUIRE(wave.saveAsCode(codeFile.string(), "sglTestSamples"));
     REQUIRE(std::filesystem::exists(codeFile));
 
     std::filesystem::remove(file);
@@ -71,22 +71,22 @@ TEST_CASE("Wave schreibt und liest eine WAV-Datei", "[audio][wave][io]") {
 
 TEST_CASE("Wave schreibt und liest eine QOA-Datei", "[audio][wave][qoa][io]") {
     Wave wave;
-    REQUIRE(wave.SetSamples(std::vector<f32>(4410, 0.25f), 44100, 1));
+    REQUIRE(wave.setSamples(std::vector<f32>(4410, 0.25f), 44100, 1));
 
     const std::filesystem::path file =
         std::filesystem::temp_directory_path() / "sgl-audio-test.qoa";
     std::filesystem::remove(file);
 
-    REQUIRE(wave.SaveToFile(file.string()));
+    REQUIRE(wave.saveToFile(file.string()));
     REQUIRE(std::filesystem::exists(file));
 
     Wave loaded;
-    REQUIRE(loaded.LoadFromFile(file.string()));
-    REQUIRE(loaded.IsValid());
-    REQUIRE(loaded.SampleRate() == 44100);
-    REQUIRE(loaded.Channels() == 1);
-    REQUIRE(loaded.FrameCount() == 4410);
-    REQUIRE(loaded.Samples().front() == Catch::Approx(0.25f).margin(0.05f));
+    REQUIRE(loaded.loadFromFile(file.string()));
+    REQUIRE(loaded.isValid());
+    REQUIRE(loaded.sampleRate() == 44100);
+    REQUIRE(loaded.channels() == 1);
+    REQUIRE(loaded.frameCount() == 4410);
+    REQUIRE(loaded.samples().front() == Catch::Approx(0.25f).margin(0.05f));
 
     std::filesystem::remove(file);
 }
@@ -127,25 +127,25 @@ TEST_CASE("XM-Modul wird nach PCM gerendert", "[audio][xm]") {
 
 TEST_CASE("Sound und AudioStream lassen sich aus Daten anlegen", "[audio]") {
     Wave wave;
-    REQUIRE(wave.SetSamples(std::vector<f32>(400, 0.0f), 44100, 2));
+    REQUIRE(wave.setSamples(std::vector<f32>(400, 0.0f), 44100, 2));
 
     Sound sound;
-    REQUIRE(sound.LoadFromWave(wave, 2));
-    REQUIRE(sound.IsValid());
-    REQUIRE(sound.VoiceCount() == 2);
-    REQUIRE(sound.Data().FrameCount() == 200);
+    REQUIRE(sound.loadFromWave(wave, 2));
+    REQUIRE(sound.isValid());
+    REQUIRE(sound.voiceCount() == 2);
+    REQUIRE(sound.data().frameCount() == 200);
 
     AudioStream stream;
-    REQUIRE(stream.Load(48000, 2, 256));
-    REQUIRE(stream.IsValid());
-    REQUIRE(stream.CapacityFrames() == 256);
+    REQUIRE(stream.load(48000, 2, 256));
+    REQUIRE(stream.isValid());
+    REQUIRE(stream.capacityFrames() == 256);
 
     const std::array<f32, 32> frames{};
-    REQUIRE(stream.Push(frames.data(), 16));
-    REQUIRE(stream.QueuedFrames() == 16);
+    REQUIRE(stream.push(frames.data(), 16));
+    REQUIRE(stream.queuedFrames() == 16);
 
-    stream.Clear();
-    REQUIRE(stream.QueuedFrames() == 0);
-    stream.Unload();
-    REQUIRE_FALSE(stream.IsValid());
+    stream.clear();
+    REQUIRE(stream.queuedFrames() == 0);
+    stream.unload();
+    REQUIRE_FALSE(stream.isValid());
 }

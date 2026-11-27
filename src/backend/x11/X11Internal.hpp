@@ -99,28 +99,28 @@ struct State {
     bool initialized = false;
 };
 
-State& state();
-void rebuildMonitors(bool notify);
-void processPendingEvents();
+State& GetX11State();
+void RebuildMonitors(bool notify);
+void ProcessPendingEvents();
 
-Key translateKeysym(KeySym keysym);
-KeySym keysymForKey(Key key);
-int scancodeForKey(Key key);
-std::string keyName(Key key, i32 scancode);
+Key TranslateKeysym(KeySym keysym);
+KeySym KeysymForKey(Key key);
+int ScancodeForKey(Key key);
+std::string KeyName(Key key, i32 scancode);
 
 class X11WindowBackend;
 
-void registerWindow(X11WindowBackend* window, ::Window handle);
-void unregisterWindow(::Window handle);
-X11WindowBackend* findWindow(::Window handle);
-X11WindowBackend* focusedWindow();
+void RegisterWindow(X11WindowBackend* window, ::Window handle);
+void UnregisterWindow(::Window handle);
+X11WindowBackend* FindWindow(::Window handle);
+X11WindowBackend* FocusedWindow();
 
 class X11CursorBackend final : public CursorBackend {
 public:
     X11CursorBackend(::Cursor cursor, bool owned) : m_cursor(cursor), m_owned(owned) {}
     ~X11CursorBackend() override {
-        if (m_owned && m_cursor != 0 && state().display) {
-            XFreeCursor(state().display, m_cursor);
+        if (m_owned && m_cursor != 0 && GetX11State().display) {
+            XFreeCursor(GetX11State().display, m_cursor);
         }
     }
     [[nodiscard]] void* getNativeHandle() const override {
@@ -202,7 +202,7 @@ public:
     [[nodiscard]] ::Window getX11Window() const { return m_window; }
     [[nodiscard]] GLXContext getGLXContext() const { return m_glxContext; }
     [[nodiscard]] GLXWindow getGLXWindow() const { return m_glxWindow; }
-    [[nodiscard]] Display* getDisplay() const { return state().display; }
+    [[nodiscard]] Display* getDisplay() const { return GetX11State().display; }
     [[nodiscard]] bool isFullscreen() const { return m_fullscreen; }
 
     void setClipboardText(std::string text) { m_clipboardText = std::move(text); }

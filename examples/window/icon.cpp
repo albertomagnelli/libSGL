@@ -10,7 +10,7 @@
 
 namespace {
 
-sgl::WindowIcon makeIcon(int size, u8 red, u8 green, u8 blue) {
+sgl::WindowIcon MakeIcon(int size, u8 red, u8 green, u8 blue) {
     sgl::WindowIcon image;
     image.size = ivec2(size, size);
     image.rgba8.assign(static_cast<std::size_t>(size) * size * 4, 0);
@@ -40,18 +40,18 @@ sgl::WindowIcon makeIcon(int size, u8 red, u8 green, u8 blue) {
     return image;
 }
 
-std::vector<sgl::WindowIcon> makeIconSet(u8 red, u8 green, u8 blue) {
+std::vector<sgl::WindowIcon> MakeIconSet(u8 red, u8 green, u8 blue) {
     std::vector<sgl::WindowIcon> icons;
-    icons.push_back(makeIcon(16, red, green, blue));
-    icons.push_back(makeIcon(32, red, green, blue));
-    icons.push_back(makeIcon(64, red, green, blue));
+    icons.push_back(MakeIcon(16, red, green, blue));
+    icons.push_back(MakeIcon(32, red, green, blue));
+    icons.push_back(MakeIcon(64, red, green, blue));
     return icons;
 }
 
 } // namespace
 
 int main() {
-    auto window = example::createWindow("sgl – Icon", 800, 600);
+    auto window = example::CreateWindow("sgl – Icon", 800, 600);
     if (!window) {
         return 1;
     }
@@ -61,7 +61,7 @@ int main() {
         return static_cast<u8>(64 + random() % 192);
     };
 
-    std::vector<sgl::WindowIcon> icons = makeIconSet(230, 120, 30);
+    std::vector<sgl::WindowIcon> icons = MakeIconSet(230, 120, 30);
     window->setIcon(icons);
     SLOGI("Icon gesetzt (%zu Größen). I wechselt das Set, R färbt neu.\n", icons.size());
 
@@ -74,11 +74,11 @@ int main() {
             window->setCloseRequested(true);
         } else if (key == sgl::Key::I) {
             alternate = !alternate;
-            icons = alternate ? makeIconSet(40, 170, 255) : makeIconSet(230, 120, 30);
+            icons = alternate ? MakeIconSet(40, 170, 255) : MakeIconSet(230, 120, 30);
             window->setIcon(icons);
             SLOGI("Icon-Set: %s\n", alternate ? "blau" : "orange");
         } else if (key == sgl::Key::R) {
-            icons = makeIconSet(randomColor(), randomColor(), randomColor());
+            icons = MakeIconSet(randomColor(), randomColor(), randomColor());
             window->setIcon(icons);
             SLOGI("Icon neu eingefärbt.\n");
         }
@@ -86,15 +86,15 @@ int main() {
 
     while (!window->isCloseRequested()) {
         const ivec2 framebuffer = window->getFramebufferSize();
-        example::clearBackground(0.07f, 0.09f, 0.12f);
-        example::drawRectTopLeft(ivec2((framebuffer.x - 64) / 2, (framebuffer.y - 64) / 2),
+        example::ClearBackground(0.07f, 0.09f, 0.12f);
+        example::DrawRectTopLeft(ivec2((framebuffer.x - 64) / 2, (framebuffer.y - 64) / 2),
                                  ivec2(64, 64), framebuffer, alternate ? 0.16f : 0.90f,
                                  alternate ? 0.66f : 0.47f, alternate ? 1.0f : 0.12f);
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

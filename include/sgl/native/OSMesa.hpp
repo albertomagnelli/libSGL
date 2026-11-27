@@ -5,8 +5,8 @@
 
 namespace sgl::native::osmesa {
 
-void* getContext(const Window& window);
-void* getColorBuffer(const Window& window);
-void* getDepthBuffer(const Window& window);
+void* GetContext(const Window& window);
+void* GetColorBuffer(const Window& window);
+void* GetDepthBuffer(const Window& window);
 
 } // namespace sgl::native::osmesa

@@ -4,9 +4,9 @@
 
 namespace sgl {
 
-void pollEvents();
-void waitEvents();
-void waitEventsTimeout(f64 seconds);
-void postEmptyEvent();
+void PollEvents();
+void WaitEvents();
+void WaitEventsTimeout(f64 seconds);
+void PostEmptyEvent();
 
 } // namespace sgl

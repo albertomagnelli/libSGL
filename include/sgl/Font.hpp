@@ -3,16 +3,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Glyphenatlas-Schriften (Bitmap und SDF). Öffentliche Schnittstelle dieses Headers:
 //
-//   FontError, Font, fromBitmap, fromSdf, load, loadDefault
+//   FontError, Font, FromBitmap, FromSdf, load, LoadDefault
 //   g_defaultFont
 //   save, isValid, hasGlyph, kerning, missingAdvance
 //   setMetrics, addGlyph, addGlyphs, addKerning, setFallback
-//   bounds, lineCount, kerningKey, rebuildIndex, DecodeUtf8
+//   bounds, LineCount, KerningKey, rebuildIndex, DecodeUtf8
 //   EncodeUtf8
 //
 // Beispiel:
 //
-//   Font font = Font::fromBitmap(atlas, metrics);
+//   Font font = Font::FromBitmap(atlas, metrics);
 //   font.addGlyphs(glyphs);
 //   font.addKerning('A', 'V', -1.5f);
 //   f32 w = font.measure("Hallo", 24.0f);
@@ -39,7 +39,7 @@
 //
 // Beispiel:
 //
-//   Font font = Font::load("assets/fonts/inter_16.font");
+//   Font font = Font::Load("assets/fonts/inter_16.font");
 //   const f32 breite = font.measure("Hallo Welt", 24.0f);
 //   const Rectangle flaeche = font.bounds("Hallo Welt", {20.0f, 40.0f}, 24.0f);
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,16 +96,16 @@ public:
     Font() = default;  // ungültig, bis Atlas und Glyphen gesetzt sind
 
     // Atlas mit Deckung (Bitmap) bzw. Distanzfeld (SDF) übernehmen.
-    [[nodiscard]] static Font fromBitmap(Image atlas, FontMetrics metrics);
-    [[nodiscard]] static Font fromSdf(Image atlas, FontMetrics metrics, f32 spread = 8.0f);
+    [[nodiscard]] static Font FromBitmap(Image atlas, FontMetrics metrics);
+    [[nodiscard]] static Font FromSdf(Image atlas, FontMetrics metrics, f32 spread = 8.0f);
 
     // Textdatei lesen/schreiben; das Atlasbild liegt daneben und wird
     // beim Speichern mitgeschrieben (gleicher Dateiname mit .png).
-    [[nodiscard]] static Font load(const std::filesystem::path& file);
+    [[nodiscard]] static Font Load(const std::filesystem::path& file);
     // Eingebettete DejaVu-Teilmenge aus DefaultFont.cpp. Die Glyphen werden
     // beim Aufruf aus dem TrueType-Programm in einen Graustufenatlas gerastert
     // (191 Zeichen, ASCII 32..126 und Latin-1 160..255).
-    [[nodiscard]] static Font loadDefault();
+    [[nodiscard]] static Font LoadDefault();
     void save(const std::filesystem::path& file) const;
 
     // ── Zustand ──────────────────────────────────────────────────────────────
@@ -139,10 +139,10 @@ public:
     [[nodiscard]] f32 measure(std::string_view utf8, f32 pixelSize) const;
     // Umschließendes Rechteck ab position (linke obere Ecke der ersten Zeile)
     [[nodiscard]] Rectangle bounds(std::string_view utf8, const vec2& position, f32 pixelSize) const;
-    static i32 lineCount(std::string_view utf8) ;
+    static i32 LineCount(std::string_view utf8) ;
 
 private:
-    [[nodiscard]] static u64 kerningKey(u32 left, u32 right) {
+    [[nodiscard]] static u64 KerningKey(u32 left, u32 right) {
         return (static_cast<u64>(left) << 32) | static_cast<u64>(right);
     }
     void rebuildIndex();
@@ -159,7 +159,7 @@ private:
 
 // ─── Freie Helfer ───────────────────────────────────────────────────────────
 
-// Standardschrift der Bibliothek. Wird beim ersten Window::create einmalig
+// Standardschrift der Bibliothek. Wird beim ersten Window::Create einmalig
 // geladen und ist danach global verfügbar; ohne Fenster ist sie ungültig.
 extern Font g_defaultFont;
 

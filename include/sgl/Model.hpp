@@ -18,10 +18,10 @@
 //
 // Beispiel:
 //
-//   auto model = ModelIO::load("character.glb");
+//   auto model = ModelIO::Load("character.glb");
 //   if (!model) { /* model.error().getMessage() */ }
 //
-//   auto animations = ModelAnimationIO::load("character.glb");
+//   auto animations = ModelAnimationIO::Load("character.glb");
 //   if (animations) {
 //       for (const ModelAnimation& animation : *animations) {
 //           /* Animation auf model.nodes anwenden */
@@ -117,12 +117,12 @@ struct ModelLoadOptions {
 
 class ModelIO {
 public:
-    static std::expected<Model, ModelError> load(
+    static std::expected<Model, ModelError> Load(
         const std::filesystem::path& file,
         const ModelLoadOptions& options = {});
 
     // basePath ist das Verzeichnis für relative Buffer-/Bild-URIs.
-    static std::expected<Model, ModelError> loadFromMemory(
+    static std::expected<Model, ModelError> LoadFromMemory(
         std::span<const u8> data,
         const std::filesystem::path& basePath = {},
         const ModelLoadOptions& options = {});
@@ -183,10 +183,10 @@ public:
 
 class ModelAnimationIO {
 public:
-    static std::expected<std::vector<ModelAnimation>, ModelError> load(
+    static std::expected<std::vector<ModelAnimation>, ModelError> Load(
         const std::filesystem::path& file);
 
-    static std::expected<std::vector<ModelAnimation>, ModelError> loadFromMemory(
+    static std::expected<std::vector<ModelAnimation>, ModelError> LoadFromMemory(
         std::span<const u8> data,
         const std::filesystem::path& basePath = {});
 };

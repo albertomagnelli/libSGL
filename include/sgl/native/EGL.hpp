@@ -5,8 +5,8 @@
 
 namespace sgl::native::egl {
 
-void* getDisplay(const Window& window);
-void* getSurface(const Window& window);
-void* getContext(const Window& window);
+void* GetDisplay(const Window& window);
+void* GetSurface(const Window& window);
+void* GetContext(const Window& window);
 
 } // namespace sgl::native::egl

@@ -6,12 +6,12 @@
 
 namespace sgl::native::x11 {
 
-void* getDisplay(const Window& window);
-unsigned long getWindow(const Window& window);
-void* getGLXContext(const Window& window);
-unsigned long getGLXWindow(const Window& window);
+void* GetDisplay(const Window& window);
+unsigned long GetWindow(const Window& window);
+void* GetGlxContext(const Window& window);
+unsigned long GetGlxWindow(const Window& window);
 
-void* getDisplay(const Monitor& monitor);
-unsigned long getMonitor(const Monitor& monitor);
+void* GetDisplay(const Monitor& monitor);
+unsigned long GetMonitor(const Monitor& monitor);
 
 } // namespace sgl::native::x11

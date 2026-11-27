@@ -78,12 +78,12 @@ struct WaylandState {
     bool initialized = false;
 };
 
-WaylandState& state();
-WaylandOutput* findOutput(wl_output* output);
-class WaylandWindowBackend* windowForSurface(wl_surface* surface);
-const wl_data_source_listener* dataSourceListenerPtr();
-void rebuildMonitors(bool notify);
-void dispatchEvents(bool block, f64 timeout);
+WaylandState& State();
+WaylandOutput* FindOutput(wl_output* output);
+class WaylandWindowBackend* WindowForSurface(wl_surface* surface);
+const wl_data_source_listener* DataSourceListenerPtr();
+void RebuildMonitors(bool notify);
+void DispatchEvents(bool block, f64 timeout);
 
 class WaylandCursorBackend final : public CursorBackend {
 public:

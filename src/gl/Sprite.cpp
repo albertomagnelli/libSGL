@@ -26,7 +26,7 @@ namespace {
   constexpr f32 DegreesToRadians = 3.14159265358979323846f / 180.0f;
 
   bool HasCurrentContext() {
-    return getCurrentWindow() != nullptr && GL::glCreateTextures != nullptr;
+    return GetCurrentWindow() != nullptr && GL::glCreateTextures != nullptr;
   }
 
   // ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ void main() {
 )";
 
   SpriteRenderer *RendererForCurrentContext() {
-    Window *current = getCurrentWindow();
+    Window *current = GetCurrentWindow();
 
     if ((current == nullptr) || (GL::glCreateVertexArrays == nullptr)) {
       SLOGE << "DrawSprite: kein aktiver OpenGL-Kontext (Window noetig)";
@@ -125,7 +125,7 @@ void main() {
     stages.push_back(std::move(vertex));
     stages.push_back(std::move(fragment));
 
-    renderer->shader = Shader::fromSources(std::move(stages));
+    renderer->shader = Shader::FromSources(std::move(stages));
 
     if (!renderer->shader.isValid()) {
       SLOGE << "DrawSprite: Sprite-Shader laesst sich nicht bauen: " << renderer->shader.lastError();
@@ -150,20 +150,20 @@ void main() {
   }
 }  // namespace
 
-Sprite::~Sprite() { Unload(); }
+Sprite::~Sprite() { unload(); }
 
-Sprite::Sprite(Sprite &&other) noexcept { MoveFrom(other); }
+Sprite::Sprite(Sprite &&other) noexcept { moveFrom(other); }
 
 Sprite &Sprite::operator=(Sprite &&other) noexcept {
   if (this == &other) return *this;
 
-  Unload();
-  MoveFrom(other);
+  unload();
+  moveFrom(other);
 
   return *this;
 }
 
-void Sprite::MoveFrom(Sprite &other) {
+void Sprite::moveFrom(Sprite &other) {
   m_texture      = std::move(other.m_texture);
   m_pixels       = std::move(other.m_pixels);
   m_shape        = std::move(other.m_shape);
@@ -186,7 +186,7 @@ void Sprite::MoveFrom(Sprite &other) {
   other.m_pixels       = Image{};
 }
 
-void Sprite::Unload() {
+void Sprite::unload() {
   m_texture = Texture2d{};
   m_pixels  = Image{};
   m_shape   = CollisionShape{};
@@ -200,13 +200,13 @@ void Sprite::Unload() {
 // -----------------------------------------------------------------------------
 // Laden
 // -----------------------------------------------------------------------------
-bool Sprite::LoadFromImage(const Image &image, const bool smooth, const u8 collisionThreshold) {
+bool Sprite::loadFromImage(const Image &image, const bool smooth, const u8 collisionThreshold) {
   if (image.isEmpty()) {
     SLOGE << "Sprite: Bild ist ungueltig";
     return false;
   }
 
-  Unload();
+  unload();
 
   m_pixels    = image; // tiefe Kopie fuer die Deckungsform
   m_threshold = collisionThreshold;
@@ -226,18 +226,18 @@ bool Sprite::LoadFromImage(const Image &image, const bool smooth, const u8 colli
       options.wrapT     = TextureWrap::ClampToEdge;
       options.minFilter = smooth ? TextureFilter::Linear : TextureFilter::Nearest;
       options.magFilter = options.minFilter;
-      m_texture = Texture2d::fromImage(image, options);
+      m_texture = Texture2d::FromImage(image, options);
     } catch (const std::exception &error) {
       SLOGW << "Sprite: Textur laesst sich nicht anlegen (" << error.what() << ", Kollision funktioniert trotzdem)";
     }
   }
 
-  RebuildShape();
+  rebuildShape();
 
   return true;
 }
 
-bool Sprite::LoadFromTexture(const Texture2d &texture, const bool smooth, const u8 collisionThreshold) {
+bool Sprite::loadFromTexture(const Texture2d &texture, const bool smooth, const u8 collisionThreshold) {
   if (!texture.isValid()) {
     SLOGE << "Sprite: Textur ist ungueltig";
     return false;
@@ -248,7 +248,7 @@ bool Sprite::LoadFromTexture(const Texture2d &texture, const bool smooth, const 
     return false;
   }
 
-  Unload();
+  unload();
 
   m_threshold = collisionThreshold;
   m_smooth    = smooth;
@@ -275,7 +275,7 @@ bool Sprite::LoadFromTexture(const Texture2d &texture, const bool smooth, const 
       options.wrapT     = TextureWrap::ClampToEdge;
       options.minFilter = smooth ? TextureFilter::Linear : TextureFilter::Nearest;
       options.magFilter = options.minFilter;
-      m_texture = Texture2d::fromImage(m_pixels, options);
+      m_texture = Texture2d::FromImage(m_pixels, options);
     } catch (const std::exception &error) {
       SLOGW << "Sprite: Textur laesst sich nicht anlegen (" << error.what() << ")";
     }
@@ -286,19 +286,19 @@ bool Sprite::LoadFromTexture(const Texture2d &texture, const bool smooth, const 
   m_sourceWidth  = texture.width();
   m_sourceHeight = texture.height();
 
-  RebuildShape();
+  rebuildShape();
 
   return m_texture.isValid();
 }
 
-bool Sprite::LoadFromTexture(Texture2d &&texture, const i32 width, const i32 height) {
+bool Sprite::loadFromTexture(Texture2d &&texture, const i32 width, const i32 height) {
   if (!texture.isValid()) {
     SLOGE << "Sprite: Textur ist ungueltig";
 
     return false;
   }
 
-  Unload();
+  unload();
 
   m_texture      = std::move(texture);
   m_sourceX      = 0;
@@ -310,7 +310,7 @@ bool Sprite::LoadFromTexture(Texture2d &&texture, const i32 width, const i32 hei
   return true;
 }
 
-bool Sprite::SetSourceRect(const i32 x, const i32 y, const i32 width, const i32 height, const bool rebuildShape) {
+bool Sprite::setSourceRect(const i32 x, const i32 y, const i32 width, const i32 height, const bool rebuild) {
   const i32 textureWidth  = !m_pixels.isEmpty() ? m_pixels.width() : m_texture.width();
   const i32 textureHeight = !m_pixels.isEmpty() ? m_pixels.height() : m_texture.height();
 
@@ -330,28 +330,28 @@ bool Sprite::SetSourceRect(const i32 x, const i32 y, const i32 width, const i32 
   m_sourceWidth  = width;
   m_sourceHeight = height;
 
-  if (rebuildShape) RebuildShape();
+  if (rebuild) rebuildShape();
 
   return true;
 }
 
-void Sprite::ResetSourceRect() {
+void Sprite::resetSourceRect() {
   m_sourceX      = 0;
   m_sourceY      = 0;
   m_sourceWidth  = !m_pixels.isEmpty() ? m_pixels.width() : m_texture.width();
   m_sourceHeight = !m_pixels.isEmpty() ? m_pixels.height() : m_texture.height();
 
-  RebuildShape();
+  rebuildShape();
 }
 
-i32 Sprite::SourceX() const { return m_sourceX; }
+i32 Sprite::sourceX() const { return m_sourceX; }
 
-i32 Sprite::SourceY() const { return m_sourceY; }
+i32 Sprite::sourceY() const { return m_sourceY; }
 
 // -----------------------------------------------------------------------------
 // Deckungsform
 // -----------------------------------------------------------------------------
-void Sprite::RebuildShape() {
+void Sprite::rebuildShape() {
   m_shape = CollisionShape{};
 
   if (m_pixels.isEmpty() || (m_sourceWidth <= 0) || (m_sourceHeight <= 0)) return;
@@ -368,37 +368,37 @@ void Sprite::RebuildShape() {
   }
 
   // Bezugspunkt der Form = origin des Sprites (Zeichnen und Kollision gleich)
-  m_shape.SetPivot(vec2(m_origin.x * static_cast<f32>(m_sourceWidth), m_origin.y * static_cast<f32>(m_sourceHeight)));
+  m_shape.setPivot(vec2(m_origin.x * static_cast<f32>(m_sourceWidth), m_origin.y * static_cast<f32>(m_sourceHeight)));
 }
 
 // -----------------------------------------------------------------------------
 // Darstellung
 // -----------------------------------------------------------------------------
-void Sprite::SetOrigin(const vec2 &normalized) {
+void Sprite::setOrigin(const vec2 &normalized) {
   m_origin = vec2(std::clamp(normalized.x, 0.0f, 1.0f), std::clamp(normalized.y, 0.0f, 1.0f));
 
-  if (m_shape.IsValid()) {
-    m_shape.SetPivot(
+  if (m_shape.isValid()) {
+    m_shape.setPivot(
         vec2(m_origin.x * static_cast<f32>(m_sourceWidth), m_origin.y * static_cast<f32>(m_sourceHeight)));
   }
 }
 
-vec2 Sprite::Origin() const { return m_origin; }
+vec2 Sprite::origin() const { return m_origin; }
 
-void Sprite::SetTint(const Color &tint) { m_tint = tint; }
+void Sprite::setTint(const Color &tint) { m_tint = tint; }
 
-const Color &Sprite::Tint() const { return m_tint; }
+const Color &Sprite::tint() const { return m_tint; }
 
-void Sprite::SetFlip(const bool flipX, const bool flipY) {
+void Sprite::setFlip(const bool flipX, const bool flipY) {
   m_flipX = flipX;
   m_flipY = flipY;
 }
 
-bool Sprite::FlipX() const { return m_flipX; }
+bool Sprite::flipX() const { return m_flipX; }
 
-bool Sprite::FlipY() const { return m_flipY; }
+bool Sprite::flipY() const { return m_flipY; }
 
-void Sprite::SetSmooth(const bool smooth) {
+void Sprite::setSmooth(const bool smooth) {
   m_smooth = smooth;
 
   if (m_texture.isValid()) {
@@ -410,45 +410,45 @@ void Sprite::SetSmooth(const bool smooth) {
 // -----------------------------------------------------------------------------
 // Abfragen
 // -----------------------------------------------------------------------------
-bool Sprite::IsValid() const { return m_texture.isValid() && (m_sourceWidth > 0) && (m_sourceHeight > 0); }
+bool Sprite::isValid() const { return m_texture.isValid() && (m_sourceWidth > 0) && (m_sourceHeight > 0); }
 
-bool Sprite::HasShape() const { return m_shape.IsValid(); }
+bool Sprite::hasShape() const { return m_shape.isValid(); }
 
-i32 Sprite::Width() const { return m_sourceWidth; }
+i32 Sprite::width() const { return m_sourceWidth; }
 
-i32 Sprite::Height() const { return m_sourceHeight; }
+i32 Sprite::height() const { return m_sourceHeight; }
 
-vec2 Sprite::Size() const { return vec2(static_cast<f32>(m_sourceWidth), static_cast<f32>(m_sourceHeight)); }
+vec2 Sprite::size() const { return vec2(static_cast<f32>(m_sourceWidth), static_cast<f32>(m_sourceHeight)); }
 
-const Texture2d &Sprite::Texture() const { return m_texture; }
+const Texture2d &Sprite::texture() const { return m_texture; }
 
-const CollisionShape &Sprite::Shape() const { return m_shape; }
+const CollisionShape &Sprite::shape() const { return m_shape; }
 
-const Image &Sprite::Pixels() const { return m_pixels; }
+const Image &Sprite::pixels() const { return m_pixels; }
 
 // -----------------------------------------------------------------------------
 // Kollision
 // -----------------------------------------------------------------------------
-bool Sprite::ContainsPoint(const vec2 &worldPoint, const vec2 &position, const f32 rotationDegrees) const {
-  return m_shape.ContainsWorldPoint(worldPoint, position, rotationDegrees);
+bool Sprite::containsPoint(const vec2 &worldPoint, const vec2 &position, const f32 rotationDegrees) const {
+  return m_shape.containsWorldPoint(worldPoint, position, rotationDegrees);
 }
 
-bool Sprite::CollidesWith(const Sprite &other, const vec2 &position, const f32 rotationDegrees,
+bool Sprite::collidesWith(const Sprite &other, const vec2 &position, const f32 rotationDegrees,
                           const vec2 &otherPosition, const f32 otherRotationDegrees) const {
-  return m_shape.Overlaps(other.m_shape, position, rotationDegrees, otherPosition, otherRotationDegrees);
+  return m_shape.overlaps(other.m_shape, position, rotationDegrees, otherPosition, otherRotationDegrees);
 }
 
 // -----------------------------------------------------------------------------
 // Freie Funktionen
 // -----------------------------------------------------------------------------
 void DrawSprite(const Sprite &sprite, const vec2 position, const f32 rotationAngle) {
-  if (!sprite.IsValid()) return;
+  if (!sprite.isValid()) return;
 
   SpriteRenderer *renderer = RendererForCurrentContext();
 
   if (renderer == nullptr) return;
 
-  const Texture2d &texture = sprite.Texture();
+  const Texture2d &texture = sprite.texture();
 
   if ((texture.width() <= 0) || (texture.height() <= 0)) return;
 
@@ -463,21 +463,21 @@ void DrawSprite(const Sprite &sprite, const vec2 position, const f32 rotationAng
   shader.use();
   shader.setUniform("uViewport", vec2(screenWidth, screenHeight));
   shader.setUniform("uPosition", position);
-  shader.setUniform("uSize", sprite.Size());
+  shader.setUniform("uSize", sprite.size());
   shader.setUniform("uOrigin",
-                    vec2(sprite.Origin().x * static_cast<f32>(sprite.Width()),
-                         sprite.Origin().y * static_cast<f32>(sprite.Height())));
+                    vec2(sprite.origin().x * static_cast<f32>(sprite.width()),
+                         sprite.origin().y * static_cast<f32>(sprite.height())));
   shader.setUniform("uRotation", rotationAngle * DegreesToRadians);
-  shader.setUniform("uFlip", vec2(sprite.FlipX() ? -1.0f : 1.0f, sprite.FlipY() ? -1.0f : 1.0f));
-  shader.setUniform("uTint", sprite.Tint().toVec4());
+  shader.setUniform("uFlip", vec2(sprite.flipX() ? -1.0f : 1.0f, sprite.flipY() ? -1.0f : 1.0f));
+  shader.setUniform("uTint", sprite.tint().toVec4());
 
   const f32 textureWidth  = static_cast<f32>(texture.width());
   const f32 textureHeight = static_cast<f32>(texture.height());
 
-  shader.setUniform("uUvMin", vec2(static_cast<f32>(sprite.SourceX()) / textureWidth,
-                                   static_cast<f32>(sprite.SourceY()) / textureHeight));
-  shader.setUniform("uUvMax", vec2(static_cast<f32>(sprite.SourceX() + sprite.Width()) / textureWidth,
-                                   static_cast<f32>(sprite.SourceY() + sprite.Height()) / textureHeight));
+  shader.setUniform("uUvMin", vec2(static_cast<f32>(sprite.sourceX()) / textureWidth,
+                                   static_cast<f32>(sprite.sourceY()) / textureHeight));
+  shader.setUniform("uUvMax", vec2(static_cast<f32>(sprite.sourceX() + sprite.width()) / textureWidth,
+                                   static_cast<f32>(sprite.sourceY() + sprite.height()) / textureHeight));
   shader.setUniform("uTexture", 0);
 
   glDisable(GL_DEPTH_TEST);
@@ -496,14 +496,14 @@ void DrawSprite(const Sprite &sprite, const vec2 position, const f32 rotationAng
 
 Sprite LoadSpriteFromTexture(const Texture2d &texture) {
   Sprite sprite;
-  if (!sprite.LoadFromTexture(texture)) return Sprite{};
+  if (!sprite.loadFromTexture(texture)) return Sprite{};
 
   return sprite;
 }
 
 Sprite LoadSpriteFromImage(const Image &image) {
   Sprite sprite;
-  if (!sprite.LoadFromImage(image)) return Sprite{};
+  if (!sprite.loadFromImage(image)) return Sprite{};
 
   return sprite;
 }

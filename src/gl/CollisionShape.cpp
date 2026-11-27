@@ -67,17 +67,17 @@ CollisionShape::LocalFrame::LocalFrame(const vec2 &position, const f32 rotationD
   m_sin = std::sin(radians);
 }
 
-vec2 CollisionShape::LocalFrame::ToLocal(const vec2 &world) const {
+vec2 CollisionShape::LocalFrame::toLocal(const vec2 &world) const {
   const vec2 delta = world - m_position;
 
   return vec2((delta.x * m_cos) - (delta.y * m_sin), (delta.x * m_sin) + (delta.y * m_cos));
 }
 
-vec2 CollisionShape::LocalFrame::ToWorld(const vec2 &local) const {
+vec2 CollisionShape::LocalFrame::toWorld(const vec2 &local) const {
   return m_position + vec2((local.x * m_cos) + (local.y * m_sin), (-local.x * m_sin) + (local.y * m_cos));
 }
 
-vec2 CollisionShape::LocalFrame::Position() const { return m_position; }
+vec2 CollisionShape::LocalFrame::position() const { return m_position; }
 
 CollisionShape CollisionShape::FromAlphaMask(const u8 *mask, const i32 width, const i32 height, const u8 threshold) {
   CollisionShape shape;
@@ -175,52 +175,52 @@ CollisionShape CollisionShape::FromImage(const Image &image, const u8 threshold,
   return FromAlphaMask(mask.data(), width, height, threshold);
 }
 
-bool CollisionShape::IsValid() const { return (m_width > 0) && (m_height > 0) && !m_solid.empty(); }
+bool CollisionShape::isValid() const { return (m_width > 0) && (m_height > 0) && !m_solid.empty(); }
 
-i32 CollisionShape::Width() const { return m_width; }
+i32 CollisionShape::width() const { return m_width; }
 
-i32 CollisionShape::Height() const { return m_height; }
+i32 CollisionShape::height() const { return m_height; }
 
-i32 CollisionShape::OpaqueCount() const { return m_opaque; }
+i32 CollisionShape::opaqueCount() const { return m_opaque; }
 
-f32 CollisionShape::Coverage() const {
-  if (!IsValid()) return 0.0f;
+f32 CollisionShape::coverage() const {
+  if (!isValid()) return 0.0f;
 
   return static_cast<f32>(m_opaque) / static_cast<f32>(static_cast<std::size_t>(m_width) * m_height);
 }
 
-void CollisionShape::SetPivot(const vec2 &pivot) { m_pivot = pivot; }
+void CollisionShape::setPivot(const vec2 &pivot) { m_pivot = pivot; }
 
-const vec2 &CollisionShape::Pivot() const { return m_pivot; }
+const vec2 &CollisionShape::pivot() const { return m_pivot; }
 
-vec2 CollisionShape::BoundsMin() const { return -m_pivot; }
+vec2 CollisionShape::boundsMin() const { return -m_pivot; }
 
-vec2 CollisionShape::BoundsMax() const { return vec2(static_cast<f32>(m_width), static_cast<f32>(m_height)) - m_pivot; }
+vec2 CollisionShape::boundsMax() const { return vec2(static_cast<f32>(m_width), static_cast<f32>(m_height)) - m_pivot; }
 
-f32 CollisionShape::BoundingRadius() const {
-  const vec2 min = BoundsMin();
-  const vec2 max = BoundsMax();
+f32 CollisionShape::boundingRadius() const {
+  const vec2 min = boundsMin();
+  const vec2 max = boundsMax();
 
   // groesster Abstand Pivot -> Ecke
   return std::max(glm::length(min), glm::length(max));
 }
 
-bool CollisionShape::SolidAtPixel(const i32 x, const i32 y) const {
+bool CollisionShape::solidAtPixel(const i32 x, const i32 y) const {
   if ((x < 0) || (y < 0) || (x >= m_width) || (y >= m_height)) return false;
 
   return m_solid[(static_cast<std::size_t>(y) * m_width) + x] != 0;
 }
 
-bool CollisionShape::IsSolidAt(const i32 x, const i32 y) const { return SolidAtPixel(x, y); }
+bool CollisionShape::isSolidAt(const i32 x, const i32 y) const { return solidAtPixel(x, y); }
 
-bool CollisionShape::ContainsPoint(const vec2 &local) const {
-  if (!IsValid()) return false;
+bool CollisionShape::containsPoint(const vec2 &local) const {
+  if (!isValid()) return false;
 
   // lokale Koordinate -> Pixelindex (Ursprung = Pivot)
   const auto x = static_cast<i32>(std::floor(local.x + m_pivot.x));
   const auto y = static_cast<i32>(std::floor(local.y + m_pivot.y));
 
-  return SolidAtPixel(x, y);
+  return solidAtPixel(x, y);
 }
 
 vec2 CollisionShape::LocalToWorld(const vec2 &local, const vec2 &position, const f32 rotationDegrees) {
@@ -231,28 +231,28 @@ vec2 CollisionShape::WorldToLocal(const vec2 &world, const vec2 &position, const
   return Rotate(world - position, -rotationDegrees * DegreesToRadians);
 }
 
-bool CollisionShape::ContainsWorldPoint(const vec2 &worldPoint, const vec2 &position,
+bool CollisionShape::containsWorldPoint(const vec2 &worldPoint, const vec2 &position,
                                         const f32 rotationDegrees) const {
-  return ContainsPoint(WorldToLocal(worldPoint, position, rotationDegrees));
+  return containsPoint(WorldToLocal(worldPoint, position, rotationDegrees));
 }
 
-bool CollisionShape::ContainsWorldPoint(const vec2 &worldPoint, const LocalFrame &frame) const {
-  return ContainsPoint(frame.ToLocal(worldPoint));
+bool CollisionShape::containsWorldPoint(const vec2 &worldPoint, const LocalFrame &frame) const {
+  return containsPoint(frame.toLocal(worldPoint));
 }
 
-void CollisionShape::WorldCorners(const LocalFrame &frame, vec2 corners[4]) const {
-  const vec2 min = BoundsMin();
-  const vec2 max = BoundsMax();
+void CollisionShape::worldCorners(const LocalFrame &frame, vec2 corners[4]) const {
+  const vec2 min = boundsMin();
+  const vec2 max = boundsMax();
 
-  corners[0] = frame.ToWorld(vec2(min.x, min.y));
-  corners[1] = frame.ToWorld(vec2(max.x, min.y));
-  corners[2] = frame.ToWorld(vec2(max.x, max.y));
-  corners[3] = frame.ToWorld(vec2(min.x, max.y));
+  corners[0] = frame.toWorld(vec2(min.x, min.y));
+  corners[1] = frame.toWorld(vec2(max.x, min.y));
+  corners[2] = frame.toWorld(vec2(max.x, max.y));
+  corners[3] = frame.toWorld(vec2(min.x, max.y));
 }
 
-void CollisionShape::WorldCorners(const vec2 &position, const f32 rotationDegrees, vec2 corners[4]) const {
-  const vec2 min = BoundsMin();
-  const vec2 max = BoundsMax();
+void CollisionShape::worldCorners(const vec2 &position, const f32 rotationDegrees, vec2 corners[4]) const {
+  const vec2 min = boundsMin();
+  const vec2 max = boundsMax();
 
   corners[0] = LocalToWorld(vec2(min.x, min.y), position, rotationDegrees);
   corners[1] = LocalToWorld(vec2(max.x, min.y), position, rotationDegrees);
@@ -260,18 +260,18 @@ void CollisionShape::WorldCorners(const vec2 &position, const f32 rotationDegree
   corners[3] = LocalToWorld(vec2(min.x, max.y), position, rotationDegrees);
 }
 
-bool CollisionShape::HasSolidPixelIn(const CollisionShape &otherShape, const LocalFrame &frame,
+bool CollisionShape::hasSolidPixelIn(const CollisionShape &otherShape, const LocalFrame &frame,
                                      const LocalFrame &otherFrame) const {
   // Nur den Teil der eigenen Maske abtasten, der in der Huelle der anderen Form
   // liegt: deren vier Weltecken in den eigenen lokalen Raum abbilden.
   vec2 otherCorners[4];
-  otherShape.WorldCorners(otherFrame, otherCorners);
+  otherShape.worldCorners(otherFrame, otherCorners);
 
-  vec2 minLocal = frame.ToLocal(otherCorners[0]);
+  vec2 minLocal = frame.toLocal(otherCorners[0]);
   vec2 maxLocal = minLocal;
 
   for (i32 i = 1; i < 4; ++i) {
-    const vec2 corner = frame.ToLocal(otherCorners[i]);
+    const vec2 corner = frame.toLocal(otherCorners[i]);
 
     minLocal = glm::min(minLocal, corner);
     maxLocal = glm::max(maxLocal, corner);
@@ -287,27 +287,27 @@ bool CollisionShape::HasSolidPixelIn(const CollisionShape &otherShape, const Loc
 
   for (i32 y = startY; y <= endY; ++y) {
     for (i32 x = startX; x <= endX; ++x) {
-      if (!SolidAtPixel(x, y)) continue;
+      if (!solidAtPixel(x, y)) continue;
 
       // Pixelmittelpunkt in lokalen Koordinaten (Ursprung = Pivot) -> Welt
       const vec2 local(static_cast<f32>(x) + 0.5f - m_pivot.x, static_cast<f32>(y) + 0.5f - m_pivot.y);
-      const vec2 world = frame.ToWorld(local);
+      const vec2 world = frame.toWorld(local);
 
-      if (otherShape.ContainsWorldPoint(world, otherFrame)) return true;
+      if (otherShape.containsWorldPoint(world, otherFrame)) return true;
     }
   }
 
   return false;
 }
 
-bool CollisionShape::Overlaps(const CollisionShape &other, const vec2 &position, const f32 rotationDegrees,
+bool CollisionShape::overlaps(const CollisionShape &other, const vec2 &position, const f32 rotationDegrees,
                               const vec2 &otherPosition, const f32 otherRotationDegrees) const {
-  if (!IsValid() || !other.IsValid()) return false;
+  if (!isValid() || !other.isValid()) return false;
 
   // 1. Umkreis: billige Abweisung
   const f32 distance = glm::length(otherPosition - position);
 
-  if (distance > (BoundingRadius() + other.BoundingRadius())) return false;
+  if (distance > (boundingRadius() + other.boundingRadius())) return false;
 
   // 2. gedrehte Bounding Boxes (Drehungen einmal vorberechnen)
   const LocalFrame frame(position, rotationDegrees);
@@ -316,16 +316,16 @@ bool CollisionShape::Overlaps(const CollisionShape &other, const vec2 &position,
   vec2 corners[4];
   vec2 otherCorners[4];
 
-  WorldCorners(frame, corners);
-  other.WorldCorners(otherFrame, otherCorners);
+  worldCorners(frame, corners);
+  other.worldCorners(otherFrame, otherCorners);
 
   if (!BoxesOverlap(corners, otherCorners)) return false;
 
   // 3. pixelweise: liegt ein deckender Pixel(mittelpunkt) der einen Form in der
   //    anderen? Beide Richtungen, damit die Pruefung symmetrisch bleibt.
-  if (HasSolidPixelIn(other, frame, otherFrame)) return true;
+  if (hasSolidPixelIn(other, frame, otherFrame)) return true;
 
-  return other.HasSolidPixelIn(*this, otherFrame, frame);
+  return other.hasSolidPixelIn(*this, otherFrame, frame);
 }
 
 }  // namespace sgl

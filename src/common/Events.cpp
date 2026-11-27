@@ -5,36 +5,36 @@
 namespace sgl {
 namespace {
 
-detail::Backend* requireBackend() {
-    auto* backend = detail::getBackend();
+detail::Backend* RequireBackend() {
+    auto* backend = detail::GetBackend();
     if (!backend) {
-        reportError(ErrorCode::NotInitialized, "sgl ist nicht initialisiert.");
+        ReportError(ErrorCode::NotInitialized, "sgl ist nicht initialisiert.");
     }
     return backend;
 }
 
 } // namespace
 
-void pollEvents() {
-    if (auto* backend = requireBackend()) {
+void PollEvents() {
+    if (auto* backend = RequireBackend()) {
         backend->pollEvents();
     }
 }
 
-void waitEvents() {
-    if (auto* backend = requireBackend()) {
+void WaitEvents() {
+    if (auto* backend = RequireBackend()) {
         backend->waitEvents(-1.0);
     }
 }
 
-void waitEventsTimeout(f64 seconds) {
-    if (auto* backend = requireBackend()) {
+void WaitEventsTimeout(f64 seconds) {
+    if (auto* backend = RequireBackend()) {
         backend->waitEvents(seconds);
     }
 }
 
-void postEmptyEvent() {
-    if (auto* backend = requireBackend()) {
+void PostEmptyEvent() {
+    if (auto* backend = RequireBackend()) {
         backend->postEmptyEvent();
     }
 }

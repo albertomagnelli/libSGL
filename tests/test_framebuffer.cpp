@@ -15,8 +15,8 @@ namespace {
 
 struct FramebufferTestContext {
     FramebufferTestContext() {
-        sgl::initHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
-        if (auto result = sgl::init(); !result) {
+        sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
+        if (auto result = sgl::Init(); !result) {
             return;
         }
         sgl::WindowHints hints;
@@ -27,19 +27,19 @@ struct FramebufferTestContext {
         hints.contextVersionMajor = 4;
         hints.contextVersionMinor = 6;
         hints.contextProfile = sgl::ContextProfile::Core;
-        auto window = sgl::Window::create(hints);
+        auto window = sgl::Window::Create(hints);
         if (!window) {
-            sgl::terminate();
+            sgl::Terminate();
             return;
         }
         this->window = std::move(*window);
         this->window->makeContextCurrent();
-        GL::load();
+        GL::Load();
     }
 
     ~FramebufferTestContext() {
         window.reset();
-        sgl::terminate();
+        sgl::Terminate();
     }
 
     std::unique_ptr<sgl::Window> window;
@@ -108,9 +108,9 @@ TEST_CASE("Sprite zeichnet in ein Framebuffer", "[gl][framebuffer][sprite]") {
     image.fill(std::array<u8, 4>{255, 0, 0, 255});
 
     Sprite sprite;
-    REQUIRE(sprite.LoadFromImage(image));
-    REQUIRE(sprite.IsValid());
-    REQUIRE(sprite.HasShape());
+    REQUIRE(sprite.loadFromImage(image));
+    REQUIRE(sprite.isValid());
+    REQUIRE(sprite.hasShape());
 
     Framebuffer framebuffer(32, 32);
     framebuffer.bind();
@@ -119,7 +119,7 @@ TEST_CASE("Sprite zeichnet in ein Framebuffer", "[gl][framebuffer][sprite]") {
 
     DrawSprite(sprite, vec2(16.0f, 16.0f), 0.0f);
 
-    Framebuffer::bindDefault();
+    Framebuffer::BindDefault();
 
     const Image result = framebuffer.readPixels();
     const std::array<u8, 4> pixel = result.pixelAt(16, 16);

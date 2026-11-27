@@ -15,7 +15,7 @@ struct Target {
     i32 index = -1;
 };
 
-Target targetForField(std::string_view field) {
+Target TargetForField(std::string_view field) {
     if (field == "a") return {true, false, static_cast<i32>(GamepadButton::A)};
     if (field == "b") return {true, false, static_cast<i32>(GamepadButton::B)};
     if (field == "x") return {true, false, static_cast<i32>(GamepadButton::X)};
@@ -42,7 +42,7 @@ Target targetForField(std::string_view field) {
     return {};
 }
 
-std::string_view trim(std::string_view text) {
+std::string_view Trim(std::string_view text) {
     while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())) != 0) {
         text.remove_prefix(1);
     }
@@ -52,7 +52,7 @@ std::string_view trim(std::string_view text) {
     return text;
 }
 
-bool parseNumber(std::string_view& text, i32& value) {
+bool ParseNumber(std::string_view& text, i32& value) {
     const char* begin = text.data();
     const char* end = text.data() + text.size();
     const auto result = std::from_chars(begin, end, value);
@@ -63,8 +63,8 @@ bool parseNumber(std::string_view& text, i32& value) {
     return true;
 }
 
-bool parseInput(std::string_view text, MappedInput& input) {
-    text = trim(text);
+bool ParseInput(std::string_view text, MappedInput& input) {
+    text = Trim(text);
     if (text.empty()) {
         return false;
     }
@@ -88,7 +88,7 @@ bool parseInput(std::string_view text, MappedInput& input) {
 
     if (kind == 'a') {
         i32 index = 0;
-        if (!parseNumber(text, index)) {
+        if (!ParseNumber(text, index)) {
             return false;
         }
         input.type = MappedInputType::Axis;
@@ -106,7 +106,7 @@ bool parseInput(std::string_view text, MappedInput& input) {
 
     if (kind == 'b') {
         i32 index = 0;
-        if (!parseNumber(text, index)) {
+        if (!ParseNumber(text, index)) {
             return false;
         }
         input.type = MappedInputType::Button;
@@ -116,12 +116,12 @@ bool parseInput(std::string_view text, MappedInput& input) {
 
     if (kind == 'h') {
         i32 hat = 0;
-        if (!parseNumber(text, hat) || text.empty() || text.front() != '.') {
+        if (!ParseNumber(text, hat) || text.empty() || text.front() != '.') {
             return false;
         }
         text.remove_prefix(1);
         i32 bit = 0;
-        if (!parseNumber(text, bit)) {
+        if (!ParseNumber(text, bit)) {
             return false;
         }
         input.type = MappedInputType::HatBit;
@@ -132,7 +132,7 @@ bool parseInput(std::string_view text, MappedInput& input) {
     return false;
 }
 
-std::string_view nextField(std::string_view& line) {
+std::string_view NextField(std::string_view& line) {
     const std::size_t comma = line.find(',');
     if (comma == std::string_view::npos) {
         const std::string_view field = line;
@@ -146,7 +146,7 @@ std::string_view nextField(std::string_view& line) {
 
 } // namespace
 
-std::string normalizeGamepadGuid(std::string_view guid) {
+std::string NormalizeGamepadGuid(std::string_view guid) {
     std::string result;
     result.reserve(guid.size());
     for (char character : guid) {
@@ -158,7 +158,7 @@ std::string normalizeGamepadGuid(std::string_view guid) {
     return result;
 }
 
-std::string makeLinuxGamepadGuid(u16 bus, u16 vendor, u16 product, u16 version,
+std::string MakeLinuxGamepadGuid(u16 bus, u16 vendor, u16 product, u16 version,
                                  std::string_view name) {
     char guid[33] = {};
     if (vendor != 0 && product != 0 && version != 0) {
@@ -180,7 +180,7 @@ std::string makeLinuxGamepadGuid(u16 bus, u16 vendor, u16 product, u16 version,
     return guid;
 }
 
-std::string makeCocoaGamepadGuid(u64 vendor, u64 product, u64 version, std::string_view name) {
+std::string MakeCocoaGamepadGuid(u64 vendor, u64 product, u64 version, std::string_view name) {
     char guid[33] = {};
     if (vendor != 0 && product != 0) {
         std::snprintf(guid, sizeof(guid),
@@ -202,8 +202,8 @@ std::string makeCocoaGamepadGuid(u64 vendor, u64 product, u64 version, std::stri
     return guid;
 }
 
-bool parseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::string& platform) {
-    line = trim(line);
+bool ParseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::string& platform) {
+    line = Trim(line);
     if (line.empty() || line.front() == '#') {
         return false;
     }
@@ -211,10 +211,10 @@ bool parseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::st
     mapping = GamepadMapping{};
     platform.clear();
 
-    std::string_view guidField = nextField(line);
-    std::string_view nameField = nextField(line);
-    mapping.guid = normalizeGamepadGuid(guidField);
-    mapping.name = std::string(trim(nameField));
+    std::string_view guidField = NextField(line);
+    std::string_view nameField = NextField(line);
+    mapping.guid = NormalizeGamepadGuid(guidField);
+    mapping.name = std::string(Trim(nameField));
 
     if (mapping.guid.size() != 32 ||
         !std::all_of(mapping.guid.begin(), mapping.guid.end(), [](char character) {
@@ -224,7 +224,7 @@ bool parseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::st
     }
 
     while (!line.empty()) {
-        std::string_view field = trim(nextField(line));
+        std::string_view field = Trim(NextField(line));
         if (field.empty()) {
             continue;
         }
@@ -234,21 +234,21 @@ bool parseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::st
             continue;
         }
 
-        const std::string_view key = trim(field.substr(0, colon));
-        const std::string_view value = trim(field.substr(colon + 1));
+        const std::string_view key = Trim(field.substr(0, colon));
+        const std::string_view value = Trim(field.substr(colon + 1));
 
         if (key == "platform") {
             platform = std::string(value);
             continue;
         }
 
-        const Target target = targetForField(key);
+        const Target target = TargetForField(key);
         if (!target.valid) {
             continue;
         }
 
         MappedInput input;
-        if (!parseInput(value, input)) {
+        if (!ParseInput(value, input)) {
             return false;
         }
 
@@ -266,7 +266,7 @@ bool parseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::st
     return true;
 }
 
-GamepadMappingDatabase& GamepadMappingDatabase::instance() {
+GamepadMappingDatabase& GamepadMappingDatabase::Instance() {
     static GamepadMappingDatabase database;
     return database;
 }
@@ -287,7 +287,7 @@ void GamepadMappingDatabase::ensureLoaded() const {
         }
 
         GamepadMappingEntry entry;
-        if (parseGamepadMapping(text, entry.mapping, entry.platform)) {
+        if (ParseGamepadMapping(text, entry.mapping, entry.platform)) {
             m_entries.push_back(std::move(entry));
         }
     }
@@ -314,7 +314,7 @@ bool GamepadMappingDatabase::addMappings(std::string_view text) {
         }
 
         GamepadMappingEntry entry;
-        if (parseGamepadMapping(line, entry.mapping, entry.platform)) {
+        if (ParseGamepadMapping(line, entry.mapping, entry.platform)) {
             m_entries.push_back(std::move(entry));
             added = true;
         }
@@ -326,7 +326,7 @@ std::optional<GamepadMapping> GamepadMappingDatabase::find(std::string_view guid
                                                            std::string_view platform) const {
     ensureLoaded();
 
-    const std::string normalized = normalizeGamepadGuid(guid);
+    const std::string normalized = NormalizeGamepadGuid(guid);
     if (normalized.size() != 32) {
         return std::nullopt;
     }
@@ -342,7 +342,7 @@ std::optional<GamepadMapping> GamepadMappingDatabase::find(std::string_view guid
     return std::nullopt;
 }
 
-GamepadState applyGamepadMapping(const GamepadMapping& mapping, std::span<const f32> axes,
+GamepadState ApplyGamepadMapping(const GamepadMapping& mapping, std::span<const f32> axes,
                                  std::span<const u8> buttons,
                                  std::span<const JoystickHat> hats) {
     GamepadState state;

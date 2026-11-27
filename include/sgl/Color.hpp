@@ -109,7 +109,7 @@ struct Cmyk {
                     static_cast<f32>(a) / 255.0f};
         }
 
-        [[nodiscard]] static Color fromVec4(const vec4 &color) {
+        [[nodiscard]] static Color FromVec4(const vec4 &color) {
             const auto toByte = [](const f32 value) -> u8 {
                 const f32 clamped = (value < 0.0f) ? 0.0f : ((value > 1.0f) ? 1.0f : value);
 

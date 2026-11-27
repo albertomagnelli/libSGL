@@ -34,13 +34,13 @@ struct Error {
 
 using ErrorCallback = std::function<void(const Error&)>;
 
-void setErrorCallback(ErrorCallback callback);
-Error getError();
-void reportError(ErrorCode code, std::string message);
-void clearError();
+void SetErrorCallback(ErrorCallback callback);
+Error GetError();
+void ReportError(ErrorCode code, std::string message);
+void ClearError();
 
 namespace detail {
-inline Error makeError(ErrorCode code, std::string message) {
+inline Error MakeError(ErrorCode code, std::string message) {
     return Error{code, std::move(message)};
 }
 } // namespace detail

@@ -37,39 +37,39 @@ public:
   Wave &operator=(Wave &&) noexcept = default;
   ~Wave() = default;
 
-  bool LoadFromFile(const std::string &path);
-  bool LoadFromMemory(const u8 *data, std::size_t size, const std::string &extension = std::string());
+  bool loadFromFile(const std::string &path);
+  bool loadFromMemory(const u8 *data, std::size_t size, const std::string &extension = std::string());
 
   // Rohdaten setzen (muss zu Channele/ Samplerate passen)
-  bool SetSamples(std::vector<f32> samples, i32 sampleRate, i32 channels);
+  bool setSamples(std::vector<f32> samples, i32 sampleRate, i32 channels);
 
-  void Unload();
-  bool IsValid() const;
+  void unload();
+  bool isValid() const;
 
-  i32 FrameCount() const;  // Anzahl Rahmen
-  i32 SampleRate() const;  // Rahmen pro Sekunde
-  i32 Channels() const;    // 1 = mono, 2 = stereo
-  i32 SampleSize() const;  // Bytes je Sample (immer 4 bei 32 Bit float)
-  i32 SampleCount() const; // Rahmen * Kanaele
+  i32 frameCount() const;  // Anzahl Rahmen
+  i32 sampleRate() const;  // Rahmen pro Sekunde
+  i32 channels() const;    // 1 = mono, 2 = stereo
+  i32 sampleSize() const;  // Bytes je Sample (immer 4 bei 32 Bit float)
+  i32 sampleCount() const; // Rahmen * Kanaele
 
-  f32 Duration() const; // Sekunden
+  f32 duration() const; // Sekunden
 
-  const std::vector<f32> &Samples() const;
-  std::vector<f32>       &Samples();
+  const std::vector<f32> &samples() const;
+  std::vector<f32>       &samples();
 
-  Wave Copy() const;
+  Wave copy() const;
 
   // Rahmenbereich behalten (initFrame..finalFrame, beide inklusive)
-  bool Crop(i32 firstFrame, i32 lastFrame);
+  bool crop(i32 firstFrame, i32 lastFrame);
 
   // Samplerate/Kanaele umrechnen (sampleSize muss 32 sein)
-  bool Convert(i32 sampleRate, i32 channels);
+  bool convert(i32 sampleRate, i32 channels);
 
   // Als 16-Bit-PCM-WAV schreiben; bei der Endung .qoa als QOA
-  bool SaveToFile(const std::string &path) const;
+  bool saveToFile(const std::string &path) const;
 
   // Als C-Header mit float-Array schreiben
-  bool SaveAsCode(const std::string &path, const std::string &variableName = "waveSamples") const;
+  bool saveAsCode(const std::string &path, const std::string &variableName = "waveSamples") const;
 
 private:
   std::vector<f32> m_samples;
@@ -89,30 +89,30 @@ public:
   Sound(const Sound &)            = delete;
   Sound &operator=(const Sound &) = delete;
 
-  bool LoadFromFile(const std::string &path, i32 voices = 8);
-  bool LoadFromWave(const Wave &wave, i32 voices = 8);
+  bool loadFromFile(const std::string &path, i32 voices = 8);
+  bool loadFromWave(const Wave &wave, i32 voices = 8);
 
-  void Unload();
-  bool IsValid() const; // Daten dekodiert (Wiedergabe braucht zusaetzlich ein Geraet)
+  void unload();
+  bool isValid() const; // Daten dekodiert (Wiedergabe braucht zusaetzlich ein Geraet)
 
-  const Wave &Data() const;
-  f32         Duration() const;
-  i32         VoiceCount() const;
+  const Wave &data() const;
+  f32         duration() const;
+  i32         voiceCount() const;
 
-  void Play();
-  void Stop();
-  void Pause();
-  void Resume();
-  bool IsPlaying() const;
+  void play();
+  void stop();
+  void pause();
+  void resume();
+  bool isPlaying() const;
 
-  void SetVolume(f32 volume); // 1.0 = normal
-  f32  Volume() const;
-  void SetPitch(f32 pitch); // 1.0 = Originaltonhoehe
-  f32  Pitch() const;
-  void SetPan(f32 pan); // -1.0 links .. 1.0 rechts
-  f32  Pan() const;
-  void SetLooping(bool looping);
-  bool IsLooping() const;
+  void setVolume(f32 volume); // 1.0 = normal
+  f32  volume() const;
+  void setPitch(f32 pitch); // 1.0 = Originaltonhoehe
+  f32  pitch() const;
+  void setPan(f32 pan); // -1.0 links .. 1.0 rechts
+  f32  pan() const;
+  void setLooping(bool looping);
+  bool isLooping() const;
 
   struct Impl; // intern (Definition in Audio.cpp)
 
@@ -133,36 +133,36 @@ public:
   Music(const Music &)            = delete;
   Music &operator=(const Music &) = delete;
 
-  bool LoadFromFile(const std::string &path);
-  bool LoadFromMemory(const u8 *data, std::size_t size, const std::string &extension = std::string());
+  bool loadFromFile(const std::string &path);
+  bool loadFromMemory(const u8 *data, std::size_t size, const std::string &extension = std::string());
 
-  void Unload();
-  bool IsValid() const;
-  bool IsStreaming() const; // true = aus der Datei gestreamt
+  void unload();
+  bool isValid() const;
+  bool isStreaming() const; // true = aus der Datei gestreamt
 
-  void Play();
-  void Stop();
-  void Pause();
-  void Resume();
-  bool IsPlaying() const;
-  bool IsPaused() const;
-  void Update(); // nicht noetig (miniaudio streamt selbst), bleibt fuer raylib-Aufrufe
+  void play();
+  void stop();
+  void pause();
+  void resume();
+  bool isPlaying() const;
+  bool isPaused() const;
+  void update(); // nicht noetig (miniaudio streamt selbst), bleibt fuer raylib-Aufrufe
 
-  void Seek(f32 seconds);
-  f32  TimeLength() const; // Sekunden
-  f32  TimePlayed() const;
+  void seek(f32 seconds);
+  f32  timeLength() const; // Sekunden
+  f32  timePlayed() const;
 
-  void SetVolume(f32 volume);
-  f32  Volume() const;
-  void SetPitch(f32 pitch);
-  void SetPan(f32 pan);
-  void SetLooping(bool looping);
-  bool IsLooping() const;
+  void setVolume(f32 volume);
+  f32  volume() const;
+  void setPitch(f32 pitch);
+  void setPan(f32 pan);
+  void setLooping(bool looping);
+  bool isLooping() const;
 
   struct Impl; // intern (Definition in Audio.cpp)
 
 private:
-  static bool initBuffer(Impl& impl, Wave wave);
+  static bool InitBuffer(Impl& impl, Wave wave);
 
   std::unique_ptr<Impl> m_impl;
 };
@@ -179,28 +179,28 @@ public:
   AudioStream(const AudioStream &)            = delete;
   AudioStream &operator=(const AudioStream &) = delete;
 
-  bool Load(u32 sampleRate, u32 channels = 2, u32 bufferFrames = 8192);
-  void Unload();
-  bool IsValid() const;
+  bool load(u32 sampleRate, u32 channels = 2, u32 bufferFrames = 8192);
+  void unload();
+  bool isValid() const;
 
   // Rahmen (interleaved) anhaengen; gibt false zurueck, wenn der Puffer voll ist
-  bool Push(const f32 *samples, i32 frameCount);
-  void Clear();
-  i32  QueuedFrames() const;
-  i32  CapacityFrames() const;
-  i32  SampleRate() const;
-  i32  Channels() const;
+  bool push(const f32 *samples, i32 frameCount);
+  void clear();
+  i32  queuedFrames() const;
+  i32  capacityFrames() const;
+  i32  sampleRate() const;
+  i32  channels() const;
 
-  void Play();
-  void Pause();
-  void Resume();
-  void Stop();
-  bool IsPlaying() const;
+  void play();
+  void pause();
+  void resume();
+  void stop();
+  bool isPlaying() const;
 
-  void SetVolume(f32 volume);
-  void SetPitch(f32 pitch);
-  void SetPan(f32 pan);
-  void SetLooping(bool looping);
+  void setVolume(f32 volume);
+  void setPitch(f32 pitch);
+  void setPan(f32 pan);
+  void setLooping(bool looping);
 
   struct Impl; // intern (Definition in Audio.cpp)
 

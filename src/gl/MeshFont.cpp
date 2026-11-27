@@ -130,7 +130,7 @@ Font2d& Font2d::operator=(Font2d&& other) noexcept {
     return *this;
 }
 
-Font2d Font2d::fromFile(const std::filesystem::path& file) {
+Font2d Font2d::FromFile(const std::filesystem::path& file) {
     Font2d font;
     ttf_t* raw = nullptr;
     const i32 result = ttf_load_from_file(file.string().c_str(), &raw, false);
@@ -143,7 +143,7 @@ Font2d Font2d::fromFile(const std::filesystem::path& file) {
     return font;
 }
 
-Font2d Font2d::fromMemory(std::span<const u8> data) {
+Font2d Font2d::FromMemory(std::span<const u8> data) {
     if (data.empty()) {
         throw MeshFontError("Font2d: leerer Puffer");
     }
@@ -197,7 +197,7 @@ f32 Font2d::measure(const std::string_view text, const f32 pixelSize) const {
     return MeasureEm(m_font, text) * pixelSize;
 }
 
-u32 Font2d::lineCount(const std::string_view text) {
+u32 Font2d::LineCount(const std::string_view text) {
     u32 lines = 1;
     for (const char character : text) {
         if (character == '\n') {
@@ -282,7 +282,7 @@ Font3d& Font3d::operator=(Font3d&& other) noexcept {
     return *this;
 }
 
-Font3d Font3d::fromFile(const std::filesystem::path& file) {
+Font3d Font3d::FromFile(const std::filesystem::path& file) {
     Font3d font;
     ttf_t* raw = nullptr;
     const i32 result = ttf_load_from_file(file.string().c_str(), &raw, false);
@@ -295,7 +295,7 @@ Font3d Font3d::fromFile(const std::filesystem::path& file) {
     return font;
 }
 
-Font3d Font3d::fromMemory(std::span<const u8> data) {
+Font3d Font3d::FromMemory(std::span<const u8> data) {
     if (data.empty()) {
         throw MeshFontError("Font3d: leerer Puffer");
     }

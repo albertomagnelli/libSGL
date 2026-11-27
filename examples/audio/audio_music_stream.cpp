@@ -46,18 +46,18 @@ int main(int argc, char** argv) {
                                  : audiodemo::Resource(fileName).string();
 
     Music music;
-    if (!music.LoadFromFile(path)) {
+    if (!music.loadFromFile(path)) {
         SLOGE << path << " konnte nicht geladen werden.";
         audiodemo::CloseAudio();
         return 1;
     }
 
-    SLOGI << path << ": " << audiodemo::FormatTime(music.TimeLength())
-          << ", streaming=" << (music.IsStreaming() ? "ja" : "nein");
+    SLOGI << path << ": " << audiodemo::FormatTime(music.timeLength())
+          << ", streaming=" << (music.isStreaming() ? "ja" : "nein");
 
-    music.SetVolume(0.6f);
-    music.SetLooping(true);
-    music.Play();
+    music.setVolume(0.6f);
+    music.setLooping(true);
+    music.play();
 
     f32 elapsed = 0.0f;
     while (elapsed < duration) {
@@ -65,22 +65,22 @@ int main(int argc, char** argv) {
         elapsed += 0.25f;
 
         // miniaudio streamt selbst; Update() bleibt fuer API-Paritaet aufrufbar.
-        music.Update();
+        music.update();
 
         if ((static_cast<i32>(elapsed * 4.0f) % 4) == 0) {
-            SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.TimePlayed()) << " / "
-                  << audiodemo::FormatTime(music.TimeLength());
+            SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.timePlayed()) << " / "
+                  << audiodemo::FormatTime(music.timeLength());
         }
     }
 
     if (duration > 2.0f) {
         SLOGI << "Seek auf 1,0 s ...";
-        music.Seek(1.0f);
+        music.seek(1.0f);
         audiodemo::SleepSeconds(0.5f);
     }
 
-    music.Stop();
-    music.Unload();
+    music.stop();
+    music.unload();
 
     audiodemo::CloseAudio();
     return 0;

@@ -144,11 +144,11 @@ struct WindowEvents {
 
 } // namespace detail
 
-WindowHints getDefaultWindowHints();
+WindowHints GetDefaultWindowHints();
 
 class Window final : public detail::WindowEvents {
 public:
-    static std::expected<std::unique_ptr<Window>, Error> create(const WindowHints& hints = {});
+    static std::expected<std::unique_ptr<Window>, Error> Create(const WindowHints& hints = {});
     ~Window() override;
 
     Window(const Window&) = delete;

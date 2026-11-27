@@ -20,12 +20,12 @@ using SwapIntervalMesaProc = int (*)(unsigned int);
 using SwapIntervalSgiProc = int (*)(int);
 
 template <typename T>
-T loadGLX(const char* name) {
+T LoadGlx(const char* name) {
     return reinterpret_cast<T>(glXGetProcAddressARB(reinterpret_cast<const GLubyte*>(name)));
 }
 
-void setWindowName(::Window window, const std::string& title) {
-    State& s = state();
+void SetWindowName(::Window window, const std::string& title) {
+    State& s = GetX11State();
     XStoreName(s.display, window, title.c_str());
     XChangeProperty(s.display, window, s.netWmName, s.utf8String, 8, PropModeReplace,
                     reinterpret_cast<const unsigned char*>(title.data()),
@@ -36,9 +36,9 @@ void setWindowName(::Window window, const std::string& title) {
 
 X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
     : m_size{hints.width, hints.height}, m_title(hints.title), m_hints(hints) {
-    State& s = state();
+    State& s = GetX11State();
     if (!s.display) {
-        error = makeError(ErrorCode::PlatformUnavailable, "X11-Display ist nicht verfuegbar.");
+        error = MakeError(ErrorCode::PlatformUnavailable, "X11-Display ist nicht verfuegbar.");
         return;
     }
 
@@ -54,12 +54,12 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
 
     m_useEgl = hints.contextApi == ContextApi::EGL;
     if (hints.contextApi != ContextApi::Native && !m_useEgl) {
-        error = makeError(ErrorCode::FeatureUnavailable,
+        error = MakeError(ErrorCode::FeatureUnavailable,
                           "Dieses Backend unterstuetzt nur native GLX- oder EGL-Kontexte.");
         return;
     }
     if (hints.clientApi != ClientApi::OpenGL) {
-        error = makeError(ErrorCode::ApiUnavailable,
+        error = MakeError(ErrorCode::ApiUnavailable,
                           "Das X11-Backend unterstuetzt nur OpenGL-Kontexte.");
         return;
     }
@@ -69,7 +69,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
         int glxMinor = 0;
         if (!glXQueryVersion(s.display, &glxMajor, &glxMinor) ||
             (glxMajor == 1 && glxMinor < 3) || glxMajor < 1) {
-            error = makeError(ErrorCode::ApiUnavailable, "GLX 1.3 oder neuer wird benoetigt.");
+            error = MakeError(ErrorCode::ApiUnavailable, "GLX 1.3 oder neuer wird benoetigt.");
             return;
         }
     }
@@ -86,14 +86,14 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
             m_eglDisplay = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(s.display));
         }
         if (m_eglDisplay == EGL_NO_DISPLAY) {
-            error = makeError(ErrorCode::ApiUnavailable,
+            error = MakeError(ErrorCode::ApiUnavailable,
                               "EGL-Display konnte nicht geoeffnet werden.");
             return;
         }
         EGLint major = 0;
         EGLint minor = 0;
         if (!eglInitialize(m_eglDisplay, &major, &minor)) {
-            error = makeError(ErrorCode::ApiUnavailable, "EGL konnte nicht initialisiert werden.");
+            error = MakeError(ErrorCode::ApiUnavailable, "EGL konnte nicht initialisiert werden.");
             return;
         }
         eglBindAPI(EGL_OPENGL_API);
@@ -114,7 +114,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
         EGLint configCount = 0;
         if (!eglChooseConfig(m_eglDisplay, configAttribs, &m_eglConfig, 1, &configCount) ||
             configCount == 0) {
-            error = makeError(ErrorCode::FormatUnavailable, "Keine passende EGL-Konfiguration.");
+            error = MakeError(ErrorCode::FormatUnavailable, "Keine passende EGL-Konfiguration.");
             return;
         }
         EGLint visualId = 0;
@@ -154,7 +154,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
             configs = glXChooseFBConfig(s.display, s.screen, fbAttribs, &count);
         }
         if (!configs || count == 0) {
-            error = makeError(ErrorCode::FormatUnavailable,
+            error = MakeError(ErrorCode::FormatUnavailable,
                               "Kein passender GLX-Framebuffer gefunden.");
             if (configs) {
                 XFree(configs);
@@ -168,7 +168,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
     }
 
     if (!visual) {
-        error = makeError(ErrorCode::FormatUnavailable, "Kein passendes X11-Visual gefunden.");
+        error = MakeError(ErrorCode::FormatUnavailable, "Kein passendes X11-Visual gefunden.");
         return;
     }
 
@@ -191,11 +191,11 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
     XFree(visual);
 
     if (m_window == 0) {
-        error = makeError(ErrorCode::PlatformError, "X11-Fenster konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "X11-Fenster konnte nicht erstellt werden.");
         return;
     }
 
-    setWindowName(m_window, m_title);
+    SetWindowName(m_window, m_title);
 
     XClassHint classHint{};
     classHint.res_name = const_cast<char*>(
@@ -229,9 +229,9 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
             return;
         }
     } else {
-        auto createContext = loadGLX<CreateContextAttribsProc>("glXCreateContextAttribsARB");
+        auto createContext = LoadGlx<CreateContextAttribsProc>("glXCreateContextAttribsARB");
         if (!createContext) {
-            error = makeError(ErrorCode::ApiUnavailable,
+            error = MakeError(ErrorCode::ApiUnavailable,
                               "glXCreateContextAttribsARB ist nicht verfuegbar.");
             return;
         }
@@ -277,7 +277,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
 
     m_glxContext = createContext(s.display, config, nullptr, True, contextAttribs.data());
     if (!m_glxContext) {
-        error = makeError(ErrorCode::VersionUnavailable,
+        error = MakeError(ErrorCode::VersionUnavailable,
                           "Der angeforderte OpenGL-Kontext konnte nicht erstellt werden.");
         return;
     }
@@ -285,7 +285,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
 
     m_glxWindow = glXCreateWindow(s.display, config, m_window, nullptr);
     if (m_glxWindow == 0) {
-        error = makeError(ErrorCode::PlatformError, "GLX-Fenster konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "GLX-Fenster konnte nicht erstellt werden.");
         return;
     }
     }
@@ -295,7 +295,7 @@ X11WindowBackend::X11WindowBackend(const WindowHints& hints, Error& error)
                          XNClientWindow, m_window, XNFocusWindow, m_window, nullptr);
     }
 
-    registerWindow(this, m_window);
+    RegisterWindow(this, m_window);
 
     if (hints.visible) {
         show();
@@ -316,7 +316,7 @@ void X11WindowBackend::createEglContext(const WindowHints& hints, Error& error) 
     m_eglSurface = eglCreateWindowSurface(m_eglDisplay, m_eglConfig,
                                           static_cast<EGLNativeWindowType>(m_window), nullptr);
     if (m_eglSurface == EGL_NO_SURFACE) {
-        error = makeError(ErrorCode::PlatformError, "EGL-Surface konnte nicht erstellt werden.");
+        error = MakeError(ErrorCode::PlatformError, "EGL-Surface konnte nicht erstellt werden.");
         return;
     }
 
@@ -348,7 +348,7 @@ void X11WindowBackend::createEglContext(const WindowHints& hints, Error& error) 
 
     m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, EGL_NO_CONTEXT, attribs.data());
     if (m_eglContext == EGL_NO_CONTEXT) {
-        error = makeError(ErrorCode::VersionUnavailable,
+        error = MakeError(ErrorCode::VersionUnavailable,
                           "Der angeforderte OpenGL-Kontext konnte nicht erstellt werden.");
         return;
     }
@@ -356,7 +356,7 @@ void X11WindowBackend::createEglContext(const WindowHints& hints, Error& error) 
 }
 
 void X11WindowBackend::destroy() {
-    State& s = state();
+    State& s = GetX11State();
     if (!s.display || m_window == 0) {
         return;
     }
@@ -389,7 +389,7 @@ void X11WindowBackend::destroy() {
         glXDestroyContext(s.display, m_glxContext);
         m_glxContext = nullptr;
     }
-    unregisterWindow(m_window);
+    UnregisterWindow(m_window);
     XDestroyWindow(s.display, m_window);
     m_window = 0;
     if (m_colormap) {
@@ -403,7 +403,7 @@ void X11WindowBackend::makeContextCurrent() {
     if (m_useEgl) {
         eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext);
     } else {
-        glXMakeCurrent(state().display, m_glxWindow, m_glxContext);
+        glXMakeCurrent(GetX11State().display, m_glxWindow, m_glxContext);
     }
 }
 
@@ -411,7 +411,7 @@ void X11WindowBackend::swapBuffers() {
     if (m_useEgl) {
         eglSwapBuffers(m_eglDisplay, m_eglSurface);
     } else {
-        glXSwapBuffers(state().display, m_glxWindow);
+        glXSwapBuffers(GetX11State().display, m_glxWindow);
     }
 }
 
@@ -425,7 +425,7 @@ void* X11WindowBackend::getProcAddress(const char* name) {
 NativeHandle X11WindowBackend::getNativeHandle() const {
     NativeHandle handle;
     handle.platform = NativePlatform::X11;
-    handle.display = state().display;
+    handle.display = GetX11State().display;
     handle.window = reinterpret_cast<void*>(static_cast<uintptr_t>(m_window));
     handle.context = m_useEgl ? static_cast<void*>(m_eglContext) : m_glxContext;
     handle.surface = m_useEgl ? static_cast<void*>(m_eglSurface)
@@ -442,24 +442,24 @@ void X11WindowBackend::setSwapInterval(i32 interval) {
         m_swapInterval = interval;
         return;
     }
-    if (auto swapIntervalExt = loadGLX<SwapIntervalExtProc>("glXSwapIntervalEXT")) {
-        swapIntervalExt(state().display, m_glxWindow, interval);
+    if (auto swapIntervalExt = LoadGlx<SwapIntervalExtProc>("glXSwapIntervalEXT")) {
+        swapIntervalExt(GetX11State().display, m_glxWindow, interval);
         m_swapInterval = interval;
         return;
     }
-    if (auto swapIntervalMesa = loadGLX<SwapIntervalMesaProc>("glXSwapIntervalMESA")) {
+    if (auto swapIntervalMesa = LoadGlx<SwapIntervalMesaProc>("glXSwapIntervalMESA")) {
         swapIntervalMesa(static_cast<unsigned int>(interval));
         m_swapInterval = interval;
         return;
     }
-    if (auto swapIntervalSgi = loadGLX<SwapIntervalSgiProc>("glXSwapIntervalSGI")) {
+    if (auto swapIntervalSgi = LoadGlx<SwapIntervalSgiProc>("glXSwapIntervalSGI")) {
         swapIntervalSgi(interval);
         m_swapInterval = interval;
     }
 }
 
 bool X11WindowBackend::isExtensionSupported(const char* name) {
-    Display* display = state().display;
+    Display* display = GetX11State().display;
     if (m_useEgl) {
         const char* eglExtensions = eglQueryString(m_eglDisplay, EGL_EXTENSIONS);
         if (eglExtensions && std::strstr(eglExtensions, name)) {
@@ -484,7 +484,7 @@ bool X11WindowBackend::isExtensionSupported(const char* name) {
         return false;
     }
 
-    const char* glxExtensions = glXQueryExtensionsString(display, state().screen);
+    const char* glxExtensions = glXQueryExtensionsString(display, GetX11State().screen);
     if (glxExtensions && std::strstr(glxExtensions, name)) {
         return true;
     }
@@ -492,9 +492,9 @@ bool X11WindowBackend::isExtensionSupported(const char* name) {
     using GetStringProc = const unsigned char* (*)(unsigned int);
     using GetStringiProc = const unsigned char* (*)(unsigned int, unsigned int);
     using GetIntegervProc = void (*)(unsigned int, int*);
-    auto getString = loadGLX<GetStringProc>("glGetString");
-    auto getStringi = loadGLX<GetStringiProc>("glGetStringi");
-    auto getIntegerv = loadGLX<GetIntegervProc>("glGetIntegerv");
+    auto getString = LoadGlx<GetStringProc>("glGetString");
+    auto getStringi = LoadGlx<GetStringiProc>("glGetStringi");
+    auto getIntegerv = LoadGlx<GetIntegervProc>("glGetIntegerv");
     if (!getString || !getStringi || !getIntegerv) {
         return false;
     }
@@ -517,29 +517,29 @@ bool X11WindowBackend::isExtensionSupported(const char* name) {
 
 void X11WindowBackend::setTitle(std::string_view title) {
     m_title = std::string(title);
-    setWindowName(m_window, m_title);
+    SetWindowName(m_window, m_title);
 }
 
 void X11WindowBackend::setSize(ivec2 size) {
-    XResizeWindow(state().display, m_window,
+    XResizeWindow(GetX11State().display, m_window,
                   static_cast<unsigned int>(std::max(size.x, 1)),
                   static_cast<unsigned int>(std::max(size.y, 1)));
 }
 
 void X11WindowBackend::setPosition(ivec2 position) {
-    XMoveWindow(state().display, m_window, position.x, position.y);
+    XMoveWindow(GetX11State().display, m_window, position.x, position.y);
 }
 
 ivec2 X11WindowBackend::getPosition() const {
     XWindowAttributes attributes{};
-    if (XGetWindowAttributes(state().display, m_window, &attributes)) {
+    if (XGetWindowAttributes(GetX11State().display, m_window, &attributes)) {
         return ivec2(attributes.x, attributes.y);
     }
     return m_position;
 }
 
 ivec4 X11WindowBackend::getFrameSize() const {
-    State& s = state();
+    State& s = GetX11State();
     Atom actualType = 0;
     int actualFormat = 0;
     unsigned long count = 0;
@@ -568,7 +568,7 @@ void X11WindowBackend::show() {
     if (m_visible) {
         return;
     }
-    XMapRaised(state().display, m_window);
+    XMapRaised(GetX11State().display, m_window);
     m_visible = true;
 }
 
@@ -576,12 +576,12 @@ void X11WindowBackend::hide() {
     if (!m_visible) {
         return;
     }
-    XUnmapWindow(state().display, m_window);
+    XUnmapWindow(GetX11State().display, m_window);
     m_visible = false;
 }
 
 void X11WindowBackend::focus() {
-    State& s = state();
+    State& s = GetX11State();
     XRaiseWindow(s.display, m_window);
 
     XEvent event{};
@@ -603,7 +603,7 @@ void X11WindowBackend::focus() {
 }
 
 void X11WindowBackend::requestAttention() {
-    State& s = state();
+    State& s = GetX11State();
     XEvent event{};
     event.type = ClientMessage;
     event.xclient.window = m_window;
@@ -618,11 +618,11 @@ void X11WindowBackend::requestAttention() {
 }
 
 void X11WindowBackend::iconify() {
-    XIconifyWindow(state().display, m_window, state().screen);
+    XIconifyWindow(GetX11State().display, m_window, GetX11State().screen);
 }
 
 void X11WindowBackend::restore() {
-    State& s = state();
+    State& s = GetX11State();
     XMapWindow(s.display, m_window);
     if (m_maximized) {
         XEvent event{};
@@ -643,7 +643,7 @@ void X11WindowBackend::restore() {
 }
 
 void X11WindowBackend::maximize() {
-    State& s = state();
+    State& s = GetX11State();
     XEvent event{};
     event.type = ClientMessage;
     event.xclient.window = m_window;
@@ -706,7 +706,7 @@ i32 X11WindowBackend::getAttrib(WindowAttrib attrib) const {
 }
 
 void X11WindowBackend::setAttrib(WindowAttrib attrib, bool value) {
-    State& s = state();
+    State& s = GetX11State();
     switch (attrib) {
     case WindowAttrib::Visible:
         value ? show() : hide();
@@ -772,7 +772,7 @@ void X11WindowBackend::setAttrib(WindowAttrib attrib, bool value) {
 }
 
 void X11WindowBackend::updateNetWmState() {
-    State& s = state();
+    State& s = GetX11State();
     XEvent event{};
     event.type = ClientMessage;
     event.xclient.window = m_window;
@@ -790,7 +790,7 @@ void X11WindowBackend::setOpacity(f32 opacity) {
     m_opacity = std::clamp(opacity, 0.0f, 1.0f);
     const unsigned long value =
         static_cast<unsigned long>(m_opacity * static_cast<f32>(0xFFFFFFFFu));
-    XChangeProperty(state().display, m_window, state().netWmWindowOpacity, XA_CARDINAL, 32,
+    XChangeProperty(GetX11State().display, m_window, GetX11State().netWmWindowOpacity, XA_CARDINAL, 32,
                     PropModeReplace, reinterpret_cast<const unsigned char*>(&value), 1);
 }
 
@@ -809,7 +809,7 @@ void X11WindowBackend::setSizeLimits(ivec2 minimum, ivec2 maximum) {
         hints.max_width = maximum.x;
         hints.max_height = maximum.y;
     }
-    XSetWMNormalHints(state().display, m_window, &hints);
+    XSetWMNormalHints(GetX11State().display, m_window, &hints);
 }
 
 void X11WindowBackend::setAspectRatio(i32 numerator, i32 denominator) {
@@ -824,11 +824,11 @@ void X11WindowBackend::setAspectRatio(i32 numerator, i32 denominator) {
         hints.max_aspect.x = numerator;
         hints.max_aspect.y = denominator;
     }
-    XSetWMNormalHints(state().display, m_window, &hints);
+    XSetWMNormalHints(GetX11State().display, m_window, &hints);
 }
 
 void X11WindowBackend::setIcon(std::span<const WindowIcon> images) {
-    State& s = state();
+    State& s = GetX11State();
     m_icon.assign(images.begin(), images.end());
     m_iconStorage.clear();
 
@@ -868,7 +868,7 @@ void X11WindowBackend::setIcon(std::span<const WindowIcon> images) {
 void X11WindowBackend::setMonitor(const Monitor& monitor, ivec2 position, ivec2 size,
                                   i32 refreshRate) {
     (void)refreshRate;
-    State& s = state();
+    State& s = GetX11State();
 
     if (!monitor.isValid() || size.x <= 0 || size.y <= 0) {
         if (m_fullscreen) {
@@ -899,7 +899,7 @@ void X11WindowBackend::setMonitor(const Monitor& monitor, ivec2 position, ivec2 
     }
     m_restoreWindowedGeometry = false;
     m_fullscreen = true;
-    m_fullscreenMonitor = MonitorAccess::native(monitor);
+    m_fullscreenMonitor = MonitorAccess::Native(monitor);
 
     XEvent event{};
     event.type = ClientMessage;
@@ -919,10 +919,10 @@ void X11WindowBackend::setMonitor(const Monitor& monitor, ivec2 position, ivec2 
 }
 
 Monitor X11WindowBackend::getMonitor() const {
-    State& s = state();
+    State& s = GetX11State();
     if (m_fullscreen && m_fullscreenMonitor) {
         for (const auto& monitor : s.monitors) {
-            if (MonitorAccess::native(monitor) == m_fullscreenMonitor) {
+            if (MonitorAccess::Native(monitor) == m_fullscreenMonitor) {
                 return monitor;
             }
         }

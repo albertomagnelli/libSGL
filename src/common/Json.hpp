@@ -29,32 +29,32 @@ public:
   // Datei lesen und auswerten
   static Json ParseFile(const std::string &path);
 
-  bool IsValid() const;
-  bool IsNull() const;
-  bool IsObject() const;
-  bool IsArray() const;
-  bool IsString() const;
-  bool IsNumber() const;
+  bool isValid() const;
+  bool isNull() const;
+  bool isObject() const;
+  bool isArray() const;
+  bool isString() const;
+  bool isNumber() const;
 
-  Type Kind() const;
+  Type kind() const;
 
   // Objektzugriff (nullptr, wenn kein Objekt oder Schluessel fehlt)
-  const Json *Find(std::string_view key) const;
-  bool        Has(std::string_view key) const;
+  const Json *find(std::string_view key) const;
+  bool        has(std::string_view key) const;
 
   // Array- und Objektinhalt
-  i32 Size() const; // Anzahl Elemente/Mitglieder
-  const Json &At(i32 index) const;
-  const std::string &KeyAt(i32 index) const;
+  i32 size() const; // Anzahl Elemente/Mitglieder
+  const Json &at(i32 index) const;
+  const std::string &keyAt(i32 index) const;
 
   // Werte mit Rueckfallwerten (nie werfen)
-  f64                Number(f64 fallback = 0.0) const;
-  i32                Int(i32 fallback = 0) const;
-  f32                Float(f32 fallback = 0.0f) const;
-  bool               Bool(bool fallback = false) const;
-  const std::string &String() const;
+  f64                number(f64 fallback = 0.0) const;
+  i32                intValue(i32 fallback = 0) const;
+  f32                floatValue(f32 fallback = 0.0f) const;
+  bool               boolValue(bool fallback = false) const;
+  const std::string &string() const;
 
-  const std::string &Error() const;
+  const std::string &error() const;
 
 private:
   Type               m_type{Type::Null};

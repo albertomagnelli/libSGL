@@ -212,7 +212,7 @@ Texture2d MakeTexture(const Image& image, const bool srgb) {
     options.wrapT = TextureWrap::Repeat;
     options.isSrgb = srgb;
 
-    return Texture2d::fromImage(image, options);
+    return Texture2d::FromImage(image, options);
 }
 
 struct GpuMaterial {
@@ -514,7 +514,7 @@ std::vector<mat4> BuildBoneMatrices(const Model& model, const i32 skinIndex,
 
 std::optional<ModelInstance> LoadInstance(const std::filesystem::path& path,
                                           const f32 rotationOffset) {
-    auto result = ModelIO::load(path);
+    auto result = ModelIO::Load(path);
     if (!result) {
         SLOGE("%s: %s\n", path.string().c_str(), result.error().what());
         return std::nullopt;
@@ -675,7 +675,7 @@ void SaveFrame(const Window& window, const std::filesystem::path& path) {
     Image image(size.x, size.y, ImageFormat::Rgba,
                 std::span<const u8>(pixels.data(), pixels.size()));
     image.flipVertically();
-    ImageIO::save(image, path);
+    ImageIO::Save(image, path);
 
     SLOGI("Bild gespeichert: %s\n", path.string().c_str());
 }
@@ -715,24 +715,24 @@ int main(int argc, char** argv) {
     hints.visible = !options.headless;
 
     std::unique_ptr<Window> window =
-        example::createWindow("sgl - Model Viewer", hints.width, hints.height, hints);
+        example::CreateWindow("sgl - Model Viewer", hints.width, hints.height, hints);
     if (!window) return 1;
 
-    example::closeOnEscape(*window);
+    example::CloseOnEscape(*window);
 
     if (!glCreateVertexArrays || !glCreateTextures || !glNamedBufferData ||
         !glVertexArrayElementBuffer) {
         SLOGE("Dieses Beispiel braucht OpenGL 4.5+ (Direct State Access).\n");
         window.reset();
-        sgl::terminate();
+        sgl::Terminate();
         return 1;
     }
 
-    Shader shader = Shader::fromSource(kModelShader);
+    Shader shader = Shader::FromSource(kModelShader);
     if (!shader.isValid()) {
         SLOGE("Modelshader: %s\n", shader.lastError().c_str());
         window.reset();
-        sgl::terminate();
+        sgl::Terminate();
         return 1;
     }
 
@@ -744,11 +744,11 @@ int main(int argc, char** argv) {
 
     if (!left || !middle || !right) {
         window.reset();
-        sgl::terminate();
+        sgl::Terminate();
         return 1;
     }
 
-    const auto characterAnimations = ModelAnimationIO::load(resources / "character.glb");
+    const auto characterAnimations = ModelAnimationIO::Load(resources / "character.glb");
     if (characterAnimations) {
         if (const ModelAnimation* animation = PickAnimation(*characterAnimations)) {
             left->animation = *animation;
@@ -760,7 +760,7 @@ int main(int argc, char** argv) {
               characterAnimations.error().what());
     }
 
-    const auto turricanAnimations = ModelAnimationIO::load(resources / "turrican.glb");
+    const auto turricanAnimations = ModelAnimationIO::Load(resources / "turrican.glb");
     if (turricanAnimations) {
         if (const ModelAnimation* animation = PickAnimation(*turricanAnimations, "Walking")) {
             middle->animation = *animation;
@@ -771,7 +771,7 @@ int main(int argc, char** argv) {
         SLOGW("turrican.glb: Animationen nicht ladbar: %s\n", turricanAnimations.error().what());
     }
 
-    const auto walkAnimations = ModelAnimationIO::load(resources / "walk.fbx");
+    const auto walkAnimations = ModelAnimationIO::Load(resources / "walk.fbx");
     if (walkAnimations) {
         if (const ModelAnimation* animation = PickAnimation(*walkAnimations)) {
             right->animation = *animation;
@@ -789,12 +789,12 @@ int main(int argc, char** argv) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const f64 startTime = sgl::getTime();
+    const f64 startTime = sgl::GetTime();
 
     while (!window->isCloseRequested()) {
         const f32 time = options.headless
                              ? options.time
-                             : static_cast<f32>(sgl::getTime() - startTime);
+                             : static_cast<f32>(sgl::GetTime() - startTime);
 
         RenderScene(shader, *left, *middle, *right, time, window->getFramebufferSize());
 
@@ -804,10 +804,10 @@ int main(int argc, char** argv) {
         }
 
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

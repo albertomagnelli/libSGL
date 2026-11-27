@@ -11,22 +11,22 @@
 
 namespace sgl {
 
-bool isJoystickPresent(i32 jid);
-std::string getJoystickName(i32 jid);
-std::string getJoystickGUID(i32 jid);
-std::span<const f32> getJoystickAxes(i32 jid);
-std::span<const u8> getJoystickButtons(i32 jid);
-std::span<const JoystickHat> getJoystickHats(i32 jid);
+bool IsJoystickPresent(i32 jid);
+std::string GetJoystickName(i32 jid);
+std::string GetJoystickGuid(i32 jid);
+std::span<const f32> GetJoystickAxes(i32 jid);
+std::span<const u8> GetJoystickButtons(i32 jid);
+std::span<const JoystickHat> GetJoystickHats(i32 jid);
 
-void setJoystickUserPointer(i32 jid, void* pointer);
-void* getJoystickUserPointer(i32 jid);
+void SetJoystickUserPointer(i32 jid, void* pointer);
+void* GetJoystickUserPointer(i32 jid);
 
-bool isGamepad(i32 jid);
-std::string getGamepadName(i32 jid);
-std::optional<GamepadState> getGamepadState(i32 jid);
+bool IsGamepad(i32 jid);
+std::string GetGamepadName(i32 jid);
+std::optional<GamepadState> GetGamepadState(i32 jid);
 /// Fügt ein Mapping im SDL-GameControllerDB-Format hinzu.
-bool updateGamepadMappings(std::string_view mappings);
+bool UpdateGamepadMappings(std::string_view mappings);
 
-void setJoystickCallback(std::function<void(i32, bool)> callback);
+void SetJoystickCallback(std::function<void(i32, bool)> callback);
 
 } // namespace sgl

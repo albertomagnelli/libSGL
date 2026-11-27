@@ -7,24 +7,24 @@
 #include <cmath>
 
 int main() {
-    auto window = example::createWindow("sgl – Basic Window", 960, 540);
+    auto window = example::CreateWindow("sgl – Basic Window", 960, 540);
     if (!window) {
         return 1;
     }
 
-    example::printGLInfo();
-    example::closeOnEscape(*window);
+    example::PrintGlInfo();
+    example::CloseOnEscape(*window);
 
     while (!window->isCloseRequested()) {
-        const auto t = static_cast<float>(sgl::getTime());
-        example::clearBackground(0.5f + 0.5f * std::sin(t),
+        const auto t = static_cast<float>(sgl::GetTime());
+        example::ClearBackground(0.5f + 0.5f * std::sin(t),
                                  0.5f + 0.5f * std::sin(t + 2.094f),
                                  0.5f + 0.5f * std::sin(t + 4.189f));
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

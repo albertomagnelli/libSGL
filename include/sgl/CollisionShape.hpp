@@ -28,9 +28,9 @@ public:
     LocalFrame() = default;
     LocalFrame(const vec2 &position, f32 rotationDegrees);
 
-    vec2 ToLocal(const vec2 &world) const;
-    vec2 ToWorld(const vec2 &local) const;
-    vec2 Position() const;
+    vec2 toLocal(const vec2 &world) const;
+    vec2 toWorld(const vec2 &local) const;
+    vec2 position() const;
 
   private:
     vec2 m_position{0.0f};
@@ -49,32 +49,32 @@ public:
   // Ausschnitt eines Bildes (Atlas-Rahmen): x/y in Pixeln, sonst wie oben
   static CollisionShape FromImage(const Image &image, u8 threshold, i32 x, i32 y, i32 width, i32 height);
 
-  bool IsValid() const;
-  i32  Width() const;
-  i32  Height() const;
+  bool isValid() const;
+  i32  width() const;
+  i32  height() const;
 
-  i32 OpaqueCount() const;  // Anzahl deckender Pixel
-  f32 Coverage() const;     // Anteil deckender Pixel (0..1)
+  i32 opaqueCount() const;  // Anzahl deckender Pixel
+  f32 coverage() const;     // Anteil deckender Pixel (0..1)
 
   // Pivot in Pixelkoordinaten der Maske (Standard: Mitte)
-  void        SetPivot(const vec2 &pivot);
-  const vec2 &Pivot() const;
+  void        setPivot(const vec2 &pivot);
+  const vec2 &pivot() const;
 
-  vec2 BoundsMin() const; // linke/obere Kante relativ zum Pivot
-  vec2 BoundsMax() const; // rechte/untere Kante relativ zum Pivot
-  f32  BoundingRadius() const;
+  vec2 boundsMin() const; // linke/obere Kante relativ zum Pivot
+  vec2 boundsMax() const; // rechte/untere Kante relativ zum Pivot
+  f32  boundingRadius() const;
 
   // Abfragen in lokalen Koordinaten (Ursprung = Pivot, y nach unten)
-  bool IsSolidAt(i32 x, i32 y) const;
-  bool ContainsPoint(const vec2 &local) const;
+  bool isSolidAt(i32 x, i32 y) const;
+  bool containsPoint(const vec2 &local) const;
 
   // Punkt in der Welt, Sprite liegt bei position und ist um rotationDegrees gedreht
   // (positiv = gegen den Uhrzeigersinn)
-  bool ContainsWorldPoint(const vec2 &worldPoint, const vec2 &position, f32 rotationDegrees) const;
-  bool ContainsWorldPoint(const vec2 &worldPoint, const LocalFrame &frame) const;
+  bool containsWorldPoint(const vec2 &worldPoint, const vec2 &position, f32 rotationDegrees) const;
+  bool containsWorldPoint(const vec2 &worldPoint, const LocalFrame &frame) const;
 
   // Ueberlappung zweier Formen in Weltlage
-  bool Overlaps(const CollisionShape &other, const vec2 &position, f32 rotationDegrees, const vec2 &otherPosition,
+  bool overlaps(const CollisionShape &other, const vec2 &position, f32 rotationDegrees, const vec2 &otherPosition,
                 f32 otherRotationDegrees) const;
 
   // Umrechnung zwischen lokalem und Weltraum (gleiche Winkelkonvention)
@@ -82,14 +82,14 @@ public:
   static vec2 WorldToLocal(const vec2 &world, const vec2 &position, f32 rotationDegrees);
 
   // vier Eckpunkte der (gedrehten) Bounding Box in der Welt
-  void WorldCorners(const vec2 &position, f32 rotationDegrees, vec2 corners[4]) const;
-  void WorldCorners(const LocalFrame &frame, vec2 corners[4]) const;
+  void worldCorners(const vec2 &position, f32 rotationDegrees, vec2 corners[4]) const;
+  void worldCorners(const LocalFrame &frame, vec2 corners[4]) const;
 
 private:
-  bool SolidAtPixel(const i32 x, const i32 y) const;
+  bool solidAtPixel(const i32 x, const i32 y) const;
 
   // Liegt ein deckender Pixel dieser Form (als Weltpunkt) in der anderen Form?
-  bool HasSolidPixelIn(const CollisionShape &otherShape, const LocalFrame &frame, const LocalFrame &otherFrame) const;
+  bool hasSolidPixelIn(const CollisionShape &otherShape, const LocalFrame &frame, const LocalFrame &otherFrame) const;
 
   std::vector<u8> m_solid; // 1 = deckend, 0 = leer (Breite * Hoehe)
   i32             m_width{};

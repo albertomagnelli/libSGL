@@ -43,12 +43,12 @@ struct GamepadMappingEntry {
 };
 
 /// Parst eine einzelne Zeile im SDL-GameControllerDB-Format.
-bool parseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::string& platform);
+bool ParseGamepadMapping(std::string_view line, GamepadMapping& mapping, std::string& platform);
 
 /// Datenbank der eingebetteten SDL-GameControllerDB plus Laufzeit-Updates.
 class GamepadMappingDatabase {
 public:
-    static GamepadMappingDatabase& instance();
+    static GamepadMappingDatabase& Instance();
 
     /// Fügt eine oder mehrere Mapping-Zeilen hinzu. Neuere Einträge haben Vorrang.
     bool addMappings(std::string_view text);
@@ -67,20 +67,20 @@ private:
 };
 
 /// Wendet ein Mapping auf Rohdaten an. Die Y-Konvention ist negativ = oben.
-[[nodiscard]] GamepadState applyGamepadMapping(const GamepadMapping& mapping,
+[[nodiscard]] GamepadState ApplyGamepadMapping(const GamepadMapping& mapping,
                                                std::span<const f32> axes,
                                                std::span<const u8> buttons,
                                                std::span<const JoystickHat> hats);
 
 /// Normalisiert eine GUID auf 32 Kleinbuchstaben.
-[[nodiscard]] std::string normalizeGamepadGuid(std::string_view guid);
+[[nodiscard]] std::string NormalizeGamepadGuid(std::string_view guid);
 
 /// Erzeugt eine SDL-kompatible Linux-GUID aus evdev-IDs.
-[[nodiscard]] std::string makeLinuxGamepadGuid(u16 bus, u16 vendor, u16 product, u16 version,
+[[nodiscard]] std::string MakeLinuxGamepadGuid(u16 bus, u16 vendor, u16 product, u16 version,
                                                std::string_view name);
 
 /// Erzeugt eine SDL-kompatible macOS-GUID aus IOKit-IDs.
-[[nodiscard]] std::string makeCocoaGamepadGuid(u64 vendor, u64 product, u64 version,
+[[nodiscard]] std::string MakeCocoaGamepadGuid(u64 vendor, u64 product, u64 version,
                                                std::string_view name);
 
 } // namespace sgl::detail

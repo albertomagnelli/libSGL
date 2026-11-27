@@ -26,18 +26,18 @@ int main(int argc, char** argv) {
     audiodemo::InitAudio();
 
     Music music;
-    if (!music.LoadFromFile(audiodemo::Resource("mini1111.xm").string())) {
+    if (!music.loadFromFile(audiodemo::Resource("mini1111.xm").string())) {
         SLOGE << "mini1111.xm konnte nicht geladen werden.";
         audiodemo::CloseAudio();
         return 1;
     }
 
-    SLOGI << "mini1111.xm: " << audiodemo::FormatTime(music.TimeLength())
+    SLOGI << "mini1111.xm: " << audiodemo::FormatTime(music.timeLength())
           << " (XM-Modul, als PCM gerendert)";
 
-    music.SetVolume(0.5f);
-    music.SetLooping(true);
-    music.Play();
+    music.setVolume(0.5f);
+    music.setLooping(true);
+    music.play();
 
     const f32 step = 0.5f;
     f32 elapsed = 0.0f;
@@ -46,12 +46,12 @@ int main(int argc, char** argv) {
         audiodemo::SleepSeconds(step);
         elapsed += step;
 
-        SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.TimePlayed()) << " / "
-              << audiodemo::FormatTime(music.TimeLength());
+        SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.timePlayed()) << " / "
+              << audiodemo::FormatTime(music.timeLength());
     }
 
-    music.Stop();
-    music.Unload();
+    music.stop();
+    music.unload();
 
     audiodemo::CloseAudio();
     return 0;

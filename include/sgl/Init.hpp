@@ -47,16 +47,16 @@ struct Version {
     i32 revision = 0;
 };
 
-std::expected<void, Error> init(const InitOptions& options = {});
-void terminate();
+std::expected<void, Error> Init(const InitOptions& options = {});
+void Terminate();
 
-void initHint(InitHint hint, i64 value);
-void initHint(InitHint hint, bool value);
-inline void initHint(InitHint hint, int value) { initHint(hint, static_cast<i64>(value)); }
+void SetInitHint(InitHint hint, i64 value);
+void SetInitHint(InitHint hint, bool value);
+inline void SetInitHint(InitHint hint, int value) { SetInitHint(hint, static_cast<i64>(value)); }
 
-Version getVersion();
-std::string getVersionString();
-Platform getPlatform();
-bool isPlatformSupported(Platform platform);
+Version GetVersion();
+std::string GetVersionString();
+Platform GetPlatform();
+bool IsPlatformSupported(Platform platform);
 
 } // namespace sgl

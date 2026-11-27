@@ -12,7 +12,7 @@
 #include <cstdio>
 
 int main() {
-    auto window = example::createWindow("sgl – Window Attributes", 900, 600);
+    auto window = example::CreateWindow("sgl – Window Attributes", 900, 600);
     if (!window) {
         return 1;
     }
@@ -23,8 +23,8 @@ int main() {
     bool titleAlternate = false;
     bool opacityLow = false;
 
-    example::printKeyHelp("D R F M N O T A L V P, ESC beenden");
-    example::printAttribs(*window);
+    example::PrintKeyHelp("D R F M N O T A L V P, ESC beenden");
+    example::PrintAttribs(*window);
 
     window->setKeyCallback([&](sgl::Key key, i32, sgl::KeyAction action, sgl::Modifiers) {
         if (action != sgl::KeyAction::Press) {
@@ -72,40 +72,40 @@ int main() {
             break;
         case sgl::Key::V:
             hidden = true;
-            hiddenSince = sgl::getTime();
+            hiddenSince = sgl::GetTime();
             window->hide();
             SLOGI("Fenster für 1 Sekunde versteckt.\n");
             break;
         case sgl::Key::P:
-            example::printAttribs(*window);
+            example::PrintAttribs(*window);
             break;
         default:
             break;
         }
-        example::printAttribs(*window);
+        example::PrintAttribs(*window);
     });
 
     while (!window->isCloseRequested()) {
-        if (hidden && sgl::getTime() - hiddenSince >= 1.0) {
+        if (hidden && sgl::GetTime() - hiddenSince >= 1.0) {
             window->show();
             hidden = false;
             SLOGI("Fenster wieder sichtbar.\n");
         }
 
         const ivec2 framebuffer = window->getFramebufferSize();
-        example::clearBackground(0.07f, 0.08f, 0.11f);
+        example::ClearBackground(0.07f, 0.08f, 0.11f);
 
         const float red = window->isFloating() ? 0.95f : 0.20f;
         const float green = window->isDecorated() ? 0.65f : 0.25f;
         const float blue = window->isResizable() ? 0.35f : 0.20f;
-        example::drawRectTopLeft(ivec2(40, 40), ivec2(framebuffer.x - 80, 60), framebuffer, red,
+        example::DrawRectTopLeft(ivec2(40, 40), ivec2(framebuffer.x - 80, 60), framebuffer, red,
                                  green, blue);
 
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

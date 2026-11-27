@@ -3,9 +3,9 @@
 // sgl -- eingebettete Standardschrift (DejaVu Sans, Teilmenge)
 //
 // Die Bytes liegen als TrueType-Datei im Programm, damit Text ohne jede
-// Datei von der Platte funktioniert. Geladen wird ueber Font::loadDefault();
+// Datei von der Platte funktioniert. Geladen wird ueber Font::LoadDefault();
 // das Ergebnis steht global als sgl::g_defaultFont bereit und wird beim
-// ersten Window::create einmalig erzeugt.
+// ersten Window::Create einmalig erzeugt.
 //
 // Interner Header, nicht Teil der oeffentlichen API.
 

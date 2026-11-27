@@ -10,7 +10,7 @@
 namespace sgl::detail::x11 {
 namespace {
 
-std::string decodeFileUri(const std::string& uri) {
+std::string DecodeFileUri(const std::string& uri) {
     if (uri.rfind("file://", 0) != 0) {
         return {};
     }
@@ -41,7 +41,7 @@ std::string decodeFileUri(const std::string& uri) {
     return decoded;
 }
 
-std::vector<std::string> parseUriList(const std::string& data) {
+std::vector<std::string> ParseUriList(const std::string& data) {
     std::vector<std::string> paths;
     std::size_t start = 0;
     while (start < data.size()) {
@@ -57,7 +57,7 @@ std::vector<std::string> parseUriList(const std::string& data) {
         if (line.empty() || line[0] == '#') {
             continue;
         }
-        std::string path = decodeFileUri(line);
+        std::string path = DecodeFileUri(line);
         if (!path.empty()) {
             paths.push_back(std::move(path));
         }
@@ -65,8 +65,8 @@ std::vector<std::string> parseUriList(const std::string& data) {
     return paths;
 }
 
-std::string readProperty(::Window window, Atom property) {
-    State& s = state();
+std::string ReadProperty(::Window window, Atom property) {
+    State& s = GetX11State();
     Atom actualType = 0;
     int actualFormat = 0;
     unsigned long count = 0;
@@ -86,7 +86,7 @@ std::string readProperty(::Window window, Atom property) {
 } // namespace
 
 std::string X11WindowBackend::getClipboardString() const {
-    State& s = state();
+    State& s = GetX11State();
     if (s.clipboardOwned && XGetSelectionOwner(s.display, s.clipboard) == m_window) {
         return m_clipboardText;
     }
@@ -124,25 +124,25 @@ std::string X11WindowBackend::getClipboardString() const {
     }
 
     if (!s.selectionReady) {
-        reportError(ErrorCode::PlatformError, "Zwischenablage konnte nicht gelesen werden.");
+        ReportError(ErrorCode::PlatformError, "Zwischenablage konnte nicht gelesen werden.");
     }
     return s.selectionResult;
 }
 
 void X11WindowBackend::setClipboardString(std::string_view text) {
-    State& s = state();
+    State& s = GetX11State();
     m_clipboardText = std::string(text);
     s.clipboardString = m_clipboardText;
     s.clipboardOwned = true;
     XSetSelectionOwner(s.display, s.clipboard, m_window, CurrentTime);
     if (XGetSelectionOwner(s.display, s.clipboard) != m_window) {
         s.clipboardOwned = false;
-        reportError(ErrorCode::PlatformError, "Zwischenablage konnte nicht belegt werden.");
+        ReportError(ErrorCode::PlatformError, "Zwischenablage konnte nicht belegt werden.");
     }
 }
 
 void X11WindowBackend::handleSelectionRequest(XSelectionRequestEvent& event) {
-    State& s = state();
+    State& s = GetX11State();
     XSelectionEvent notify{};
     notify.type = SelectionNotify;
     notify.display = event.display;
@@ -174,7 +174,7 @@ void X11WindowBackend::handleSelectionRequest(XSelectionRequestEvent& event) {
 }
 
 void X11WindowBackend::handleSelectionNotify(XSelectionEvent& event) {
-    State& s = state();
+    State& s = GetX11State();
 
     if (event.property == X11None) {
         s.selectionReady = true;
@@ -182,10 +182,10 @@ void X11WindowBackend::handleSelectionNotify(XSelectionEvent& event) {
     }
 
     if (event.selection == s.xdndSelection) {
-        const std::string data = readProperty(m_window, event.property);
+        const std::string data = ReadProperty(m_window, event.property);
         XDeleteProperty(s.display, m_window, event.property);
 
-        const auto paths = parseUriList(data);
+        const auto paths = ParseUriList(data);
         if (!paths.empty() && m_events) {
             m_events->onDrop(paths);
         }
@@ -205,13 +205,13 @@ void X11WindowBackend::handleSelectionNotify(XSelectionEvent& event) {
         return;
     }
 
-    s.selectionResult = readProperty(m_window, event.property);
+    s.selectionResult = ReadProperty(m_window, event.property);
     XDeleteProperty(s.display, m_window, event.property);
     s.selectionReady = true;
 }
 
 void X11WindowBackend::handleSelectionClear(XSelectionClearEvent& event) {
-    State& s = state();
+    State& s = GetX11State();
     if (event.selection == s.clipboard) {
         s.clipboardOwned = false;
         m_clipboardText.clear();
@@ -219,7 +219,7 @@ void X11WindowBackend::handleSelectionClear(XSelectionClearEvent& event) {
 }
 
 void X11WindowBackend::sendXdndStatus(XClientMessageEvent& event, bool accept) {
-    State& s = state();
+    State& s = GetX11State();
     XEvent status{};
     status.type = ClientMessage;
     status.xclient.window = static_cast<::Window>(event.data.l[0]);
@@ -235,7 +235,7 @@ void X11WindowBackend::sendXdndStatus(XClientMessageEvent& event, bool accept) {
 }
 
 void X11WindowBackend::handleXdnd(XClientMessageEvent& event) {
-    State& s = state();
+    State& s = GetX11State();
     if (event.message_type == s.xdndEnter) {
         m_xdndSource = static_cast<::Window>(event.data.l[0]);
     } else if (event.message_type == s.xdndPosition) {

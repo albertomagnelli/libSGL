@@ -12,7 +12,7 @@ TEST_CASE("Font2d tesselliert Glyphen aus einer Systemschrift", "[meshfont]") {
         SKIP("Keine TrueType-Systemschrift gefunden.");
     }
 
-    const Font2d font = Font2d::fromFile(path);
+    const Font2d font = Font2d::FromFile(path);
     REQUIRE(font.isValid());
     REQUIRE(font.glyphCount() > 0);
     REQUIRE(font.ascent() > 0.0f);
@@ -33,7 +33,7 @@ TEST_CASE("Font3d erzeugt extrudierte Glyphennetze", "[meshfont]") {
         SKIP("Keine TrueType-Systemschrift gefunden.");
     }
 
-    const Font3d font = Font3d::fromFile(path);
+    const Font3d font = Font3d::FromFile(path);
     REQUIRE(font.isValid());
 
     const GlyphMesh3d mesh = font.glyphMesh3d(U'A', 0.2f, MeshQuality::Low);

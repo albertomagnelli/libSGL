@@ -6,26 +6,26 @@
 
 namespace sgl {
 
-void* getProcAddress(std::string_view name) {
-    Window* window = detail::getCurrentWindow();
+void* GetProcAddress(std::string_view name) {
+    Window* window = detail::GetCurrentWindow();
     if (!window) {
-        reportError(ErrorCode::NoCurrentContext, "Kein aktueller OpenGL-Kontext.");
+        ReportError(ErrorCode::NoCurrentContext, "Kein aktueller OpenGL-Kontext.");
         return nullptr;
     }
     return window->getProcAddress(name);
 }
 
-bool isExtensionSupported(std::string_view name) {
-    Window* window = detail::getCurrentWindow();
+bool IsExtensionSupported(std::string_view name) {
+    Window* window = detail::GetCurrentWindow();
     if (!window) {
-        reportError(ErrorCode::NoCurrentContext, "Kein aktueller OpenGL-Kontext.");
+        ReportError(ErrorCode::NoCurrentContext, "Kein aktueller OpenGL-Kontext.");
         return false;
     }
     return window->isExtensionSupported(name);
 }
 
-Window* getCurrentWindow() {
-    return detail::getCurrentWindow();
+Window* GetCurrentWindow() {
+    return detail::GetCurrentWindow();
 }
 
 } // namespace sgl

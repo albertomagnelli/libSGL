@@ -18,7 +18,7 @@ TEST_CASE("SDL-Mapping wird geparst", "[gamepad][mapping]") {
 
     GamepadMapping mapping;
     std::string platform;
-    REQUIRE(parseGamepadMapping(line, mapping, platform));
+    REQUIRE(ParseGamepadMapping(line, mapping, platform));
     REQUIRE(platform == "Linux");
     REQUIRE(mapping.guid == "030000006d0400001dc2000014400000");
     REQUIRE(mapping.name == "Logitech F310 Gamepad (XInput)");
@@ -45,7 +45,7 @@ TEST_CASE("Mapping-Invertierung und Halbachsen", "[gamepad][mapping]") {
     GamepadMapping mapping;
     std::string platform;
 
-    REQUIRE(parseGamepadMapping(
+    REQUIRE(ParseGamepadMapping(
         "03000000000000000000000000000000,Test,lefty:a1~,righty:-a2,lefttrigger:+a3,"
         "platform:Linux,",
         mapping, platform));
@@ -66,7 +66,7 @@ TEST_CASE("Mapping-Invertierung und Halbachsen", "[gamepad][mapping]") {
 TEST_CASE("Mapping wird auf Rohdaten angewendet", "[gamepad][mapping]") {
     GamepadMapping mapping;
     std::string platform;
-    REQUIRE(parseGamepadMapping(
+    REQUIRE(ParseGamepadMapping(
         "03000000000000000000000000000000,Test,a:b0,b:b1,x:a0,leftx:a0,lefty:a1~,"
         "lefttrigger:b2,dpup:h0.1,platform:Linux,",
         mapping, platform));
@@ -75,7 +75,7 @@ TEST_CASE("Mapping wird auf Rohdaten angewendet", "[gamepad][mapping]") {
     const std::array<u8, 3> buttons = {1, 0, 1};
     const std::array<JoystickHat, 1> hats = {JoystickHat::Up};
 
-    const GamepadState state = applyGamepadMapping(mapping, axes, buttons, hats);
+    const GamepadState state = ApplyGamepadMapping(mapping, axes, buttons, hats);
 
     REQUIRE(state.buttons[static_cast<std::size_t>(GamepadButton::A)] == 1);
     REQUIRE(state.buttons[static_cast<std::size_t>(GamepadButton::B)] == 0);
@@ -88,14 +88,14 @@ TEST_CASE("Mapping wird auf Rohdaten angewendet", "[gamepad][mapping]") {
 }
 
 TEST_CASE("SDL-kompatible GUIDs werden erzeugt", "[gamepad][guid]") {
-    REQUIRE(makeLinuxGamepadGuid(0x0003, 0x046d, 0xc21d, 0x4014, "Logitech Gamepad F310") ==
+    REQUIRE(MakeLinuxGamepadGuid(0x0003, 0x046d, 0xc21d, 0x4014, "Logitech Gamepad F310") ==
             "030000006d0400001dc2000014400000");
-    REQUIRE(makeCocoaGamepadGuid(0x045e, 0x028e, 0x0114, "Xbox 360 Controller") ==
+    REQUIRE(MakeCocoaGamepadGuid(0x045e, 0x028e, 0x0114, "Xbox 360 Controller") ==
             "030000005e0400008e02000014010000");
 }
 
 TEST_CASE("Eingebettete Datenbank findet bekannte Geräte", "[gamepad][database]") {
-    auto& database = GamepadMappingDatabase::instance();
+    auto& database = GamepadMappingDatabase::Instance();
 
     const auto f310 = database.find("030000006d0400001dc2000014400000", "Linux");
     REQUIRE(f310.has_value());
@@ -105,7 +105,7 @@ TEST_CASE("Eingebettete Datenbank findet bekannte Geräte", "[gamepad][database]
 }
 
 TEST_CASE("updateGamepadMappings ergänzt eigene Einträge", "[gamepad][database]") {
-    auto& database = GamepadMappingDatabase::instance();
+    auto& database = GamepadMappingDatabase::Instance();
 
     const std::string custom =
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,Mein Controller,a:b0,b:b1,leftx:a0,lefty:a1,"

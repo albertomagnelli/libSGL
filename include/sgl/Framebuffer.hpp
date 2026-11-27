@@ -7,7 +7,7 @@
 //   SampleCount: One, Two, Four, Eight, Sixteen
 //   FramebufferOptions { width, height, colorFormat, samples, isDepth, isStencil,
 //                        isSrgb, colorAttachments }
-//   Framebuffer: Framebuffer(width, height, options), resize, bind, unbind,
+//   Framebuffer: Framebuffer(width, height, options), resize, bind, Unbind,
 //                clear, isComplete, colorTexture, colorRenderbuffer, readPixels,
 //                width, height, samples, isMultisampled, hasDepth, hasStencil
 //   Freie Funktionen: BlitFramebuffer(src, dst, ...), ResolveFramebuffer(src, dst)
@@ -117,8 +117,8 @@ public:
 
     // ── Binden und Zeichnen ─────────────────────────────────────────────────
     void bind() const;
-    static void bindDefault();
-    static void unbind() { bindDefault(); }
+    static void BindDefault();
+    static void Unbind() { BindDefault(); }
     // Setzt glViewport auf die Zielgröße.
     void setViewport() const;
     // Löscht Farbe(n), Tiefe und Stencil (je nach Anhängen).

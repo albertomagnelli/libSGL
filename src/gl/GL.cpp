@@ -1,6 +1,6 @@
 // sgl/GL.cpp — Loader für <sgl/GL.hpp>.
 //
-// Die Adressen werden über sgl::getProcAddress() bezogen. sgl verwendet auf
+// Die Adressen werden über sgl::GetProcAddress() bezogen. sgl verwendet auf
 // jeder Plattform den passenden Mechanismus (wglGetProcAddress unter Windows,
 // glXGetProcAddress unter Linux/X11, eglGetProcAddress unter Wayland, ...).
 
@@ -12,7 +12,7 @@ namespace {
 
 template <typename T>
 T getProc(const char* name) {
-    return reinterpret_cast<T>(sgl::getProcAddress(name));
+    return reinterpret_cast<T>(sgl::GetProcAddress(name));
 }
 
 } // namespace
@@ -676,7 +676,7 @@ void (GL_APIENTRY *glViewportIndexedf)(GLuint index, GLfloat x, GLfloat y, GLflo
 void (GL_APIENTRY *glViewportIndexedfv)(GLuint index, const GLfloat *v) = nullptr;
 void (GL_APIENTRY *glWaitSync)(GLsync sync, GLbitfield flags, GLuint64 timeout) = nullptr;
 
-LoadReport load() {
+LoadReport Load() {
     LoadReport report;
 
 #define GL_LOAD(fn)                                        \

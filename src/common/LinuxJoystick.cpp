@@ -19,11 +19,11 @@
 namespace sgl::detail {
 namespace {
 
-constexpr std::size_t bitCount(int maxValue) {
+constexpr std::size_t BitCount(int maxValue) {
     return static_cast<std::size_t>(maxValue / 8 + 1);
 }
 
-bool testBit(const unsigned long* bits, int code) {
+bool TestBit(const unsigned long* bits, int code) {
     const auto index = static_cast<std::size_t>(code);
     return (bits[index / (sizeof(unsigned long) * 8)] &
             (1UL << (index % (sizeof(unsigned long) * 8)))) != 0;
@@ -67,18 +67,18 @@ struct LinuxDevice {
 };
 
 
-int openDevice(const std::string& path, LinuxDevice& device) {
+int OpenDevice(const std::string& path, LinuxDevice& device) {
     const int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) {
         return -1;
     }
 
-    std::array<unsigned long, bitCount(EV_MAX)> eventBits{};
+    std::array<unsigned long, BitCount(EV_MAX)> eventBits{};
     if (ioctl(fd, EVIOCGBIT(0, sizeof(eventBits)), eventBits.data()) < 0) {
         close(fd);
         return -1;
     }
-    if (!testBit(eventBits.data(), EV_ABS) && !testBit(eventBits.data(), EV_KEY)) {
+    if (!TestBit(eventBits.data(), EV_ABS) && !TestBit(eventBits.data(), EV_KEY)) {
         close(fd);
         return -1;
     }
@@ -97,10 +97,10 @@ int openDevice(const std::string& path, LinuxDevice& device) {
         device.product = id.product;
         device.version = id.version;
     }
-    device.guid = makeLinuxGamepadGuid(device.bus, device.vendor, device.product, device.version,
+    device.guid = MakeLinuxGamepadGuid(device.bus, device.vendor, device.product, device.version,
                                        device.name);
 
-    std::array<unsigned long, bitCount(ABS_MAX)> absBits{};
+    std::array<unsigned long, BitCount(ABS_MAX)> absBits{};
     if (ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absBits)), absBits.data()) < 0) {
         std::memset(absBits.data(), 0, sizeof(absBits));
     }
@@ -110,7 +110,7 @@ int openDevice(const std::string& path, LinuxDevice& device) {
         if (code >= ABS_HAT0X && code <= ABS_HAT3Y) {
             continue;
         }
-        if (!testBit(absBits.data(), code)) {
+        if (!TestBit(absBits.data(), code)) {
             continue;
         }
         input_absinfo info{};
@@ -135,15 +135,15 @@ int openDevice(const std::string& path, LinuxDevice& device) {
                                         1.0f);
     }
 
-    std::array<unsigned long, bitCount(KEY_MAX)> keyBits{};
+    std::array<unsigned long, BitCount(KEY_MAX)> keyBits{};
     if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keyBits)), keyBits.data()) < 0) {
         std::memset(keyBits.data(), 0, sizeof(keyBits));
     }
     for (int code = BTN_MISC; code <= 0x2ff; ++code) {
-        if (static_cast<std::size_t>(code) >= bitCount(KEY_MAX) * sizeof(unsigned long) * 8) {
+        if (static_cast<std::size_t>(code) >= BitCount(KEY_MAX) * sizeof(unsigned long) * 8) {
             break;
         }
-        if (!testBit(keyBits.data(), code)) {
+        if (!TestBit(keyBits.data(), code)) {
             continue;
         }
         device.buttonIndex[code] = static_cast<int>(device.buttons.size());
@@ -154,7 +154,7 @@ int openDevice(const std::string& path, LinuxDevice& device) {
     for (int hat = 0; hat < 4; ++hat) {
         const int x = ABS_HAT0X + hat * 2;
         const int y = ABS_HAT0Y + hat * 2;
-        if (testBit(absBits.data(), x) && testBit(absBits.data(), y)) {
+        if (TestBit(absBits.data(), x) && TestBit(absBits.data(), y)) {
             device.hatCodes.emplace_back(x, y);
             device.hats.push_back(JoystickHat::Centered);
         }
@@ -162,12 +162,12 @@ int openDevice(const std::string& path, LinuxDevice& device) {
 
     device.path = path;
     device.fd = fd;
-    device.mapping = GamepadMappingDatabase::instance().find(device.guid, "Linux");
+    device.mapping = GamepadMappingDatabase::Instance().find(device.guid, "Linux");
     device.gamepad = device.mapping.has_value();
     return fd;
 }
 
-void readDevice(LinuxDevice& device) {
+void ReadDevice(LinuxDevice& device) {
     input_event events[32];
     while (true) {
         const ssize_t count = read(device.fd, events, sizeof(events));
@@ -274,7 +274,7 @@ struct LinuxJoysticks::Impl {
                 close(device.fd);
                 continue;
             }
-            readDevice(device);
+            ReadDevice(device);
             found.push_back(std::move(device));
         }
         devices.clear();
@@ -292,7 +292,7 @@ struct LinuxJoysticks::Impl {
                 continue;
             }
             LinuxDevice device;
-            if (openDevice(path, device) >= 0) {
+            if (OpenDevice(path, device) >= 0) {
                 found.push_back(std::move(device));
             }
         }
@@ -327,12 +327,12 @@ struct LinuxJoysticks::Impl {
             return;
         }
         for (auto& device : devices) {
-            readDevice(device);
+            ReadDevice(device);
         }
     }
 };
 
-LinuxJoysticks& linuxJoysticks() {
+LinuxJoysticks& GetLinuxJoysticks() {
     static LinuxJoysticks manager;
     return manager;
 }
@@ -410,14 +410,14 @@ std::optional<GamepadState> LinuxJoysticks::getGamepadState(i32 jid) const {
     if (!device.mapping) {
         return std::nullopt;
     }
-    return applyGamepadMapping(*device.mapping, device.axes, device.buttons, device.hats);
+    return ApplyGamepadMapping(*device.mapping, device.axes, device.buttons, device.hats);
 }
 
 bool LinuxJoysticks::updateGamepadMappings(std::string_view mappings) {
     auto& instance = impl();
-    const bool added = GamepadMappingDatabase::instance().addMappings(mappings);
+    const bool added = GamepadMappingDatabase::Instance().addMappings(mappings);
     for (auto& device : instance.devices) {
-        device.mapping = GamepadMappingDatabase::instance().find(device.guid, "Linux");
+        device.mapping = GamepadMappingDatabase::Instance().find(device.guid, "Linux");
         device.gamepad = device.mapping.has_value();
     }
     return added;

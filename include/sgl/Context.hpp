@@ -36,10 +36,10 @@ enum class ContextReleaseBehavior : i32 {
     None = 0x00035002,
 };
 
-void* getProcAddress(std::string_view name);
-bool isExtensionSupported(std::string_view name);
+void* GetProcAddress(std::string_view name);
+bool IsExtensionSupported(std::string_view name);
 
 class Window;
-Window* getCurrentWindow();
+Window* GetCurrentWindow();
 
 } // namespace sgl

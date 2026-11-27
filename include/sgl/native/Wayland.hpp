@@ -6,13 +6,13 @@
 
 namespace sgl::native::wayland {
 
-void* getDisplay(const Window& window);
-void* getSurface(const Window& window);
-void* getEGLDisplay(const Window& window);
-void* getEGLSurface(const Window& window);
-void* getEGLContext(const Window& window);
+void* GetDisplay(const Window& window);
+void* GetSurface(const Window& window);
+void* GetEglDisplay(const Window& window);
+void* GetEglSurface(const Window& window);
+void* GetEglContext(const Window& window);
 
-void* getDisplay(const Monitor& monitor);
-void* getMonitor(const Monitor& monitor);
+void* GetDisplay(const Monitor& monitor);
+void* GetMonitor(const Monitor& monitor);
 
 } // namespace sgl::native::wayland

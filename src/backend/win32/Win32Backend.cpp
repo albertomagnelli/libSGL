@@ -543,7 +543,7 @@ public:
         std::vector<Monitor> monitors;
         monitors.reserve(g_state.monitors.size());
         for (HMONITOR monitor : g_state.monitors) {
-            monitors.push_back(makeMonitor(monitor));
+            monitors.push_back(MakeMonitor(monitor));
         }
         return monitors;
     }
@@ -551,7 +551,7 @@ public:
     [[nodiscard]] Monitor getPrimaryMonitor() override {
         POINT point{0, 0};
         const HMONITOR monitor = MonitorFromPoint(point, MONITOR_DEFAULTTOPRIMARY);
-        return makeMonitor(monitor);
+        return MakeMonitor(monitor);
     }
 
     void pollEvents() override {
@@ -578,7 +578,7 @@ public:
     }
 
     [[nodiscard]] bool isMonitorConnected(const Monitor& monitor) override {
-        const HMONITOR handle = static_cast<HMONITOR>(MonitorAccess::native(monitor));
+        const HMONITOR handle = static_cast<HMONITOR>(MonitorAccess::Native(monitor));
         return std::find(g_state.monitors.begin(), g_state.monitors.end(), handle) !=
                g_state.monitors.end();
     }
@@ -586,7 +586,7 @@ public:
     [[nodiscard]] ivec2 getMonitorPosition(const Monitor& monitor) override {
         MONITORINFO info{};
         info.cbSize = sizeof(info);
-        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             return ivec2(info.rcMonitor.left, info.rcMonitor.top);
         }
         return {0, 0};
@@ -596,7 +596,7 @@ public:
         Monitor::Workarea area;
         MONITORINFO info{};
         info.cbSize = sizeof(info);
-        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             area.position = ivec2(info.rcWork.left, info.rcWork.top);
             area.size = ivec2(info.rcWork.right - info.rcWork.left,
                               info.rcWork.bottom - info.rcWork.top);
@@ -607,10 +607,10 @@ public:
     [[nodiscard]] ivec2 getMonitorPhysicalSize(const Monitor& monitor) override {
         i32 dpiX = 96;
         i32 dpiY = 96;
-        getMonitorDpi(monitor, dpiX, dpiY);
+        GetMonitorDpi(monitor, dpiX, dpiY);
         MONITORINFO info{};
         info.cbSize = sizeof(info);
-        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             const i32 width = info.rcMonitor.right - info.rcMonitor.left;
             const i32 height = info.rcMonitor.bottom - info.rcMonitor.top;
             return ivec2(static_cast<i32>(std::lround(width * 25.4 / dpiX)),
@@ -622,14 +622,14 @@ public:
     [[nodiscard]] vec2 getMonitorContentScale(const Monitor& monitor) override {
         i32 dpiX = 96;
         i32 dpiY = 96;
-        getMonitorDpi(monitor, dpiX, dpiY);
+        GetMonitorDpi(monitor, dpiX, dpiY);
         return {static_cast<f32>(dpiX) / 96.0f, static_cast<f32>(dpiY) / 96.0f};
     }
 
     [[nodiscard]] std::string getMonitorName(const Monitor& monitor) override {
         MONITORINFOEXW info{};
         info.cbSize = sizeof(info);
-        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             return {};
         }
         DISPLAY_DEVICEW device{};
@@ -646,7 +646,7 @@ public:
         std::vector<VideoMode> modes;
         MONITORINFOEXW info{};
         info.cbSize = sizeof(info);
-        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             return modes;
         }
         DEVMODEW mode{};
@@ -671,7 +671,7 @@ public:
         VideoMode result;
         MONITORINFOEXW info{};
         info.cbSize = sizeof(info);
-        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             return result;
         }
         DEVMODEW mode{};
@@ -706,7 +706,7 @@ public:
         GammaRamp result;
         MONITORINFOEXW info{};
         info.cbSize = sizeof(info);
-        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             return result;
         }
         HDC dc = CreateDCW(info.szDevice, nullptr, nullptr, nullptr);
@@ -728,7 +728,7 @@ public:
     void setGammaRamp(const Monitor& monitor, const GammaRamp& ramp) override {
         MONITORINFOEXW info{};
         info.cbSize = sizeof(info);
-        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (!GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             return;
         }
         HDC dc = CreateDCW(info.szDevice, nullptr, nullptr, nullptr);
@@ -748,7 +748,7 @@ public:
     [[nodiscard]] NativeHandle getMonitorNativeHandle(const Monitor& monitor) override {
         NativeHandle handle;
         handle.platform = NativePlatform::Win32;
-        handle.window = MonitorAccess::native(monitor);
+        handle.window = MonitorAccess::Native(monitor);
         return handle;
     }
 
@@ -805,7 +805,7 @@ public:
         if (!isJoystickPresent(jid)) {
             return false;
         }
-        return GamepadMappingDatabase::instance()
+        return GamepadMappingDatabase::Instance()
             .find(xinputGuid(jid), kGamepadPlatform)
             .has_value();
     }
@@ -815,7 +815,7 @@ public:
             return {};
         }
         const auto mapping =
-            GamepadMappingDatabase::instance().find(xinputGuid(jid), kGamepadPlatform);
+            GamepadMappingDatabase::Instance().find(xinputGuid(jid), kGamepadPlatform);
         return mapping ? mapping->name : std::string{};
     }
 
@@ -824,7 +824,7 @@ public:
             return std::nullopt;
         }
         const auto mapping =
-            GamepadMappingDatabase::instance().find(xinputGuid(jid), kGamepadPlatform);
+            GamepadMappingDatabase::Instance().find(xinputGuid(jid), kGamepadPlatform);
         if (!mapping) {
             return std::nullopt;
         }
@@ -834,7 +834,7 @@ public:
     }
 
     bool updateGamepadMappings(std::string_view mappings) override {
-        return GamepadMappingDatabase::instance().addMappings(mappings);
+        return GamepadMappingDatabase::Instance().addMappings(mappings);
     }
 
     void setJoystickCallback(std::function<void(i32, bool)> callback) override {
@@ -842,11 +842,11 @@ public:
     }
 
 private:
-    static Monitor makeMonitor(HMONITOR monitor) {
-        return MonitorAccess::make(monitor, Platform::Win32);
+    static Monitor MakeMonitor(HMONITOR monitor) {
+        return MonitorAccess::Make(monitor, Platform::Win32);
     }
 
-    static void getMonitorDpi(const Monitor& monitor, i32& dpiX, i32& dpiY) {
+    static void GetMonitorDpi(const Monitor& monitor, i32& dpiX, i32& dpiY) {
         using GetDpiForMonitorProc = HRESULT(WINAPI*)(HMONITOR, int, UINT*, UINT*);
         static auto getDpiForMonitor = [] {
             if (HMODULE module = LoadLibraryW(L"Shcore.dll")) {
@@ -861,7 +861,7 @@ private:
             UINT x = 96;
             UINT y = 96;
             if (SUCCEEDED(getDpiForMonitor(
-                    static_cast<HMONITOR>(MonitorAccess::native(monitor)), 0, &x, &y))) {
+                    static_cast<HMONITOR>(MonitorAccess::Native(monitor)), 0, &x, &y))) {
                 dpiX = static_cast<i32>(x);
                 dpiY = static_cast<i32>(y);
             }
@@ -1522,7 +1522,7 @@ void Win32WindowBackend::setMonitor(const Monitor& monitor, ivec2 position, ivec
 
         MONITORINFO info{};
         info.cbSize = sizeof(info);
-        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::native(monitor)), &info)) {
+        if (GetMonitorInfoW(static_cast<HMONITOR>(MonitorAccess::Native(monitor)), &info)) {
             SetWindowLongW(m_hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
             SetWindowPos(m_hwnd, HWND_TOP, info.rcMonitor.left, info.rcMonitor.top,
                          info.rcMonitor.right - info.rcMonitor.left,
@@ -1548,7 +1548,7 @@ Monitor Win32WindowBackend::getMonitor() const {
         return m_fullscreenMonitor;
     }
     const HMONITOR monitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);
-    return MonitorAccess::make(monitor, Platform::Win32);
+    return MonitorAccess::Make(monitor, Platform::Win32);
 }
 
 void Win32WindowBackend::updateCursorMode() {

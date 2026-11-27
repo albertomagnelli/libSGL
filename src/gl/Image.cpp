@@ -495,7 +495,7 @@ void Swap(Image &first, Image &second) noexcept { first.swap(second); }
 
 // ─── Laden und Speichern ────────────────────────────────────────────────────
 
-Image ImageIO::load(const std::filesystem::path &file,
+Image ImageIO::Load(const std::filesystem::path &file,
                      const LoadOptions &options) {
   std::ifstream input(file, std::ios::binary);
   if (!input) {
@@ -507,10 +507,10 @@ Image ImageIO::load(const std::filesystem::path &file,
   if (bytes.empty()) {
     throw ImageError("Bilddatei ist leer: " + file.string());
   }
-  return ImageIO::loadFromMemory(bytes, options);
+  return ImageIO::LoadFromMemory(bytes, options);
 }
 
-Image ImageIO::loadFromMemory(std::span<const u8> data,
+Image ImageIO::LoadFromMemory(std::span<const u8> data,
                                const LoadOptions &options) {
   if (data.empty()) {
     throw ImageError("loadFromMemory: keine Daten übergeben");
@@ -552,7 +552,7 @@ Image ImageIO::loadFromMemory(std::span<const u8> data,
   return image;
 }
 
-std::vector<u8> ImageIO::encode(const Image &source, const ImageFileFormat format,
+std::vector<u8> ImageIO::Encode(const Image &source, const ImageFileFormat format,
                                  const SaveOptions &options) {
   if (source.isEmpty()) {
     throw ImageError("encode: Bild ist leer");
@@ -592,13 +592,13 @@ std::vector<u8> ImageIO::encode(const Image &source, const ImageFileFormat forma
   return bytes;
 }
 
-void ImageIO::save(const Image &image, const std::filesystem::path &file,
+void ImageIO::Save(const Image &image, const std::filesystem::path &file,
                    const SaveOptions &options) {
   if (image.isEmpty()) {
     throw ImageError("Speichern: Bild ist leer");
   }
   const ImageFileFormat format = FileFormatFromPath(file);
-  const std::vector<u8> bytes = ImageIO::encode(image, format, options);
+  const std::vector<u8> bytes = ImageIO::Encode(image, format, options);
 
   const std::filesystem::path parent = file.parent_path();
   if (!parent.empty()) {

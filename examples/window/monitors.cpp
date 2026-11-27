@@ -5,26 +5,26 @@
 #include <cstdio>
 
 int main() {
-    sgl::setErrorCallback([](const sgl::Error& error) {
+    sgl::SetErrorCallback([](const sgl::Error& error) {
         SLOGE("sgl-Fehler %d: %s\n", static_cast<int>(error.code),
                      error.message.c_str());
     });
 
-    if (auto result = sgl::init(); !result) {
-        SLOGE("sgl::init() fehlgeschlagen: %s\n", result.error().message.c_str());
+    if (auto result = sgl::Init(); !result) {
+        SLOGE("sgl::Init() fehlgeschlagen: %s\n", result.error().message.c_str());
         return 1;
     }
 
-    sgl::pollEvents();
+    sgl::PollEvents();
 
-    SLOGI("Plattform: %s\n", sgl::getPlatform() == sgl::Platform::X11     ? "X11"
-                                   : sgl::getPlatform() == sgl::Platform::Wayland ? "Wayland"
-                                   : sgl::getPlatform() == sgl::Platform::Win32   ? "Win32"
-                                   : sgl::getPlatform() == sgl::Platform::Cocoa   ? "Cocoa"
+    SLOGI("Plattform: %s\n", sgl::GetPlatform() == sgl::Platform::X11     ? "X11"
+                                   : sgl::GetPlatform() == sgl::Platform::Wayland ? "Wayland"
+                                   : sgl::GetPlatform() == sgl::Platform::Win32   ? "Win32"
+                                   : sgl::GetPlatform() == sgl::Platform::Cocoa   ? "Cocoa"
                                                                                   : "Null");
 
-    const auto monitors = sgl::getMonitors();
-    const sgl::Monitor primary = sgl::getPrimaryMonitor();
+    const auto monitors = sgl::GetMonitors();
+    const sgl::Monitor primary = sgl::GetPrimaryMonitor();
 
     SLOGI("%zu Monitor(e)", monitors.size());
     for (std::size_t i = 0; i < monitors.size(); ++i) {
@@ -51,19 +51,19 @@ int main() {
     SLOGI("Joysticks/Gamepads:");
     bool anyJoystick = false;
     for (i32 index = 0; index < 16; ++index) {
-        if (!sgl::isJoystickPresent(index)) {
+        if (!sgl::IsJoystickPresent(index)) {
             continue;
         }
         anyJoystick = true;
-        const auto axes = sgl::getJoystickAxes(index);
-        const auto buttons = sgl::getJoystickButtons(index);
-        const auto hats = sgl::getJoystickHats(index);
+        const auto axes = sgl::GetJoystickAxes(index);
+        const auto buttons = sgl::GetJoystickButtons(index);
+        const auto hats = sgl::GetJoystickHats(index);
 
-        SLOGI("  [%d] %s\n", index, sgl::getJoystickName(index).c_str());
-        SLOGI("       GUID: %s\n", sgl::getJoystickGUID(index).c_str());
+        SLOGI("  [%d] %s\n", index, sgl::GetJoystickName(index).c_str());
+        SLOGI("       GUID: %s\n", sgl::GetJoystickGuid(index).c_str());
         SLOGI("       Achsen: %zu  Buttons: %zu  Hats: %zu  Gamepad: %s\n", axes.size(),
-                    buttons.size(), hats.size(), sgl::isGamepad(index) ? "ja" : "nein");
-        if (const auto state = sgl::getGamepadState(index)) {
+                    buttons.size(), hats.size(), sgl::IsGamepad(index) ? "ja" : "nein");
+        if (const auto state = sgl::GetGamepadState(index)) {
             SLOGI("       Links: %.2f,%.2f  Rechts: %.2f,%.2f  Trigger: %.2f,%.2f\n",
                         static_cast<double>(state->axes[static_cast<std::size_t>(
                             sgl::GamepadAxis::LeftX)]),
@@ -83,6 +83,6 @@ int main() {
         SLOGI("  (keine gefunden)\n");
     }
 
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

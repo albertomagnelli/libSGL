@@ -17,7 +17,7 @@ int main() {
     hints.decorated = false;
     hints.resizable = true;
 
-    auto window = example::createWindow("sgl – Frameless", 900, 600, hints);
+    auto window = example::CreateWindow("sgl – Frameless", 900, 600, hints);
     if (!window) {
         return 1;
     }
@@ -27,7 +27,7 @@ int main() {
     vec2 dragCursorStart{0.0f, 0.0f};
     vec2 cursorPosition = window->getCursorPos();
 
-    example::printKeyHelp("D Dekoration, F Floating, M Maximieren, ESC beenden; "
+    example::PrintKeyHelp("D Dekoration, F Floating, M Maximieren, ESC beenden; "
                           "obere Leiste mit linker Maustaste ziehen");
 
     window->setCursorPosCallback([&](vec2 position) {
@@ -81,24 +81,24 @@ int main() {
         }
 
         const ivec2 framebuffer = window->getFramebufferSize();
-        example::clearBackground(0.08f, 0.10f, 0.13f);
+        example::ClearBackground(0.08f, 0.10f, 0.13f);
 
         // Titelleiste
-        example::drawRectTopLeft(ivec2(0, 0), ivec2(framebuffer.x, 38), framebuffer, 0.16f,
+        example::DrawRectTopLeft(ivec2(0, 0), ivec2(framebuffer.x, 38), framebuffer, 0.16f,
                                  0.20f, 0.28f);
         // "Fensterknopf"
-        example::drawRectTopLeft(ivec2(10, 10), ivec2(18, 18), framebuffer, 1.0f, 0.55f, 0.1f);
+        example::DrawRectTopLeft(ivec2(10, 10), ivec2(18, 18), framebuffer, 1.0f, 0.55f, 0.1f);
 
         // Cursor-Punkt
         const ivec2 position(static_cast<i32>(cursorPosition.x), static_cast<i32>(cursorPosition.y));
-        example::drawRectTopLeft(ivec2(position.x - 3, position.y - 3), ivec2(6, 6), framebuffer,
+        example::DrawRectTopLeft(ivec2(position.x - 3, position.y - 3), ivec2(6, 6), framebuffer,
                                  0.9f, 0.95f, 1.0f);
 
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

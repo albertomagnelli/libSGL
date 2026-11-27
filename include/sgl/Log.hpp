@@ -2,7 +2,7 @@
 /**
  * @brief Basename of the current source file, without directory components.
  */
-#define SHL_FILENAME (::sgl::detail::basename(__FILE__))
+#define SHL_FILENAME (::sgl::detail::Basename(__FILE__))
 
 #ifndef FILENAME
 /**
@@ -48,7 +48,7 @@ namespace sgl::detail {
    * @param path Path or file name.
    * @return Substring after the last '/' or '\\'.
    */
-  constexpr std::string_view basename(const std::string_view path) noexcept {
+  constexpr std::string_view Basename(const std::string_view path) noexcept {
     const auto separator = path.find_last_of("/\\");
     return separator == std::string_view::npos ? path : path.substr(separator + 1);
   }
@@ -74,7 +74,7 @@ namespace sgl {
  *          `%s` is undefined behaviour; use `.c_str()`.
  */
   template<typename... Args>
-  std::string formatString(const std::string_view strToFormat, const Args &...args) {
+  std::string FormatString(const std::string_view strToFormat, const Args &...args) {
     if (strToFormat.data() == nullptr) throw std::runtime_error("formatString: null format string");
 
     if constexpr (sizeof...(Args) == 0) {
@@ -115,7 +115,7 @@ public:
    * @param file Source file name, usually @ref SHL_FILENAME.
    * @param line Source line, usually `__LINE__`.
    * @note The message is dropped immediately if @p logLevel is above the
-   *       configured maximum level (see @ref setMaxLogLevel).
+   *       configured maximum level (see @ref SetMaxLogLevel).
    */
   Logger(LogLevel logLevel, std::string_view file, i32 line) noexcept;
 
@@ -139,7 +139,7 @@ public:
     if constexpr (sizeof...(Args) == 0)
       append(std::string_view{fmt});
     else
-      append(formatString(fmt, std::forward<Args>(args)...));
+      append(FormatString(fmt, std::forward<Args>(args)...));
     return *this;
   }
 
@@ -208,17 +208,17 @@ public:
    *        numerically greater level are dropped. @ref LogLevel::INVALID
    *        disables all log output.
    */
-  static void setMaxLogLevel(LogLevel level) noexcept;
+  static void SetMaxLogLevel(LogLevel level) noexcept;
 
-  /// @brief Returns the current maximum level (see @ref setMaxLogLevel).
-  [[nodiscard]] static LogLevel maxLogLevel() noexcept;
+  /// @brief Returns the current maximum level (see @ref SetMaxLogLevel).
+  [[nodiscard]] static LogLevel MaxLogLevel() noexcept;
 
   /**
    * @brief Checks whether messages of @p level are currently emitted.
    * @param level Level to test.
    * @return `true` if @p level is at or below the maximum level.
    */
-  [[nodiscard]] static bool isEnabled(LogLevel level) noexcept;
+  [[nodiscard]] static bool IsEnabled(LogLevel level) noexcept;
 
   /**
    * @brief Redirects log output.
@@ -226,10 +226,10 @@ public:
    * @note The caller keeps ownership and must keep @p stream alive while it is
    *       installed.
    */
-  static void setOutputStream(std::ostream *stream) noexcept;
+  static void SetOutputStream(std::ostream *stream) noexcept;
 
   /// @brief Returns the current output stream (`std::cout` by default).
-  [[nodiscard]] static std::ostream *outputStream() noexcept;
+  [[nodiscard]] static std::ostream *OutputStream() noexcept;
 
 private:
   /// @brief Appends text to the internal buffer.

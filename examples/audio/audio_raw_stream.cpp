@@ -35,14 +35,14 @@ int main(int argc, char** argv) {
     constexpr f32 frequency = 440.0f;
 
     AudioStream stream;
-    if (!stream.Load(sampleRate, channels, 4096)) {
+    if (!stream.load(sampleRate, channels, 4096)) {
         SLOGE << "AudioStream konnte nicht angelegt werden.";
         audiodemo::CloseAudio();
         return 1;
     }
 
-    stream.SetVolume(0.25f);
-    stream.Play();
+    stream.setVolume(0.25f);
+    stream.play();
 
     std::vector<f32> block(static_cast<std::size_t>(blockFrames) * channels);
     f32 phase = 0.0f;
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (!stream.Push(block.data(), blockFrames)) {
+        if (!stream.push(block.data(), blockFrames)) {
             SLOGW << "AudioStream-Puffer voll; halte das Beispiel an.";
             break;
         }
@@ -70,8 +70,8 @@ int main(int argc, char** argv) {
         elapsed += blockSeconds;
     }
 
-    stream.Stop();
-    stream.Unload();
+    stream.stop();
+    stream.unload();
 
     SLOGI << "Sinuston beendet (" << duration << " s angefordert).";
 

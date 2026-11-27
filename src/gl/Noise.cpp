@@ -274,7 +274,7 @@ void main() {
 }
 )NOISE";
 
-i32 clampOctaves(const i32 value) { return std::clamp(value, 1, 12); }
+i32 ClampOctaves(const i32 value) { return std::clamp(value, 1, 12); }
 
 }  // namespace
 
@@ -290,7 +290,7 @@ bool Noise::create(const NoiseConfig& config) {
     m_config.width = std::clamp(config.width, 1, 2048);
     m_config.height = std::clamp(config.height, 1, 2048);
     m_config.depth = std::clamp(config.depth, 1, 512);
-    m_config.octaves = clampOctaves(config.octaves);
+    m_config.octaves = ClampOctaves(config.octaves);
     m_config.lacunarity = std::max(config.lacunarity, 1.0f);
     m_config.gain = std::clamp(config.gain, 0.0f, 1.0f);
     m_config.frequency = std::max(config.frequency, 0.001f);
@@ -356,7 +356,7 @@ bool Noise::buildProgram() {
                        {"SIMPLEX", (m_config.type == NoiseType::Simplex) ? "1" : "0"}};
 
     try {
-        m_program = Shader::fromSource(ShaderStage::Compute, kNoiseComputeShader, options);
+        m_program = Shader::FromSource(ShaderStage::Compute, kNoiseComputeShader, options);
     } catch (const ShaderError& error) {
         SLOGE << "Noise: Compute-Shader laesst sich nicht bauen: " << error.what();
         return false;
@@ -391,7 +391,7 @@ bool Noise::runCompute() {
     glDispatchCompute(static_cast<GLuint>(groupsX), static_cast<GLuint>(groupsY),
                       static_cast<GLuint>(groupsZ));
     glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-    Shader::unbind();
+    Shader::Unbind();
 
     glGenerateTextureMipmap(m_texture);
     return true;
@@ -438,7 +438,7 @@ void Noise::setSeed(const u32 seed) {
 }
 
 void Noise::setOctaves(const i32 octaves) {
-    m_config.octaves = clampOctaves(octaves);
+    m_config.octaves = ClampOctaves(octaves);
     generate();
 }
 

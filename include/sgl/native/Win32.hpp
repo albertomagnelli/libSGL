@@ -6,9 +6,9 @@
 
 namespace sgl::native::win32 {
 
-void* getHWND(const Window& window);
-void* getHDC(const Window& window);
-void* getHGLRC(const Window& window);
-void* getMonitor(const Monitor& monitor);
+void* GetHwnd(const Window& window);
+void* GetHdc(const Window& window);
+void* GetHglrc(const Window& window);
+void* GetMonitor(const Monitor& monitor);
 
 } // namespace sgl::native::win32

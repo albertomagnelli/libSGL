@@ -74,8 +74,8 @@ private:
 
 using MonitorCallback = std::function<void(Monitor monitor, bool connected)>;
 
-std::vector<Monitor> getMonitors();
-Monitor getPrimaryMonitor();
-void setMonitorCallback(MonitorCallback callback);
+std::vector<Monitor> GetMonitors();
+Monitor GetPrimaryMonitor();
+void SetMonitorCallback(MonitorCallback callback);
 
 } // namespace sgl

@@ -8,10 +8,10 @@ namespace sgl::detail {
 
 class Backend;
 
-std::unique_ptr<Backend> createX11Backend(Error& error);
-std::unique_ptr<Backend> createWaylandBackend(Error& error);
-std::unique_ptr<Backend> createWin32Backend(Error& error);
-std::unique_ptr<Backend> createCocoaBackend(Error& error);
-std::unique_ptr<Backend> createNullBackend(Error& error);
+std::unique_ptr<Backend> CreateX11Backend(Error& error);
+std::unique_ptr<Backend> CreateWaylandBackend(Error& error);
+std::unique_ptr<Backend> CreateWin32Backend(Error& error);
+std::unique_ptr<Backend> CreateCocoaBackend(Error& error);
+std::unique_ptr<Backend> CreateNullBackend(Error& error);
 
 } // namespace sgl::detail

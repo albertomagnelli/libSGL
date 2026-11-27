@@ -103,11 +103,11 @@ bool Rectangle::equals(const Rectangle& other, const f32 tolerance) const {
 bool Rectangle::containsRotated(const vec2& point, const vec2& origin,
                                 const f32 rotationDegrees) const {
     const vec2 pivot(x + origin.x, y + origin.y);
-    const vec2 local = rotate(point - pivot, -rotationDegrees) + pivot;
+    const vec2 local = Rotate(point - pivot, -rotationDegrees) + pivot;
     return contains(local);
 }
 
-bool Rectangle::overlapsRotated(const Rectangle& a, const vec2& aOrigin, const f32 aRotation,
+bool Rectangle::OverlapsRotated(const Rectangle& a, const vec2& aOrigin, const f32 aRotation,
                                 const Rectangle& b, const vec2& bOrigin, const f32 bRotation) {
     const vec2 cornersA[4] = {a.cornerRotated(0, aOrigin, aRotation),
                               a.cornerRotated(1, aOrigin, aRotation),
@@ -159,10 +159,10 @@ vec2 Rectangle::cornerRotated(const i32 index, const vec2& origin,
     const vec2 pivot(x + origin.x, y + origin.y);
     const vec2 corners[4] = {{x, y}, {x + width, y}, {x + width, y + height}, {x, y + height}};
     const vec2 local = corners[(index < 0 || index > 3) ? 0 : index] - pivot;
-    return rotate(local, rotationDegrees) + pivot;
+    return Rotate(local, rotationDegrees) + pivot;
 }
 
-vec2 Rectangle::rotate(const vec2& point, const f32 degrees) {
+vec2 Rectangle::Rotate(const vec2& point, const f32 degrees) {
     const f32 radians = degrees * (3.14159265358979323846f / 180.0f);
     const f32 cosine = std::cos(radians);
     const f32 sine = std::sin(radians);

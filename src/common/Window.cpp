@@ -13,14 +13,14 @@ std::once_flag g_defaultFontOnce;
 
 } // namespace
 
-WindowHints getDefaultWindowHints() {
+WindowHints GetDefaultWindowHints() {
     return WindowHints{};
 }
 
-std::expected<std::unique_ptr<Window>, Error> Window::create(const WindowHints& hints) {
-    auto* backend = detail::getBackend();
+std::expected<std::unique_ptr<Window>, Error> Window::Create(const WindowHints& hints) {
+    auto* backend = detail::GetBackend();
     if (!backend) {
-        return std::unexpected(detail::makeError(ErrorCode::NotInitialized,
+        return std::unexpected(detail::MakeError(ErrorCode::NotInitialized,
                                                  "sgl ist nicht initialisiert."));
     }
 
@@ -28,7 +28,7 @@ std::expected<std::unique_ptr<Window>, Error> Window::create(const WindowHints& 
     auto windowBackend = backend->createWindow(hints, error);
     if (!windowBackend) {
         if (!error.isError()) {
-            error = detail::makeError(ErrorCode::PlatformError, "Fenster konnte nicht erstellt werden.");
+            error = detail::MakeError(ErrorCode::PlatformError, "Fenster konnte nicht erstellt werden.");
         }
         return std::unexpected(std::move(error));
     }
@@ -37,7 +37,7 @@ std::expected<std::unique_ptr<Window>, Error> Window::create(const WindowHints& 
     window->m_title = hints.title;
 
     std::call_once(g_defaultFontOnce, [] {
-        g_defaultFont = Font::loadDefault();
+        g_defaultFont = Font::LoadDefault();
     });
 
     return window;
@@ -49,14 +49,14 @@ Window::Window(std::unique_ptr<detail::WindowBackend> backend)
 }
 
 Window::~Window() {
-    if (detail::getCurrentWindow() == this) {
-        detail::setCurrentWindow(nullptr);
+    if (detail::GetCurrentWindow() == this) {
+        detail::SetCurrentWindow(nullptr);
     }
 }
 
 void Window::makeContextCurrent() {
     m_backend->makeContextCurrent();
-    detail::setCurrentWindow(this);
+    detail::SetCurrentWindow(this);
 }
 
 void Window::swapBuffers() {

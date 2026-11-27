@@ -267,7 +267,7 @@ Image LoadImageData(const cgltf_image& source, const std::filesystem::path& base
   if (source.buffer_view != nullptr) {
     const u8* bytes = cgltf_buffer_view_data(source.buffer_view);
     if (bytes != nullptr) {
-      return ImageIO::loadFromMemory(
+      return ImageIO::LoadFromMemory(
           std::span<const u8>(bytes, static_cast<std::size_t>(source.buffer_view->size)));
     }
   }
@@ -280,7 +280,7 @@ Image LoadImageData(const cgltf_image& source, const std::filesystem::path& base
     const auto bytes = DecodeDataUri(uri);
     if (!bytes) return {};
 
-    return ImageIO::loadFromMemory(*bytes);
+    return ImageIO::LoadFromMemory(*bytes);
   }
 
   std::string decoded(source.uri);
@@ -289,7 +289,7 @@ Image LoadImageData(const cgltf_image& source, const std::filesystem::path& base
   std::filesystem::path path(decoded);
   if (path.is_relative() && !baseDir.empty()) path = baseDir / path;
 
-  return ImageIO::load(path);
+  return ImageIO::Load(path);
 }
 
 const Image* GetImage(LoadContext& context, const cgltf_image* source) {
@@ -828,7 +828,7 @@ Image LoadFbxTexture(FbxTextureCache& cache, const ufbx_texture* source) {
 
   try {
     if (fileTexture->content.data != nullptr && fileTexture->content.size > 0) {
-      image = ImageIO::loadFromMemory(std::span<const u8>(
+      image = ImageIO::LoadFromMemory(std::span<const u8>(
           static_cast<const u8*>(fileTexture->content.data), fileTexture->content.size));
     } else {
       std::array<std::string, 3> candidates{
@@ -845,7 +845,7 @@ Image LoadFbxTexture(FbxTextureCache& cache, const ufbx_texture* source) {
 
         if (!std::filesystem::exists(path)) continue;
 
-        image = ImageIO::load(path);
+        image = ImageIO::Load(path);
         break;
       }
     }
@@ -1446,7 +1446,7 @@ bool ModelAnimation::isValid() const noexcept {
 
 // ─── ModelIO / ModelAnimationIO ──────────────────────────────────────────────
 
-std::expected<Model, ModelError> ModelIO::load(const std::filesystem::path& file,
+std::expected<Model, ModelError> ModelIO::Load(const std::filesystem::path& file,
                                                const ModelLoadOptions& options) {
   if (IsFbxFile(file)) {
     auto parsed = LoadFbxFile(file, true);
@@ -1464,7 +1464,7 @@ std::expected<Model, ModelError> ModelIO::load(const std::filesystem::path& file
   return BuildModel(*data, file.parent_path(), file.stem().string(), options);
 }
 
-std::expected<Model, ModelError> ModelIO::loadFromMemory(std::span<const u8> data,
+std::expected<Model, ModelError> ModelIO::LoadFromMemory(std::span<const u8> data,
                                                          const std::filesystem::path& basePath,
                                                          const ModelLoadOptions& options) {
   if (IsFbxMemory(data)) {
@@ -1483,7 +1483,7 @@ std::expected<Model, ModelError> ModelIO::loadFromMemory(std::span<const u8> dat
   return BuildModel(*model, basePath, "model", options);
 }
 
-std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::load(
+std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::Load(
     const std::filesystem::path& file) {
   if (IsFbxFile(file)) {
     auto parsed = LoadFbxFile(file, false);
@@ -1501,7 +1501,7 @@ std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::load(
   return BuildAnimations(*data);
 }
 
-std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::loadFromMemory(
+std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::LoadFromMemory(
     std::span<const u8> data, const std::filesystem::path& basePath) {
   if (IsFbxMemory(data)) {
     auto parsed = LoadFbxMemory(data, basePath, false);

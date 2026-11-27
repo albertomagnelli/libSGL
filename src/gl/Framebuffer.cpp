@@ -176,7 +176,7 @@ void Framebuffer::allocate() {
             textureOptions.wrapS = TextureWrap::ClampToEdge;
             textureOptions.wrapT = TextureWrap::ClampToEdge;
             Texture2d texture =
-                Texture2d::createStorage(m_width, m_height, m_options.colorFormat, textureOptions);
+                Texture2d::CreateStorage(m_width, m_height, m_options.colorFormat, textureOptions);
             glNamedFramebufferTexture(m_id, static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index),
                                       texture.id(), 0);
             m_colorTextures[static_cast<std::size_t>(index)] = std::move(texture);
@@ -268,7 +268,7 @@ void Framebuffer::bind() const {
     glBindFramebuffer(GL_FRAMEBUFFER, m_id);
 }
 
-void Framebuffer::bindDefault() {
+void Framebuffer::BindDefault() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

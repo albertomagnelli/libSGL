@@ -4,34 +4,34 @@
 
 namespace sgl {
 
-std::expected<std::unique_ptr<Cursor>, Error> Cursor::create(const WindowIcon& image, ivec2 hotspot) {
-    auto* backend = detail::getBackend();
+std::expected<std::unique_ptr<Cursor>, Error> Cursor::Create(const WindowIcon& image, ivec2 hotspot) {
+    auto* backend = detail::GetBackend();
     if (!backend) {
-        return std::unexpected(detail::makeError(ErrorCode::NotInitialized,
+        return std::unexpected(detail::MakeError(ErrorCode::NotInitialized,
                                                  "sgl ist nicht initialisiert."));
     }
     Error error;
     auto cursorBackend = backend->createCursor(image, hotspot, error);
     if (!cursorBackend) {
         if (!error.isError()) {
-            error = detail::makeError(ErrorCode::PlatformError, "Cursor konnte nicht erstellt werden.");
+            error = detail::MakeError(ErrorCode::PlatformError, "Cursor konnte nicht erstellt werden.");
         }
         return std::unexpected(std::move(error));
     }
     return std::unique_ptr<Cursor>(new Cursor(std::move(cursorBackend)));
 }
 
-std::expected<std::unique_ptr<Cursor>, Error> Cursor::createStandard(StandardCursor shape) {
-    auto* backend = detail::getBackend();
+std::expected<std::unique_ptr<Cursor>, Error> Cursor::CreateStandard(StandardCursor shape) {
+    auto* backend = detail::GetBackend();
     if (!backend) {
-        return std::unexpected(detail::makeError(ErrorCode::NotInitialized,
+        return std::unexpected(detail::MakeError(ErrorCode::NotInitialized,
                                                  "sgl ist nicht initialisiert."));
     }
     Error error;
     auto cursorBackend = backend->createStandardCursor(shape, error);
     if (!cursorBackend) {
         if (!error.isError()) {
-            error = detail::makeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht erstellt werden.");
+            error = detail::MakeError(ErrorCode::PlatformError, "Standard-Cursor konnte nicht erstellt werden.");
         }
         return std::unexpected(std::move(error));
     }

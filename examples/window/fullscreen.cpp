@@ -7,7 +7,7 @@
 #include <optional>
 
 int main() {
-    auto window = example::createWindow("sgl – Fullscreen", 960, 540);
+    auto window = example::CreateWindow("sgl – Fullscreen", 960, 540);
     if (!window) {
         return 1;
     }
@@ -17,7 +17,7 @@ int main() {
     ivec2 windowedSize = window->getSize();
     sgl::Monitor fullscreenMonitor;
 
-    example::printKeyHelp("F11 Vollbild, ESC beenden");
+    example::PrintKeyHelp("F11 Vollbild, ESC beenden");
 
     window->setKeyCallback([&](sgl::Key key, i32, sgl::KeyAction action, sgl::Modifiers) {
         if (action != sgl::KeyAction::Press) {
@@ -36,9 +36,9 @@ int main() {
             windowedSize = window->getSize();
 
             std::optional<sgl::Monitor> current = window->getMonitor();
-            sgl::Monitor monitor = current ? *current : sgl::getPrimaryMonitor();
+            sgl::Monitor monitor = current ? *current : sgl::GetPrimaryMonitor();
             if (!monitor.isValid()) {
-                monitor = sgl::getPrimaryMonitor();
+                monitor = sgl::GetPrimaryMonitor();
             }
             if (!monitor.isValid()) {
                 SLOGE("Kein Monitor für Vollbild gefunden.\n");
@@ -58,7 +58,7 @@ int main() {
         } else {
             window->setMonitor(sgl::Monitor{});
             window->setSize(windowedSize);
-            if (sgl::getPlatform() != sgl::Platform::Wayland) {
+            if (sgl::GetPlatform() != sgl::Platform::Wayland) {
                 window->setPosition(windowedPosition);
             }
             fullscreen = false;
@@ -68,16 +68,16 @@ int main() {
     });
 
     while (!window->isCloseRequested()) {
-        const auto t = static_cast<float>(sgl::getTime());
-        example::clearBackground(fullscreen ? 0.10f : 0.16f,
+        const auto t = static_cast<float>(sgl::GetTime());
+        example::ClearBackground(fullscreen ? 0.10f : 0.16f,
                                  fullscreen ? 0.20f : 0.20f,
                                  fullscreen ? 0.16f : 0.26f);
         (void)t;
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

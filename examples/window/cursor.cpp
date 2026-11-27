@@ -16,7 +16,7 @@
 
 namespace {
 
-std::unique_ptr<sgl::Cursor> createCustomCursor() {
+std::unique_ptr<sgl::Cursor> CreateCustomCursor() {
     constexpr int size = 32;
     std::vector<u8> pixels(static_cast<std::size_t>(size) * size * 4, 0);
 
@@ -43,7 +43,7 @@ std::unique_ptr<sgl::Cursor> createCustomCursor() {
     sgl::WindowIcon image;
     image.size = ivec2(size, size);
     image.rgba8 = std::move(pixels);
-    auto cursor = sgl::Cursor::create(image, ivec2(size / 2, size / 2));
+    auto cursor = sgl::Cursor::Create(image, ivec2(size / 2, size / 2));
     if (!cursor) {
         SLOGE("Eigener Cursor fehlgeschlagen: %s\n",
                      cursor.error().message.c_str());
@@ -52,7 +52,7 @@ std::unique_ptr<sgl::Cursor> createCustomCursor() {
     return std::move(*cursor);
 }
 
-const char* modeName(sgl::CursorMode mode) {
+const char* ModeName(sgl::CursorMode mode) {
     switch (mode) {
     case sgl::CursorMode::Normal: return "Normal";
     case sgl::CursorMode::Hidden: return "Hidden";
@@ -65,7 +65,7 @@ const char* modeName(sgl::CursorMode mode) {
 } // namespace
 
 int main() {
-    auto window = example::createWindow("sgl – Cursor", 800, 600);
+    auto window = example::CreateWindow("sgl – Cursor", 800, 600);
     if (!window) {
         return 1;
     }
@@ -77,7 +77,7 @@ int main() {
         sgl::StandardCursor::HResize, sgl::StandardCursor::VResize,
     };
     for (std::size_t i = 0; i < shapes.size(); ++i) {
-        auto cursor = sgl::Cursor::createStandard(shapes[i]);
+        auto cursor = sgl::Cursor::CreateStandard(shapes[i]);
         if (!cursor) {
             SLOGE("Standard-Cursor %zu fehlgeschlagen: %s\n", i,
                          cursor.error().message.c_str());
@@ -85,7 +85,7 @@ int main() {
         }
         standard[i] = std::move(*cursor);
     }
-    auto custom = createCustomCursor();
+    auto custom = CreateCustomCursor();
 
     int selected = 0;
     sgl::CursorMode mode = sgl::CursorMode::Normal;
@@ -93,7 +93,7 @@ int main() {
 
     window->setCursor(standard[0].get());
     window->setCursorMode(mode);
-    example::printKeyHelp("1–6 Standard-Cursor, 7 eigener Cursor, 0 zurücksetzen, C Modus, ESC "
+    example::PrintKeyHelp("1–6 Standard-Cursor, 7 eigener Cursor, 0 zurücksetzen, C Modus, ESC "
                           "beenden");
 
     window->setCursorPosCallback([&cursorPosition](vec2 position) {
@@ -127,26 +127,26 @@ int main() {
                 mode = sgl::CursorMode::Normal;
             }
             window->setCursorMode(mode);
-            SLOGI("Cursor-Modus: %s\n", modeName(mode));
+            SLOGI("Cursor-Modus: %s\n", ModeName(mode));
         }
     });
 
     while (!window->isCloseRequested()) {
         const ivec2 framebuffer = window->getFramebufferSize();
-        example::clearBackground(0.10f, 0.12f, 0.16f);
+        example::ClearBackground(0.10f, 0.12f, 0.16f);
 
         const ivec2 position(static_cast<i32>(cursorPosition.x), static_cast<i32>(cursorPosition.y));
         if (position.x >= 0 && position.y >= 0 && position.x < framebuffer.x &&
             position.y < framebuffer.y) {
-            example::drawRectTopLeft(ivec2(position.x - 6, position.y - 6), ivec2(12, 12),
+            example::DrawRectTopLeft(ivec2(position.x - 6, position.y - 6), ivec2(12, 12),
                                      framebuffer, 1.0f, 0.55f, 0.1f);
         }
 
         window->swapBuffers();
-        sgl::pollEvents();
+        sgl::PollEvents();
     }
 
     window.reset();
-    sgl::terminate();
+    sgl::Terminate();
     return 0;
 }

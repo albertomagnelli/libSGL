@@ -12,7 +12,7 @@ namespace {
 
 struct InitGuard {
     InitGuard() = default;
-    ~InitGuard() { sgl::terminate(); }
+    ~InitGuard() { sgl::Terminate(); }
     InitGuard(const InitGuard&) = delete;
     InitGuard& operator=(const InitGuard&) = delete;
 };
@@ -20,76 +20,76 @@ struct InitGuard {
 } // namespace
 
 TEST_CASE("Version information is available", "[core]") {
-    const sgl::Version version = sgl::getVersion();
+    const sgl::Version version = sgl::GetVersion();
     REQUIRE(version.major >= 0);
     REQUIRE(version.minor >= 0);
-    REQUIRE_FALSE(sgl::getVersionString().empty());
+    REQUIRE_FALSE(sgl::GetVersionString().empty());
 }
 
 TEST_CASE("Errors can be reported and consumed", "[core][error]") {
     sgl::Error captured;
-    sgl::setErrorCallback([&captured](const sgl::Error& error) { captured = error; });
+    sgl::SetErrorCallback([&captured](const sgl::Error& error) { captured = error; });
 
-    sgl::reportError(sgl::ErrorCode::InvalidValue, "kaputt");
-    const sgl::Error error = sgl::getError();
+    sgl::ReportError(sgl::ErrorCode::InvalidValue, "kaputt");
+    const sgl::Error error = sgl::GetError();
 
     REQUIRE(error.code == sgl::ErrorCode::InvalidValue);
     REQUIRE(error.message == "kaputt");
     REQUIRE(captured.code == sgl::ErrorCode::InvalidValue);
     REQUIRE_FALSE(error.isError() == false);
 
-    REQUIRE_FALSE(sgl::getError().isError());
-    sgl::setErrorCallback(nullptr);
+    REQUIRE_FALSE(sgl::GetError().isError());
+    sgl::SetErrorCallback(nullptr);
 }
 
 TEST_CASE("Modifier helpers combine flags", "[core][input]") {
     const sgl::Modifiers modifiers =
         sgl::Modifiers::Shift | sgl::Modifiers::Control | sgl::Modifiers::Super;
-    REQUIRE(sgl::hasModifier(modifiers, sgl::Modifiers::Shift));
-    REQUIRE(sgl::hasModifier(modifiers, sgl::Modifiers::Control));
-    REQUIRE(sgl::hasModifier(modifiers, sgl::Modifiers::Super));
-    REQUIRE_FALSE(sgl::hasModifier(modifiers, sgl::Modifiers::Alt));
+    REQUIRE(sgl::HasModifier(modifiers, sgl::Modifiers::Shift));
+    REQUIRE(sgl::HasModifier(modifiers, sgl::Modifiers::Control));
+    REQUIRE(sgl::HasModifier(modifiers, sgl::Modifiers::Super));
+    REQUIRE_FALSE(sgl::HasModifier(modifiers, sgl::Modifiers::Alt));
 
     sgl::Modifiers mutableModifiers = sgl::Modifiers::None;
     mutableModifiers |= sgl::Modifiers::Alt;
-    REQUIRE(sgl::hasModifier(mutableModifiers, sgl::Modifiers::Alt));
+    REQUIRE(sgl::HasModifier(mutableModifiers, sgl::Modifiers::Alt));
 }
 
 TEST_CASE("Time is monotonic", "[core][time]") {
-    const f64 first = sgl::getTime();
-    const f64 second = sgl::getTime();
+    const f64 first = sgl::GetTime();
+    const f64 second = sgl::GetTime();
     REQUIRE(second >= first);
-    REQUIRE(sgl::getTimerFrequency() > 0);
+    REQUIRE(sgl::GetTimerFrequency() > 0);
 }
 
 TEST_CASE("The null platform initialises and rejects windows", "[null]") {
     InitGuard guard;
-    sgl::initHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::Null));
+    sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::Null));
 
-    auto result = sgl::init();
+    auto result = sgl::Init();
     REQUIRE(result.has_value());
-    REQUIRE(sgl::getPlatform() == sgl::Platform::Null);
+    REQUIRE(sgl::GetPlatform() == sgl::Platform::Null);
 
-    auto window = sgl::Window::create({});
+    auto window = sgl::Window::Create({});
     REQUIRE_FALSE(window.has_value());
     REQUIRE(window.error().code == sgl::ErrorCode::FeatureUnavailable);
 
-    REQUIRE_FALSE(sgl::isJoystickPresent(0));
-    REQUIRE(sgl::getMonitors().empty());
-    REQUIRE_FALSE(sgl::getPrimaryMonitor().isValid());
+    REQUIRE_FALSE(sgl::IsJoystickPresent(0));
+    REQUIRE(sgl::GetMonitors().empty());
+    REQUIRE_FALSE(sgl::GetPrimaryMonitor().isValid());
 }
 
 TEST_CASE("Functions without a backend report NotInitialized", "[core]") {
-    sgl::terminate();
+    sgl::Terminate();
 
-    REQUIRE(sgl::getProcAddress("glGetString") == nullptr);
-    REQUIRE_FALSE(sgl::isExtensionSupported("GL_ARB_framebuffer_object"));
+    REQUIRE(sgl::GetProcAddress("glGetString") == nullptr);
+    REQUIRE_FALSE(sgl::IsExtensionSupported("GL_ARB_framebuffer_object"));
 
-    auto cursor = sgl::Cursor::createStandard(sgl::StandardCursor::Arrow);
+    auto cursor = sgl::Cursor::CreateStandard(sgl::StandardCursor::Arrow);
     REQUIRE_FALSE(cursor.has_value());
     REQUIRE(cursor.error().code == sgl::ErrorCode::NotInitialized);
 
-    REQUIRE(sgl::getCurrentWindow() == nullptr);
+    REQUIRE(sgl::GetCurrentWindow() == nullptr);
 }
 
 TEST_CASE("Window hints have GLFW-compatible defaults", "[core][window]") {
@@ -118,13 +118,13 @@ TEST_CASE("X11 windows can be created and controlled", "[x11][window]") {
     }
 
     InitGuard guard;
-    sgl::initHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
+    sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
 
-    auto result = sgl::init();
+    auto result = sgl::Init();
     if (!result) {
         SKIP("X11 konnte nicht initialisiert werden: " + result.error().message);
     }
-    REQUIRE(sgl::getPlatform() == sgl::Platform::X11);
+    REQUIRE(sgl::GetPlatform() == sgl::Platform::X11);
 
     sgl::WindowHints hints;
     hints.width = 320;
@@ -132,7 +132,7 @@ TEST_CASE("X11 windows can be created and controlled", "[x11][window]") {
     hints.title = "sgl Testfenster";
     hints.visible = false;
 
-    auto windowResult = sgl::Window::create(hints);
+    auto windowResult = sgl::Window::Create(hints);
     REQUIRE(windowResult.has_value());
     std::unique_ptr<sgl::Window> window = std::move(*windowResult);
 
@@ -146,18 +146,18 @@ TEST_CASE("X11 windows can be created and controlled", "[x11][window]") {
     REQUIRE(window->getTitle() == "Neuer Titel");
 
     window->show();
-    sgl::pollEvents();
+    sgl::PollEvents();
     REQUIRE(window->isVisible());
 
     window->setSize(ivec2(400, 300));
     for (int i = 0; i < 50 && window->getSize() != ivec2(400, 300); ++i) {
-        sgl::waitEventsTimeout(0.01);
+        sgl::WaitEventsTimeout(0.01);
     }
     CAPTURE(window->getSize().x, window->getSize().y);
     REQUIRE(window->getSize() == ivec2(400, 300));
 
     window->hide();
-    sgl::pollEvents();
+    sgl::PollEvents();
     REQUIRE_FALSE(window->isVisible());
 
     window->setCloseRequested(true);
@@ -177,7 +177,7 @@ TEST_CASE("X11 windows can be created and controlled", "[x11][window]") {
     window->setClipboardString("sgl Zwischenablage");
     REQUIRE(window->getClipboardString() == "sgl Zwischenablage");
 
-    auto cursor = sgl::Cursor::createStandard(sgl::StandardCursor::Hand);
+    auto cursor = sgl::Cursor::CreateStandard(sgl::StandardCursor::Hand);
     REQUIRE(cursor.has_value());
     window->setCursor(**cursor);
     window->setCursor(nullptr);
@@ -200,8 +200,8 @@ TEST_CASE("X11 EGL contexts are supported", "[x11][egl]") {
     }
 
     InitGuard guard;
-    sgl::initHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
-    auto result = sgl::init();
+    sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
+    auto result = sgl::Init();
     if (!result) {
         SKIP("X11 konnte nicht initialisiert werden: " + result.error().message);
     }
@@ -216,7 +216,7 @@ TEST_CASE("X11 EGL contexts are supported", "[x11][egl]") {
     hints.contextVersionMinor = 6;
     hints.contextProfile = sgl::ContextProfile::Core;
 
-    auto windowResult = sgl::Window::create(hints);
+    auto windowResult = sgl::Window::Create(hints);
     if (!windowResult) {
         SKIP("EGL-Kontext nicht verfuegbar: " + windowResult.error().message);
     }
@@ -233,8 +233,8 @@ TEST_CASE("Wayland init fails cleanly without a compositor", "[wayland]") {
     }
 
     InitGuard guard;
-    sgl::initHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::Wayland));
-    auto result = sgl::init();
+    sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::Wayland));
+    auto result = sgl::Init();
     REQUIRE_FALSE(result.has_value());
 }
 
@@ -244,13 +244,13 @@ TEST_CASE("X11 monitors are enumerated", "[x11][monitor]") {
     }
 
     InitGuard guard;
-    sgl::initHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
-    auto result = sgl::init();
+    sgl::SetInitHint(sgl::InitHint::Platform, static_cast<i64>(sgl::Platform::X11));
+    auto result = sgl::Init();
     if (!result) {
         SKIP("X11 konnte nicht initialisiert werden: " + result.error().message);
     }
 
-    const auto monitors = sgl::getMonitors();
+    const auto monitors = sgl::GetMonitors();
     REQUIRE_FALSE(monitors.empty());
     for (const auto& monitor : monitors) {
         REQUIRE(monitor.isValid());
