@@ -73,6 +73,9 @@ behalten ihre Originalnamen.
 - Noise: Perlin-/Simplex-Rauschtexturen per Compute-Shader, 1D/2D/3D
   (`sgl::Noise`)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
+- Leveleditor: in-house GUI, Projektverwaltung, Kachel-/Objekt-Layer,
+  Entities mit Attributen, Undo/Redo, Tiled-Import/Export (TMJ/TMX)
+  (`tools/leveleditor`, siehe [Editor-README](tools/leveleditor/README.md))
 - Native Zugriffe für X11, Wayland, Win32, Cocoa, EGL und OSMesa
 
 ## Abhängigkeiten
@@ -97,6 +100,9 @@ behalten ihre Originalnamen.
 | cgltf 1.15 | glTF-/GLB-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
 | ufbx | FBX-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
 | DejaVu Sans (Teilmenge) | eingebettete Standardschrift | Daten in `src/gl/DefaultFont.cpp` |
+| tinyxml2 | TMX-Import/-Export im Leveleditor | unter `tools/leveleditor/third_party/tinyxml2` vendort (zlib) |
+| miniz | zlib/gzip in Tiled-Kacheldaten | unter `tools/leveleditor/third_party/miniz` vendort (MIT) |
+| DejaVu Sans (TTF) | UI-Schrift des Leveleditors | unter `tools/leveleditor/assets/fonts` (Bitstream Vera) |
 
 ## Bauen
 
@@ -105,6 +111,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure
 ./build/examples/gl_loader/sgl_example_gl_loader
+./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo
 ```
 
 Optionen:
@@ -118,6 +125,7 @@ Optionen:
 -DSGL_BUILD_TESTS=ON
 -DSGL_BUILD_EXAMPLES=ON
 -DSGL_BUILD_SHARED=OFF        # sgl als Shared Library bauen
+-DSGL_BUILD_EDITOR=ON         # Leveleditor unter tools/leveleditor bauen
 -DSGL_INSTALL=ON              # Install-/find_package-Regeln erzeugen
 -DSGL_SANITIZE=""             # z. B. "address,undefined" (GCC/Clang)
 -DSGL_HEADLESS_RENDER_TESTS=OFF  # Headless-Render-Smoke-Tests in CTest
@@ -188,6 +196,30 @@ Y-Achse, `zombie.fbx` verwendet die Animation aus `walk.fbx`:
 ```
 
 Details: [`examples/model/README.md`](examples/model/README.md).
+
+
+## Leveleditor
+
+Unter `tools/leveleditor` liegt ein eigenständiger 2D-Leveleditor mit eigener
+Immediate-Mode-GUI (kein ImGui/Qt). Er nutzt `sgl` für Fenster, Eingabe,
+Bildladen und Schriftnetze und bringt einen eigenen OpenGL-3.3-Renderer mit,
+damit er auch auf macOS (OpenGL 4.1) läuft.
+
+![Leveleditor](tools/leveleditor/docs/screenshot.png)
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo
+```
+
+Funktionen: Projektverwaltung mit mehreren Levels, Kachel- und Objektebenen,
+Tileset-Import, Stift/Rechteck/Linie/Füllen/Pipette, Entities mit typisierten
+Attributen, Inspector, Undo/Redo, Minimap, Autosave sowie Tiled-Import und
+-Export als `.tmj` und `.tmx`.
+
+Details, Tastenkürzel und Projektformat:
+[`tools/leveleditor/README.md`](tools/leveleditor/README.md).
 
 ## Fehlerbehandlung
 
@@ -304,6 +336,9 @@ und die festen XInput-Bereiche unter Windows.
   dort ebenfalls; Laufzeittests mit echter GPU und Treibern stehen noch aus.
 - **macOS** unterstützt maximal OpenGL 4.1. Ein 4.6-Kontext schlägt dort
   erwartungsgemäß mit `VersionUnavailable` fehl.
+- `sgl::Texture2d` und `sgl::Framebuffer` nutzen Direct State Access und
+  benötigen OpenGL 4.5; auf macOS 4.1 stehen sie daher nicht zur Verfügung.
+  Der Leveleditor umgeht sie bewusst mit einem eigenen GL-3.3-Renderer.
 - **EGL** wird für Wayland und optional für X11 verwendet; X11 kann auch GLX,
   Win32 nutzt WGL, macOS NSOpenGL.
 - **OSMesa** wird nur gebaut, wenn `libosmesa` per pkg-config gefunden wird.
@@ -313,15 +348,17 @@ und die festen XInput-Bereiche unter Windows.
 Die Catch2-Tests decken Fehlerbehandlung, Hints, Zeit, Null-Plattform,
 Initialisierungsfehler, Bild-, Font-, Shader-/Textur-, Audio-, Modell- und
 Geometrie-API ab; bei gesetztem `DISPLAY` kommen X11-Fenster und Monitore
-hinzu.
+hinzu. Die Editor-Tests (`[editor]`) prüfen Projekt-/Level-JSON, Undo/Redo,
+TMJ-/TMX-Roundtrips und Pfad-/Farbhelfer.
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
 
-Mit `-DSGL_HEADLESS_RENDER_TESTS=ON` werden zusätzlich drei Smoke-Tests
-registriert, die Font-2D, Font-3D und den Model-Viewer headless als PNG
-rendern. Sie benötigen eine funktionierende EGL-/OSMesa-Umgebung.
+Mit `-DSGL_HEADLESS_RENDER_TESTS=ON` werden zusätzlich vier Smoke-Tests
+registriert: Font-2D, Font-3D, Model-Viewer und der Leveleditor rendern
+headless als PNG. Sie benötigen eine funktionierende EGL-/OSMesa- bzw.
+Xvfb-Umgebung.
 
 Unter `.github/workflows/ci.yml` laufen Build, Tests, Sanitizer, clang-tidy
 und die Headless-Renders auf Linux; Windows (WGL) und macOS (Cocoa) werden
@@ -332,4 +369,6 @@ ebenfalls gebaut und getestet.
 Catch2 steht unter BSL-1.0, GLM unter MIT, SDL_GameControllerDB unter zlib.
 Die Lizenztexte liegen unter `third_party/catch2/LICENSE.txt` bzw.
 `third_party/gamecontrollerdb/LICENSE.txt`; GLM wird über das Systempaket
-bezogen.
+bezogen. Der Leveleditor nutzt zusätzlich tinyxml2 (zlib), miniz (MIT) und
+DejaVu Sans (Bitstream Vera); die Lizenztexte liegen unter
+`tools/leveleditor/third_party/` bzw. `tools/leveleditor/assets/fonts/`.

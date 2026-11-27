@@ -23,4 +23,9 @@ target_compile_definitions(sgl_tests PRIVATE
     SGL_TEST_AUDIO_RESOURCES="${CMAKE_CURRENT_SOURCE_DIR}/../examples/audio/resources"
     SGL_TEST_MODEL_RESOURCES="${CMAKE_CURRENT_SOURCE_DIR}/../examples/model/resources")
 
+if(TARGET sgl_editor_core)
+    target_sources(sgl_tests PRIVATE test_editor.cpp)
+    target_link_libraries(sgl_tests PRIVATE sgl_editor_core)
+endif()
+
 add_test(NAME sgl_tests COMMAND sgl_tests)

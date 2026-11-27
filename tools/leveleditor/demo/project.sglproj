@@ -1,0 +1,76 @@
+{
+ "version": "1",
+ "name": "Terrain-Demo",
+ "levels": [
+  "levels/demo.tmj"
+ ],
+ "tilesets": [
+  {
+   "name": "terrain",
+   "image": "assets/terrain.png",
+   "firstgid": 1,
+   "tilewidth": 32,
+   "tileheight": 32,
+   "columns": 8,
+   "tilecount": 32,
+   "margin": 0,
+   "spacing": 0
+  }
+ ],
+ "entities": [
+  {
+   "name": "Startpunkt",
+   "color": "#50c878ff",
+   "attributes": [
+    {
+     "name": "Leben",
+     "type": "int",
+     "default": "100",
+     "values": []
+    }
+   ]
+  },
+  {
+   "name": "Gegner",
+   "color": "#dc5a5aff",
+   "attributes": [
+    {
+     "name": "Leben",
+     "type": "int",
+     "default": "30",
+     "values": []
+    },
+    {
+     "name": "Tempo",
+     "type": "float",
+     "default": "1.0",
+     "values": []
+    }
+   ]
+  },
+  {
+   "name": "Beute",
+   "color": "#e6be46ff",
+   "attributes": [
+    {
+     "name": "Wert",
+     "type": "int",
+     "default": "1",
+     "values": []
+    }
+   ]
+  },
+  {
+   "name": "Trigger",
+   "color": "#8c78e6ff",
+   "attributes": [
+    {
+     "name": "Aktion",
+     "type": "string",
+     "default": "",
+     "values": []
+    }
+   ]
+  }
+ ]
+}

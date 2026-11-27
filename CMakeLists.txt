@@ -24,6 +24,7 @@ option(SGL_BUILD_SHARED    "Build sgl as a shared library" OFF)
 option(SGL_INSTALL         "Generate install and CMake package rules" ON)
 option(SGL_HEADLESS_RENDER_TESTS
        "Add headless rendering smoke tests (requires a working EGL/OSMesa setup)" OFF)
+option(SGL_BUILD_EDITOR    "Build the in-house 2D level editor" ON)
 set(SGL_SANITIZE "" CACHE STRING
     "Comma-separated sanitizers for GCC/Clang, e.g. 'address,undefined'")
 
@@ -317,6 +318,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # ---------------------------------------------------------------------------
+# Leveleditor
+# ---------------------------------------------------------------------------
+if(SGL_BUILD_EDITOR)
+    add_subdirectory(tools/leveleditor)
+endif()
+
+# ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
 if(SGL_BUILD_TESTS)
@@ -355,6 +363,15 @@ if(SGL_BUILD_TESTS AND SGL_BUILD_EXAMPLES AND SGL_HEADLESS_RENDER_TESTS)
                      --frame "${CMAKE_CURRENT_BINARY_DIR}/headless/model.png" --time 0.5)
     set_tests_properties(sgl_render_font2d sgl_render_font3d sgl_render_model
                          PROPERTIES TIMEOUT 180)
+endif()
+
+if(SGL_BUILD_TESTS AND SGL_BUILD_EDITOR AND SGL_HEADLESS_RENDER_TESTS AND TARGET sgl_editor)
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/headless")
+    add_test(NAME sgl_editor_headless
+             COMMAND sgl_editor
+                     --project "${CMAKE_CURRENT_SOURCE_DIR}/tools/leveleditor/demo"
+                     --frame "${CMAKE_CURRENT_BINARY_DIR}/headless/editor.png")
+    set_tests_properties(sgl_editor_headless PROPERTIES TIMEOUT 120)
 endif()
 
 # ---------------------------------------------------------------------------

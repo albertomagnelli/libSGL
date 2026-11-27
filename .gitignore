@@ -1,6 +1,9 @@
 # IDE
 .idea/
 
+# Editor-Autosave
+tools/leveleditor/demo/.sgl/
+
 # Build directories
 build/
 build-*/
