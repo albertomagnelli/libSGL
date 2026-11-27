@@ -1,0 +1,2 @@
+# libSGL
+Simple Game Library
