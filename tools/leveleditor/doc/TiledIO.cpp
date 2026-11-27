@@ -40,7 +40,7 @@ std::string MakeProjectRelative(const Project &project, const fs::path &file) {
     if (project.root.empty()) return PathToUtf8(file);
     std::error_code ec;
     const fs::path relative = fs::relative(file, project.root, ec);
-    if (!ec && !relative.empty() && relative.native().find("..") != 0) {
+    if (!ec && !relative.empty() && PathToUtf8(relative).rfind("..", 0) != 0) {
         return PathToUtf8(relative);
     }
     return PathToUtf8(file);
