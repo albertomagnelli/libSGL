@@ -46,6 +46,8 @@ lädt einen OpenGL-4.6-Core-Kontext.
 - Farben: RGB/HSV/HSL/HWB/CMYK, Hex, Mischen, Helligkeit und Alpha-Operationen
   (`sgl::Color`)
 - Geometrie: `sgl::Rectangle` mit Kollision, Schnittmengen und Rotation
+- PBR-Materialien: Albedo, Metallic, Roughness, AO, Normal, Height und Emissive
+  als `sgl::Image`-Maps, inkl. 1x1-Bildern für konstante Werte (`sgl::Material`)
 - Noise: Perlin-/Simplex-Rauschtexturen per Compute-Shader, 1D/2D/3D
   (`sgl::Noise`)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
