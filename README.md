@@ -130,7 +130,8 @@ Fenstermodus oder headless als PNG gerendert werden:
 Details: [`examples/font/README.md`](examples/font/README.md).
 
 Unter `examples/model/` zeigt `sgl_example_model_viewer` zwei glTF-Modelle und
-`zombie.fbx` mit ihren Materialien; alle rotieren um die Y-Achse:
+`zombie.fbx` mit ihren Materialien und Laufanimationen; alle rotieren um die
+Y-Achse, `zombie.fbx` verwendet die Animation aus `walk.fbx`:
 
 ```bash
 ./build/examples/model/sgl_example_model_viewer

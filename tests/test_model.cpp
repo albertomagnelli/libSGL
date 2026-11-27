@@ -165,6 +165,22 @@ TEST_CASE("ModelIO und ModelAnimationIO laden FBX", "[model][fbx]") {
     REQUIRE(raw->meshes[0].vertices.size() == mesh.vertices.size());
     REQUIRE(mesh.vertices[0].uv.y ==
             Catch::Approx(1.0f - raw->meshes[0].vertices[0].uv.y));
+
+    // walk.fbx enthält nur das Skelett und die Animation; die Kanäle müssen
+    // sich über die Node-Namen auf das Zombie-Skelett übertragen lassen.
+    const auto walk = ModelAnimationIO::load(
+        std::filesystem::path(SGL_TEST_MODEL_RESOURCES) / "walk.fbx");
+    REQUIRE(walk);
+    REQUIRE_FALSE(walk->empty());
+    REQUIRE_FALSE(walk->front().channels.empty());
+
+    for (const AnimationChannel& channel : walk->front().channels) {
+        REQUIRE_FALSE(channel.nodeName.empty());
+        const auto node = std::find_if(
+            model.nodes.begin(), model.nodes.end(),
+            [&channel](const ModelNode& candidate) { return candidate.name == channel.nodeName; });
+        REQUIRE(node != model.nodes.end());
+    }
 }
 
 TEST_CASE("ModelIO meldet fehlende Dateien", "[model][gltf]") {

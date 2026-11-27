@@ -688,8 +688,13 @@ std::vector<ModelAnimation> BuildAnimations(const cgltf_data& data) {
       const cgltf_animation_channel& sourceChannel = source.channels[channelIndex];
       if (sourceChannel.target_node == nullptr || sourceChannel.sampler == nullptr) continue;
 
+      const i32 nodeIndex =
+          static_cast<i32>(cgltf_node_index(&data, sourceChannel.target_node));
+
       AnimationChannel channel;
-      channel.node = static_cast<i32>(cgltf_node_index(&data, sourceChannel.target_node));
+      channel.node = nodeIndex;
+      channel.nodeName = NameOr(sourceChannel.target_node->name,
+                                "node" + std::to_string(nodeIndex));
       channel.path = ToAnimationPath(sourceChannel.target_path);
       channel.sampler = static_cast<i32>(sourceChannel.sampler - source.samplers);
 
@@ -1325,19 +1330,33 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         }
       }
 
+      const std::string nodeName =
+          !FbxString(node->name).empty() ? FbxString(node->name)
+                                        : "node" + std::to_string(node->typed_id);
+
       if (translationSampler >= 0) {
-        animation.channels.push_back(
-            AnimationChannel{static_cast<i32>(node->typed_id), AnimationPath::Translation,
-                             translationSampler});
+        AnimationChannel channel;
+        channel.node = static_cast<i32>(node->typed_id);
+        channel.nodeName = nodeName;
+        channel.path = AnimationPath::Translation;
+        channel.sampler = translationSampler;
+        animation.channels.push_back(std::move(channel));
       }
       if (rotationSampler >= 0) {
-        animation.channels.push_back(
-            AnimationChannel{static_cast<i32>(node->typed_id), AnimationPath::Rotation,
-                             rotationSampler});
+        AnimationChannel channel;
+        channel.node = static_cast<i32>(node->typed_id);
+        channel.nodeName = nodeName;
+        channel.path = AnimationPath::Rotation;
+        channel.sampler = rotationSampler;
+        animation.channels.push_back(std::move(channel));
       }
       if (scaleSampler >= 0) {
-        animation.channels.push_back(AnimationChannel{static_cast<i32>(node->typed_id),
-                                                      AnimationPath::Scale, scaleSampler});
+        AnimationChannel channel;
+        channel.node = static_cast<i32>(node->typed_id);
+        channel.nodeName = nodeName;
+        channel.path = AnimationPath::Scale;
+        channel.sampler = scaleSampler;
+        animation.channels.push_back(std::move(channel));
       }
     }
 

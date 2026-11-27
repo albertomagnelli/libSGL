@@ -165,6 +165,8 @@ struct AnimationChannel {
     // Index in Model::nodes, wenn Modell und Animationen aus derselben Datei
     // geladen wurden.
     i32 node{-1};
+    // Node-Name zum Retargeting zwischen Dateien (z. B. walk.fbx -> zombie.fbx).
+    std::string nodeName;
     AnimationPath path{AnimationPath::Translation};
     i32 sampler{-1};
 };
