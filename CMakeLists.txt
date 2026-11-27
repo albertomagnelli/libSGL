@@ -279,4 +279,5 @@ if(SGL_BUILD_EXAMPLES)
 
     add_subdirectory(examples/window)
     add_subdirectory(examples/font)
+    add_subdirectory(examples/audio)
 endif()
