@@ -39,11 +39,3 @@
     using mat4 = glm::mat4;
     using quat = glm::quat;
 #endif
-
-/** @brief Rechteck in Pixeln (x/y linke obere Ecke, width/height positiv). */
-struct Rectangle {
-    f32 x{0.0f};
-    f32 y{0.0f};
-    f32 width{0.0f};
-    f32 height{0.0f};
-};

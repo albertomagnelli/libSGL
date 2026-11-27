@@ -1,11 +1,13 @@
 #pragma once
 
+#include "sgl/Color.hpp"
 #include "sgl/Context.hpp"
 #include "sgl/Cursor.hpp"
 #include "sgl/Error.hpp"
 #include "sgl/Events.hpp"
 #include "sgl/Font.hpp"
 #include "sgl/GL.hpp"
+#include "sgl/Geometry.hpp"
 #include "sgl/Image.hpp"
 #include "sgl/Init.hpp"
 #include "sgl/Input.hpp"
@@ -14,6 +16,7 @@
 #include "sgl/MeshFont.hpp"
 #include "sgl/Monitor.hpp"
 #include "sgl/Native.hpp"
+#include "sgl/Noise.hpp"
 #include "sgl/Shader.hpp"
 #include "sgl/Texture.hpp"
 #include "sgl/Time.hpp"

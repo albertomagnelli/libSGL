@@ -67,6 +67,7 @@
 
 #include "Types.hpp"
 #include "GL.hpp"
+#include "Geometry.hpp"
 #include "Image.hpp"
 
 #include <array>

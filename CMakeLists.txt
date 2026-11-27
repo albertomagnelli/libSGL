@@ -44,6 +44,9 @@ set(SGL_SOURCES
     src/gl/Font.cpp
     src/gl/MeshFont.cpp
     src/gl/DefaultFont.cpp
+    src/gl/Color.cpp
+    src/gl/Geometry.cpp
+    src/gl/Noise.cpp
     src/gl/Shader.cpp
     src/gl/Texture.cpp
     third_party/ttf2mesh/ttf2mesh.c

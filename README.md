@@ -32,6 +32,11 @@ lädt einen OpenGL-4.6-Core-Kontext.
 - Shader: GLSL-Programme aus Dateien/Quelltext, Includes, Stufen, Uniform-Cache,
   ScopedBind und Fehlerdiagnose (`sgl::Shader`)
 - Texturen: `sgl::Texture2d` und `sgl::CubeMap` über Direct State Access
+- Farben: RGB/HSV/HSL/HWB/CMYK, Hex, Mischen, Helligkeit und Alpha-Operationen
+  (`sgl::Color`)
+- Geometrie: `sgl::Rectangle` mit Kollision, Schnittmengen und Rotation
+- Noise: Perlin-/Simplex-Rauschtexturen per Compute-Shader, 1D/2D/3D
+  (`sgl::Noise`)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
 - Native Zugriffe für X11, Wayland, Win32, Cocoa, EGL und OSMesa
 
