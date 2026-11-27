@@ -45,8 +45,8 @@ inline std::unique_ptr<sgl::Window> CreateWindow(int width, int height, std::str
     std::unique_ptr<sgl::Window> window = std::move(*result);
     window->makeContextCurrent();
     window->setSwapInterval(visible ? 1 : 0);
-    GL::Load();
-    if (GL::glCreateProgram == nullptr || GL::glCreateShader == nullptr) {
+    gl::Load();
+    if (gl::glCreateProgram == nullptr || gl::glCreateShader == nullptr) {
         SLOGE("OpenGL-Funktionen konnten nicht geladen werden.");
         return nullptr;
     }

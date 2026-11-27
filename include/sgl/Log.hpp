@@ -62,7 +62,7 @@ namespace sgl {
  *
  * Example:
  * @code
- *   auto s = shl::formatString("%04i-%02i-%02i", 2026, 11, 25);
+ *   auto s = sgl::FormatString("%04i-%02i-%02i", 2026, 11, 25);
  * @endcode
  *
  * @tparam Args Argument types; must match the conversion specifiers.
@@ -75,14 +75,14 @@ namespace sgl {
  */
   template<typename... Args>
   std::string FormatString(const std::string_view strToFormat, const Args &...args) {
-    if (strToFormat.data() == nullptr) throw std::runtime_error("formatString: null format string");
+    if (strToFormat.data() == nullptr) throw std::runtime_error("FormatString: null format string");
 
     if constexpr (sizeof...(Args) == 0) {
       return std::string{strToFormat};
     } else {
       std::array<char, 256> stackBuffer{};
       const int needed = std::snprintf(stackBuffer.data(), stackBuffer.size(), strToFormat.data(), args...);
-      if (needed < 0) throw std::runtime_error("formatString: formatting failed");
+      if (needed < 0) throw std::runtime_error("FormatString: formatting failed");
 
       if (static_cast<std::size_t>(needed) < stackBuffer.size())
         return std::string{stackBuffer.data(), static_cast<std::size_t>(needed)};

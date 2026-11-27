@@ -6,7 +6,9 @@
 //   ImageError, ChannelCount, HasAlpha, ToString, FileExtension
 //   FileFormatFromPath, Image, ImageIO
 //   Image: scanline, at, setAt, pixelAt, fill, flip..., rotate..., scale...
-//   ImageIO: load, loadFromMemory, save, encode, saveToMemory
+//   ImageIO: Load, LoadFromMemory, Save, Encode, SaveToMemory sowie die
+//            nicht werfenden Varianten TryLoad, TryLoadFromMemory, TrySave,
+//            TryEncode und TrySaveToMemory
 //
 // Beispiel:
 //
@@ -55,6 +57,7 @@
 
 #include <array>
 #include <cstddef>
+#include <expected>
 #include <filesystem>
 #include <optional>
 #include <span>
@@ -219,23 +222,44 @@ private:
 
 class ImageIO {
 public:
-    /// Lädt ein Bild aus einer Datei.
+    /// Lädt ein Bild aus einer Datei und wirft bei Fehlern ImageError.
     [[nodiscard]] static Image Load(const std::filesystem::path& file,
                                     const LoadOptions& options = {});
-    /// Dekodiert ein Bild aus einem Speicherpuffer.
+    /// Dekodiert ein Bild aus einem Speicherpuffer und wirft bei Fehlern
+    /// ImageError.
     [[nodiscard]] static Image LoadFromMemory(std::span<const u8> data,
                                               const LoadOptions& options = {});
     /// Speichert ein Bild; Zielformat und Elternverzeichnisse werden abgeleitet
-    /// bzw. angelegt.
+    /// bzw. angelegt. Wirft bei Fehlern ImageError.
     static void Save(const Image& image, const std::filesystem::path& file,
                      const SaveOptions& options = {});
-    /// Kodiert ein Bild in einen Speicherpuffer.
+    /// Kodiert ein Bild in einen Speicherpuffer und wirft bei Fehlern
+    /// ImageError.
     [[nodiscard]] static std::vector<u8> Encode(const Image& image, ImageFileFormat format,
                                                 const SaveOptions& options = {});
-    /// Wie encode(), nur als sprechender Name für das Kodieren in den Speicher.
+    /// Wie Encode(), nur als sprechender Name für das Kodieren in den Speicher.
     [[nodiscard]] static std::vector<u8> SaveToMemory(const Image& image, ImageFileFormat format,
                                                       const SaveOptions& options = {}) {
         return Encode(image, format, options);
+    }
+
+    /// Nicht werfende Variante von Load().
+    [[nodiscard]] static std::expected<Image, ImageError> TryLoad(
+        const std::filesystem::path& file, const LoadOptions& options = {});
+    /// Nicht werfende Variante von LoadFromMemory().
+    [[nodiscard]] static std::expected<Image, ImageError> TryLoadFromMemory(
+        std::span<const u8> data, const LoadOptions& options = {});
+    /// Nicht werfende Variante von Save().
+    [[nodiscard]] static std::expected<void, ImageError> TrySave(
+        const Image& image, const std::filesystem::path& file,
+        const SaveOptions& options = {});
+    /// Nicht werfende Variante von Encode().
+    [[nodiscard]] static std::expected<std::vector<u8>, ImageError> TryEncode(
+        const Image& image, ImageFileFormat format, const SaveOptions& options = {});
+    /// Nicht werfende Variante von SaveToMemory().
+    [[nodiscard]] static std::expected<std::vector<u8>, ImageError> TrySaveToMemory(
+        const Image& image, ImageFileFormat format, const SaveOptions& options = {}) {
+        return TryEncode(image, format, options);
     }
 };
 

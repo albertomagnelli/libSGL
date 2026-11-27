@@ -62,15 +62,15 @@ inline std::unique_ptr<sgl::Window> CreateWindow(std::string_view title, int wid
     window->makeContextCurrent();
     window->setSwapInterval(1);
 
-    const GL::LoadReport report = GL::Load();
+    const gl::LoadReport report = gl::Load();
     if (!report.complete()) {
         SLOGE("%zu/%zu OpenGL-Funktionen geladen.\n", report.loaded, report.total);
     }
 
     const ivec2 framebuffer = window->getFramebufferSize();
-    GL::glViewport(0, 0, framebuffer.x, framebuffer.y);
+    gl::glViewport(0, 0, framebuffer.x, framebuffer.y);
     window->setFramebufferSizeCallback([](ivec2 size) {
-        GL::glViewport(0, 0, size.x, size.y);
+        gl::glViewport(0, 0, size.x, size.y);
     });
 
     return window;
@@ -87,31 +87,31 @@ inline void CloseOnEscape(sgl::Window& window) {
 }
 
 inline void PrintGlInfo() {
-    if (!GL::glGetString) {
+    if (!gl::glGetString) {
         return;
     }
-    const auto* vendor = reinterpret_cast<const char*>(GL::glGetString(GL_VENDOR));
-    const auto* renderer = reinterpret_cast<const char*>(GL::glGetString(GL_RENDERER));
-    const auto* version = reinterpret_cast<const char*>(GL::glGetString(GL_VERSION));
+    const auto* vendor = reinterpret_cast<const char*>(gl::glGetString(GL_VENDOR));
+    const auto* renderer = reinterpret_cast<const char*>(gl::glGetString(GL_RENDERER));
+    const auto* version = reinterpret_cast<const char*>(gl::glGetString(GL_VERSION));
     SLOGI("Vendor:   %s\nRenderer: %s\nVersion:  %s\n", vendor ? vendor : "?",
                 renderer ? renderer : "?", version ? version : "?");
 }
 
 /// Zeichnet einen farbigen Hintergrund.
 inline void ClearBackground(float red, float green, float blue) {
-    GL::glClearColor(red, green, blue, 1.0f);
-    GL::glClear(GL_COLOR_BUFFER_BIT);
+    gl::glClearColor(red, green, blue, 1.0f);
+    gl::glClear(GL_COLOR_BUFFER_BIT);
 }
 
 /// Zeichnet ein Rechteck per Scissor-Test (ohne Shader).
 /// Koordinaten: Ursprung oben links, y nach unten – wie bei sgl-Cursorpos.
 inline void DrawRectTopLeft(ivec2 topLeft, ivec2 size, ivec2 framebufferSize, float red,
                             float green, float blue) {
-    GL::glEnable(GL_SCISSOR_TEST);
-    GL::glScissor(topLeft.x, framebufferSize.y - topLeft.y - size.y, size.x, size.y);
-    GL::glClearColor(red, green, blue, 1.0f);
-    GL::glClear(GL_COLOR_BUFFER_BIT);
-    GL::glDisable(GL_SCISSOR_TEST);
+    gl::glEnable(GL_SCISSOR_TEST);
+    gl::glScissor(topLeft.x, framebufferSize.y - topLeft.y - size.y, size.x, size.y);
+    gl::glClearColor(red, green, blue, 1.0f);
+    gl::glClear(GL_COLOR_BUFFER_BIT);
+    gl::glDisable(GL_SCISSOR_TEST);
 }
 
 inline void PrintAttribs(const sgl::Window& window) {

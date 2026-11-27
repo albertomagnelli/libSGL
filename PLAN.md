@@ -15,11 +15,11 @@ Keine externe GLFW-Abhängigkeit, moderne C++-API, Typen aus `include/sgl/Types.
 
 ## API-Konventionen
 
-- Membervariablen: `m_`-Präfix.
-- Getter (nicht bool): `getX()`.
-- Getter (bool): `isX()`.
-- Setter: `setX()`.
-- Aktionen: Verb (`swapBuffers()`, `pollEvents()`).
+- Membermethoden: `camelCase` (`swapBuffers()`, `getSize()`).
+- Freie Funktionen und statische Methoden: `PascalCase` (`Init()`, `Window::Create()`).
+- Typen/Klassen: `PascalCase`; Namespaces: `lower_case`.
+- Membervariablen: `m_camelCase`.
+- Getter (nicht bool): `getX()`; Getter (bool): `isX()`; Setter: `setX()`.
 - Reine Datentypen (`WindowHints`, `VideoMode`, `GamepadState`, `Image`, `GammaRamp`): öffentliche Felder.
 
 ## Architektur
@@ -87,7 +87,7 @@ tests/                Catch2-Tests
 ### Verifikation
 
 - Linux/X11: `cmake --build` und `ctest` grün.
-- `GLLoader` erzeugt einen OpenGL-4.6-Core-Kontext und lädt 656/656 Funktionen.
+- `sgl_example_gl_loader` erzeugt einen OpenGL-4.6-Core-Kontext und lädt 656/656 Funktionen.
 - `ldd` enthält kein `libglfw`.
 - Wayland wird gebaut, aber ohne laufenden Compositor nicht zur Laufzeit getestet.
 - Windows/macOS bleiben ohne Toolchain unverifiziert.
@@ -98,4 +98,4 @@ tests/                Catch2-Tests
 - Wayland bietet keine Fensterpositionierung und keinen Pointer-Lock.
 - EGL wird für Wayland und optional für X11 verwendet; Win32 nutzt WGL, macOS NSOpenGL.
 - Die SDL_GameControllerDB ist eingebettet; eigene Mappings können über
-  `sgl::updateGamepadMappings()` ergänzt werden.
+  `sgl::UpdateGamepadMappings()` ergänzt werden.

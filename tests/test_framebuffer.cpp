@@ -34,7 +34,7 @@ struct FramebufferTestContext {
         }
         this->window = std::move(*window);
         this->window->makeContextCurrent();
-        GL::Load();
+        gl::Load();
     }
 
     ~FramebufferTestContext() {

@@ -34,7 +34,7 @@ TEST_CASE("Noise erzeugt eine Rauschtextur", "[noise][gl]") {
     }
     std::unique_ptr<sgl::Window> window = std::move(*windowResult);
     window->makeContextCurrent();
-    GL::Load();
+    gl::Load();
 
     {
         NoiseConfig config;

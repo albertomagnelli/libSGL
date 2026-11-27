@@ -30,7 +30,7 @@
 
 namespace sgl {
 
-using namespace GL;
+using namespace gl;
 namespace {
 
 GLint WrapToGl(const TextureWrap wrap) {

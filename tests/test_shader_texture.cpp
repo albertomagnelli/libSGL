@@ -35,7 +35,7 @@ struct GlTestContext {
         }
         this->window = std::move(*window);
         this->window->makeContextCurrent();
-        GL::Load();
+        gl::Load();
     }
 
     ~GlTestContext() {
@@ -57,8 +57,8 @@ TEST_CASE("Shader und Texture arbeiten mit einem aktuellen GL-Kontext", "[gl][sh
     if (!context.window) {
         SKIP("Kein OpenGL-Kontext verfügbar.");
     }
-    REQUIRE(GL::glCreateShader != nullptr);
-    REQUIRE(GL::glCreateTextures != nullptr);
+    REQUIRE(gl::glCreateShader != nullptr);
+    REQUIRE(gl::glCreateTextures != nullptr);
 
     SECTION("Shader kompilieren, linken und Uniform setzen") {
         const std::string source = R"(

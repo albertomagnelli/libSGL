@@ -29,7 +29,7 @@
 #include <vector>
 
 using namespace sgl;
-using namespace GL;
+using namespace gl;
 
 namespace {
 

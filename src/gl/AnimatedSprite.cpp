@@ -72,14 +72,14 @@ namespace {
   }
 
   AnimationDirection ReadDirection(const Json *tag) {
-    if ((tag == nullptr) || !tag->isString()) return ANIMATION_FORWARD;
+    if ((tag == nullptr) || !tag->isString()) return AnimationDirection::Forward;
 
     const std::string &value = tag->string();
 
-    if (value == "reverse") return ANIMATION_REVERSE;
-    if (value == "pingpong") return ANIMATION_PINGPONG;
+    if (value == "reverse") return AnimationDirection::Reverse;
+    if (value == "pingpong") return AnimationDirection::PingPong;
 
-    return ANIMATION_FORWARD;
+    return AnimationDirection::Forward;
   }
 }  // namespace
 
@@ -310,7 +310,7 @@ bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations
   m_sheetWidth  = sheet.width();
   m_sheetHeight = sheet.height();
 
-  if ((GetCurrentWindow() != nullptr) && (GL::glCreateTextures != nullptr)) {
+  if ((GetCurrentWindow() != nullptr) && (gl::glCreateTextures != nullptr)) {
     try {
       TextureOptions options;
       options.mipmaps   = MipmapMode::None;
@@ -367,14 +367,14 @@ bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations
     const auto count = static_cast<i32>(animation.frames.size());
 
     switch (animation.direction) {
-      case ANIMATION_REVERSE:
+      case AnimationDirection::Reverse:
         for (i32 i = count - 1; i >= 0; --i) {
           steps.push_back(Step{i, SanitizeDuration(animation.frames[static_cast<std::size_t>(i)].duration)});
         }
 
         break;
 
-      case ANIMATION_PINGPONG:
+      case AnimationDirection::PingPong:
         // hin und zurueck, ohne die Enden doppelt zu spielen
         for (i32 i = 0; i < count; ++i) {
           steps.push_back(Step{i, SanitizeDuration(animation.frames[static_cast<std::size_t>(i)].duration)});
@@ -385,7 +385,7 @@ bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations
 
         break;
 
-      case ANIMATION_FORWARD:
+      case AnimationDirection::Forward:
       default:
         for (i32 i = 0; i < count; ++i) {
           steps.push_back(Step{i, SanitizeDuration(animation.frames[static_cast<std::size_t>(i)].duration)});

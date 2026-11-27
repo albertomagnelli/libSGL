@@ -1,0 +1,30 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(glm CONFIG)
+find_dependency(Threads)
+
+# Die Backends linken gegen Imported Targets aus pkg-config. Beim Export
+# werden nur deren Namen gespeichert, daher müssen sie hier neu erzeugt
+# werden. Die @...@-Werte stammen aus der Konfiguration des Builds.
+if(UNIX AND NOT APPLE)
+    if("@SGL_BACKEND_X11@" AND NOT TARGET PkgConfig::X11)
+        find_dependency(PkgConfig)
+        pkg_check_modules(X11 REQUIRED IMPORTED_TARGET
+            x11 xrandr xinerama xcursor xi xext gl egl)
+    endif()
+    if("@SGL_BACKEND_WAYLAND@" AND NOT TARGET PkgConfig::WAYLAND)
+        find_dependency(PkgConfig)
+        pkg_check_modules(WAYLAND REQUIRED IMPORTED_TARGET
+            wayland-client wayland-egl wayland-cursor xkbcommon egl)
+    endif()
+    if("@SGL_PACKAGE_OSMESA@" AND NOT TARGET PkgConfig::OSMESA)
+        find_dependency(PkgConfig)
+        pkg_check_modules(OSMESA IMPORTED_TARGET osmesa)
+    endif()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/sglTargets.cmake")
+
+check_required_components(sgl)

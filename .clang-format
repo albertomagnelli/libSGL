@@ -1,0 +1,52 @@
+# clang-format – Projektstil von sgl
+#
+# Die Konfiguration beschreibt den bestehenden Stil. Ein flächendeckendes
+# Neuformatieren ist nicht nötig; neue und geänderte Dateien können mit
+#   clang-format -i <datei>
+# formatiert werden.
+---
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: Latest
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+AccessModifierOffset: -4
+ContinuationIndentWidth: 4
+
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+ReferenceAlignment: Pointer
+
+SpaceBeforeParens: ControlStatements
+SpaceAfterTemplateKeyword: true
+SpacesInAngles: Never
+SpacesInParens: Never
+
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: true
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+IncludeBlocks: Preserve
+SortIncludes: Never
+SortUsingDeclarations: Never
+
+FixNamespaceComments: true
+NamespaceIndentation: None
+
+Cpp11BracedListStyle: true
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 4
+
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1

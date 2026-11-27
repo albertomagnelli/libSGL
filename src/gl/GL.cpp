@@ -17,7 +17,7 @@ T getProc(const char* name) {
 
 } // namespace
 
-namespace GL {
+namespace gl {
 
 void (GL_APIENTRY *glActiveShaderProgram)(GLuint pipeline, GLuint program) = nullptr;
 void (GL_APIENTRY *glActiveTexture)(GLenum texture) = nullptr;
@@ -1348,4 +1348,4 @@ LoadReport Load() {
     return report;
 }
 
-} // namespace GL
+} // namespace gl

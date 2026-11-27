@@ -5,3 +5,7 @@
 build/
 build-*/
 cmake-build-*/
+
+# Local install and package-consumer test prefixes
+install/
+consumer-build/

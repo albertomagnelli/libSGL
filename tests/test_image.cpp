@@ -82,3 +82,55 @@ TEST_CASE("ImageIO speichert und lädt Dateien", "[image][io]") {
 
     std::filesystem::remove(file);
 }
+
+TEST_CASE("ImageIO Try-Varianten melden Fehler ohne Ausnahmen", "[image][io]") {
+    const std::filesystem::path missing =
+        std::filesystem::temp_directory_path() / "sgl-imageio-does-not-exist.png";
+    std::filesystem::remove(missing);
+
+    const auto loadResult = ImageIO::TryLoad(missing);
+    REQUIRE_FALSE(loadResult.has_value());
+    REQUIRE(*loadResult.error().what() != '\0');
+
+    const auto memoryResult = ImageIO::TryLoadFromMemory({});
+    REQUIRE_FALSE(memoryResult.has_value());
+    REQUIRE(*memoryResult.error().what() != '\0');
+
+    Image empty;
+    const auto encodeResult = ImageIO::TryEncode(empty, ImageFileFormat::Png);
+    REQUIRE_FALSE(encodeResult.has_value());
+
+    const std::filesystem::path unsupported =
+        std::filesystem::temp_directory_path() / "sgl-imageio-test.unknown";
+    const auto saveResult = ImageIO::TrySave(empty, unsupported);
+    REQUIRE_FALSE(saveResult.has_value());
+}
+
+TEST_CASE("ImageIO Try-Varianten runden PNG im Speicher", "[image][io]") {
+    Image image(2, 2, ImageFormat::Rgba);
+    image.fill(std::array<u8, 4>{1, 2, 3, 255});
+
+    const auto encoded = ImageIO::TrySaveToMemory(image, ImageFileFormat::Png);
+    REQUIRE(encoded.has_value());
+    REQUIRE_FALSE(encoded->empty());
+
+    const auto decoded = ImageIO::TryLoadFromMemory(*encoded);
+    REQUIRE(decoded.has_value());
+    REQUIRE(decoded->width() == 2);
+    REQUIRE(decoded->height() == 2);
+    REQUIRE(decoded->pixelAt(0, 0) == std::array<u8, 4>{1, 2, 3, 255});
+
+    const std::filesystem::path file =
+        std::filesystem::temp_directory_path() / "sgl-imageio-try-test.png";
+    std::filesystem::remove(file);
+
+    const auto saved = ImageIO::TrySave(image, file);
+    REQUIRE(saved.has_value());
+    REQUIRE(std::filesystem::exists(file));
+
+    const auto loaded = ImageIO::TryLoad(file);
+    REQUIRE(loaded.has_value());
+    REQUIRE(loaded->width() == 2);
+
+    std::filesystem::remove(file);
+}

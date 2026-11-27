@@ -14,9 +14,17 @@ lädt einen OpenGL-4.6-Core-Kontext.
 - Klassenmember-Methoden: `camelCase`, z. B. `Window::getSize()`, `Material::setAlbedo()`
 - Freie Funktionen: `PascalCase`, z. B. `sgl::Init()`, `sgl::GetTime()`
 - Statische Klassenmethoden: `PascalCase`, z. B. `Window::Create()`, `ImageIO::Load()`
-- Typen und Klassen: `PascalCase`
+- Typen und Klassen: `PascalCase`, z. B. `Window`, `ImageFormat`
+- Namespaces: `lower_case`, z. B. `sgl`, `sgl::gl`
 - Membervariablen: `m_camelCase`
 - Getter: `getX()` bzw. `isX()`/`hasX()`
+- Reine Datentypen (`WindowHints`, `VideoMode`, `GamepadState`, `Image`,
+  `GammaRamp`) haben öffentliche Felder ohne Präfix.
+
+Die Regeln sind in `.clang-tidy` hinterlegt (`readability-identifier-naming`)
+und lassen sich damit prüfen. `.clang-format` beschreibt den Formatierstil.
+Vendorte C-Bibliotheken (`cgltf_*`, `ufbx_*`, `ma_*`, `qoa_*`, `jar_xm_*`)
+behalten ihre Originalnamen.
 
 ## Funktionsumfang
 
@@ -94,7 +102,7 @@ lädt einen OpenGL-4.6-Core-Kontext.
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure
-./build/GLLoader
+./build/examples/gl_loader/sgl_example_gl_loader
 ```
 
 Optionen:
@@ -107,7 +115,34 @@ Optionen:
 -DSGL_BACKEND_OSMESA=ON
 -DSGL_BUILD_TESTS=ON
 -DSGL_BUILD_EXAMPLES=ON
+-DSGL_BUILD_SHARED=OFF        # sgl als Shared Library bauen
+-DSGL_INSTALL=ON              # Install-/find_package-Regeln erzeugen
+-DSGL_SANITIZE=""             # z. B. "address,undefined" (GCC/Clang)
+-DSGL_HEADLESS_RENDER_TESTS=OFF  # Headless-Render-Smoke-Tests in CTest
 ```
+
+Die Bibliotheksversion steht zentral in `project(sgl VERSION …)` und wird als
+`sgl/Version.hpp` erzeugt (`SGL_VERSION_MAJOR`, `SGL_VERSION_MINOR`,
+`SGL_VERSION_PATCH`, `SGL_VERSION_STRING`). `sgl::GetVersion()` und
+`sgl::GetVersionString()` verwenden diese Werte.
+
+## Installation und Einbindung
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+cmake --install build --prefix /usr/local   # oder ein eigenes Prefix
+```
+
+Danach lässt sich `sgl` in einem anderen Projekt über `find_package` verwenden:
+
+```cmake
+find_package(sgl 0.1 CONFIG REQUIRED)
+target_link_libraries(mein_programm PRIVATE sgl::sgl)
+```
+
+Alternativ genügt `add_subdirectory(pfad/zu/sgl)` und
+`target_link_libraries(mein_programm PRIVATE sgl::sgl)`.
 
 ## Fenster-Beispiele
 
@@ -125,6 +160,9 @@ cmake --build build
 
 Die vollständige Liste und Tastenkürzel stehen in
 [`examples/window/README.md`](examples/window/README.md).
+
+Der eigenständige OpenGL-Loader-Demo aus dem Minimalbeispiel liegt unter
+`examples/gl_loader/` und heißt `sgl_example_gl_loader`.
 
 Unter `examples/font/` liegen zwei Mesh-Schrift-Beispiele. Sie können im
 Fenstermodus oder headless als PNG gerendert werden:
@@ -149,6 +187,27 @@ Y-Achse, `zombie.fbx` verwendet die Animation aus `walk.fbx`:
 
 Details: [`examples/model/README.md`](examples/model/README.md).
 
+## Fehlerbehandlung
+
+Es gibt zwei Stile, die bewusst getrennt sind:
+
+- **Fenster-, Init- und Modell-API:** `std::expected` – z. B. `sgl::Init()`,
+  `sgl::Window::Create()`, `sgl::ModelIO::Load()`. Fehler werden ohne Ausnahme
+  zurückgegeben.
+- **Bild-API:** `sgl::ImageIO::Load()`, `Save()`, `Encode()` und
+  `LoadFromMemory()` werfen `sgl::ImageError`. Für Code ohne Ausnahmen stehen
+  die Varianten `TryLoad()`, `TryLoadFromMemory()`, `TrySave()`, `TryEncode()`
+  und `TrySaveToMemory()` zur Verfügung, die `std::expected` zurückgeben.
+
+```cpp
+auto result = sgl::ImageIO::TryLoad("assets/tex/dirt.png");
+if (!result) {
+    SLOGE("Bild: %s", result.error().what());
+} else {
+    sgl::Texture2d texture = sgl::Texture2d::FromImage(*result);
+}
+```
+
 ## Logging
 
 `include/sgl/Log.hpp` stellt einen leichtgewichtigen Logger mit farbigen Ausgaben bereit:
@@ -169,7 +228,7 @@ Format:
 Reihenfolge: Datum/Uhrzeit, Log-Level, Datei:Zeile, Nachricht. Die Farben
 hängen vom Level ab. Mit der Umgebungsvariable `NO_COLOR` lassen sich die
 ANSI-Farben abschalten. Das Standard-Maximallevel ist `INFO`; über
-`sgl::Logger::setMaxLogLevel()` und `sgl::Logger::setOutputStream()` lässt sich
+`sgl::Logger::SetMaxLogLevel()` und `sgl::Logger::SetOutputStream()` lässt sich
 das Verhalten anpassen.
 
 ## Minimalbeispiel
@@ -216,15 +275,6 @@ int main() {
 }
 ```
 
-## Namenskonventionen
-
-- Membervariablen: `m_`
-- Getter: `getX()`, boolesche Getter: `isX()`
-- Setter: `setX()`
-- Aktionen: Verb (`swapBuffers()`, `pollEvents()`)
-- Reine Datentypen (`WindowHints`, `VideoMode`, `GamepadState`, `Image`,
-  `GammaRamp`) haben öffentliche Felder.
-
 ## Achsen-Konvention
 
 Joystick- und Gamepad-Y-Achsen verhalten sich auf allen Plattformen gleich:
@@ -259,12 +309,22 @@ und die festen XInput-Bereiche unter Windows.
 ## Tests
 
 Die Catch2-Tests decken Fehlerbehandlung, Hints, Zeit, Null-Plattform,
-Initialisierungsfehler und – bei gesetztem `DISPLAY` – X11-Fenster und
-Monitore ab.
+Initialisierungsfehler, Bild-, Font-, Shader-/Textur-, Audio-, Modell- und
+Geometrie-API ab; bei gesetztem `DISPLAY` kommen X11-Fenster und Monitore
+hinzu.
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
+
+Mit `-DSGL_HEADLESS_RENDER_TESTS=ON` werden zusätzlich drei Smoke-Tests
+registriert, die Font-2D, Font-3D und den Model-Viewer headless als PNG
+rendern. Sie benötigen eine funktionierende EGL-/OSMesa-Umgebung.
+
+Unter `.github/workflows/ci.yml` laufen Build, Tests, Sanitizer, clang-tidy
+und die Headless-Renders auf Linux; Windows und macOS werden mindestens
+kompiliert (derzeit als beratende Jobs, bis die Backends dort verifiziert
+sind).
 
 ## Lizenzhinweise
 

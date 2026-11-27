@@ -20,13 +20,13 @@
 
 namespace sgl {
 
-using namespace GL;
+using namespace gl;
 
 namespace {
   constexpr f32 DegreesToRadians = 3.14159265358979323846f / 180.0f;
 
   bool HasCurrentContext() {
-    return GetCurrentWindow() != nullptr && GL::glCreateTextures != nullptr;
+    return GetCurrentWindow() != nullptr && gl::glCreateTextures != nullptr;
   }
 
   // ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ void main() {
   SpriteRenderer *RendererForCurrentContext() {
     Window *current = GetCurrentWindow();
 
-    if ((current == nullptr) || (GL::glCreateVertexArrays == nullptr)) {
+    if ((current == nullptr) || (gl::glCreateVertexArrays == nullptr)) {
       SLOGE << "DrawSprite: kein aktiver OpenGL-Kontext (Window noetig)";
 
       return nullptr;

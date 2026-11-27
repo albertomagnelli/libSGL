@@ -4204,14 +4204,14 @@ typedef void (GL_APIENTRY *GLVULKANPROCNV)(void);
 #  define GL_ZERO_TO_ONE 0x935F
 #endif
 
-namespace GL {
+namespace gl {
 
 /**
- * Ergebnis von GL::Load().
+ * Ergebnis von gl::Load().
  */
 struct LoadReport {
     std::size_t total = 0;   // Anzahl der Entry-Points, die geladen werden sollten
-    std::size_t loaded = 0;  // davon erfolgreich über sgl::getProcAddress geladen
+    std::size_t loaded = 0;  // davon erfolgreich über sgl::GetProcAddress geladen
 
     bool complete() const { return loaded == total; }
 };
@@ -16832,4 +16832,4 @@ extern void (GL_APIENTRY *glViewportIndexedfv)(GLuint index, const GLfloat *v);
  */
 extern void (GL_APIENTRY *glWaitSync)(GLsync sync, GLbitfield flags, GLuint64 timeout);
 
-} // namespace GL
+} // namespace gl

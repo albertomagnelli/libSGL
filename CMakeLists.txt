@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(sgl LANGUAGES C CXX)
+project(sgl VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +20,27 @@ option(SGL_BACKEND_COCOA   "Build the Cocoa/NSOpenGL backend" ON)
 option(SGL_BACKEND_OSMESA  "Build the OSMesa context helper" ON)
 option(SGL_BUILD_TESTS     "Build the Catch2 test suite" ON)
 option(SGL_BUILD_EXAMPLES  "Build the example applications" ON)
+option(SGL_BUILD_SHARED    "Build sgl as a shared library" OFF)
+option(SGL_INSTALL         "Generate install and CMake package rules" ON)
+option(SGL_HEADLESS_RENDER_TESTS
+       "Add headless rendering smoke tests (requires a working EGL/OSMesa setup)" OFF)
+set(SGL_SANITIZE "" CACHE STRING
+    "Comma-separated sanitizers for GCC/Clang, e.g. 'address,undefined'")
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+if(SGL_SANITIZE)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(FATAL_ERROR "SGL_SANITIZE is only supported with GCC or Clang")
+    endif()
+    add_compile_options(-fsanitize=${SGL_SANITIZE} -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=${SGL_SANITIZE})
+endif()
+
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/sgl")
+configure_file(cmake/Version.hpp.in
+               "${CMAKE_CURRENT_BINARY_DIR}/generated/sgl/Version.hpp" @ONLY)
 
 find_package(glm CONFIG REQUIRED)
 
@@ -69,7 +90,6 @@ set(SGL_SOURCES
 )
 
 set(SGL_DEFINITIONS "")
-set(SGL_PUBLIC_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(SGL_PRIVATE_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/audio"
@@ -225,12 +245,15 @@ if(SGL_BACKEND_OSMESA)
     if(PkgConfig_FOUND AND OSMESA_FOUND)
         list(APPEND SGL_LINK_LIBS PkgConfig::OSMESA)
         list(APPEND SGL_DEFINITIONS SGL_HAS_OSMESA=1)
+        set(SGL_PACKAGE_OSMESA ON)
     else()
         message(STATUS "OSMesa not found - OSMesa context support disabled")
         list(APPEND SGL_DEFINITIONS SGL_HAS_OSMESA=0)
+        set(SGL_PACKAGE_OSMESA OFF)
     endif()
 else()
     list(APPEND SGL_DEFINITIONS SGL_HAS_OSMESA=0)
+    set(SGL_PACKAGE_OSMESA OFF)
 endif()
 
 set(CMAKE_C_STANDARD 99)
@@ -249,11 +272,24 @@ set(SGL_THIRD_PARTY_C_SOURCES
 if(MSVC)
     set_source_files_properties(${SGL_THIRD_PARTY_C_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
 else()
-    set_source_files_properties(${SGL_THIRD_PARTY_C_SOURCES} PROPERTIES COMPILE_OPTIONS "-w")
+    set(SGL_THIRD_PARTY_COMPILE_OPTIONS "-w")
+    if(SGL_SANITIZE)
+        # Vendorte C-Bibliotheken (z. B. ttf2mesh) haben eigene, bekannte
+        # Alignmentschwächen; sie sollen den Sanitizer-Lauf nicht blockieren.
+        list(APPEND SGL_THIRD_PARTY_COMPILE_OPTIONS "-fno-sanitize=${SGL_SANITIZE}")
+    endif()
+    set_source_files_properties(${SGL_THIRD_PARTY_C_SOURCES}
+        PROPERTIES COMPILE_OPTIONS "${SGL_THIRD_PARTY_COMPILE_OPTIONS}")
 endif()
 
-add_library(sgl STATIC ${SGL_SOURCES})
+if(SGL_BUILD_SHARED)
+    add_library(sgl SHARED ${SGL_SOURCES})
+    set_target_properties(sgl PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+else()
+    add_library(sgl STATIC ${SGL_SOURCES})
+endif()
 add_library(sgl::sgl ALIAS sgl)
+set_target_properties(sgl PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(DEFINED SGL_WAYLAND_GENERATED_HEADERS AND SGL_WAYLAND_GENERATED_HEADERS)
     add_custom_target(sgl_wayland_protocols ALL DEPENDS ${SGL_WAYLAND_GENERATED_HEADERS})
@@ -262,7 +298,10 @@ endif()
 
 target_compile_features(sgl PUBLIC cxx_std_23)
 target_include_directories(sgl
-    PUBLIC ${SGL_PUBLIC_INCLUDE_DIRS}
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE ${SGL_PRIVATE_INCLUDE_DIRS})
 target_compile_definitions(sgl PRIVATE ${SGL_DEFINITIONS})
 target_link_libraries(sgl PUBLIC ${SGL_LINK_LIBS})
@@ -287,11 +326,57 @@ endif()
 # Examples
 # ---------------------------------------------------------------------------
 if(SGL_BUILD_EXAMPLES)
-    add_executable(GLLoader main.cpp)
-    target_link_libraries(GLLoader PRIVATE sgl::sgl)
-
+    add_subdirectory(examples/gl_loader)
     add_subdirectory(examples/window)
     add_subdirectory(examples/font)
     add_subdirectory(examples/audio)
     add_subdirectory(examples/model)
+endif()
+
+# ---------------------------------------------------------------------------
+# Optional headless rendering smoke tests
+# ---------------------------------------------------------------------------
+if(SGL_BUILD_TESTS AND SGL_BUILD_EXAMPLES AND SGL_HEADLESS_RENDER_TESTS)
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/headless")
+    add_test(NAME sgl_render_font2d
+             COMMAND sgl_example_meshfont2d
+                     --frame "${CMAKE_CURRENT_BINARY_DIR}/headless/font2d.png" 320 180)
+    add_test(NAME sgl_render_font3d
+             COMMAND sgl_example_meshfont3d
+                     --frame "${CMAKE_CURRENT_BINARY_DIR}/headless/font3d.png" 320 180)
+    add_test(NAME sgl_render_model
+             COMMAND sgl_example_model_viewer
+                     --frame "${CMAKE_CURRENT_BINARY_DIR}/headless/model.png" --time 0.5)
+    set_tests_properties(sgl_render_font2d sgl_render_font3d sgl_render_model
+                         PROPERTIES TIMEOUT 180)
+endif()
+
+# ---------------------------------------------------------------------------
+# Installation / find_package(sgl)
+# ---------------------------------------------------------------------------
+if(SGL_INSTALL)
+    install(TARGETS sgl EXPORT sglTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(DIRECTORY include/sgl DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/generated/sgl/Version.hpp"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/sgl)
+    install(EXPORT sglTargets
+        FILE sglTargets.cmake
+        NAMESPACE sgl::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sgl)
+
+    configure_package_config_file(cmake/sglConfig.cmake.in
+        "${CMAKE_CURRENT_BINARY_DIR}/sglConfig.cmake"
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sgl)
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/sglConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion)
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/sglConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/sglConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/sgl)
 endif()

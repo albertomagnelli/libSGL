@@ -27,13 +27,13 @@ cmake --build build
 
 `examples/common/ExampleCommon.hpp` enthält:
 
-- `example::createWindow(...)` – initialisiert sgl, erzeugt ein Fenster mit
-  OpenGL-4.6-Core (Fallback 3.3) und lädt `GL::Load()`.
-- `example::closeOnEscape(...)`
-- `example::printGLInfo()`
-- `example::clearBackground(...)`
-- `example::drawRectTopLeft(...)` – Rechteck per Scissor-Test, ohne Shader.
-- `example::printAttribs(...)`
+- `example::CreateWindow(...)` – initialisiert sgl, erzeugt ein Fenster mit
+  OpenGL-4.6-Core (Fallback 3.3) und lädt `gl::Load()`.
+- `example::CloseOnEscape(...)`
+- `example::PrintGlInfo()`
+- `example::ClearBackground(...)`
+- `example::DrawRectTopLeft(...)` – Rechteck per Scissor-Test, ohne Shader.
+- `example::PrintAttribs(...)`
 
 ## Hinweise
 

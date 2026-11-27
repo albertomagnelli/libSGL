@@ -1,0 +1,5 @@
+add_executable(sgl_example_gl_loader main.cpp)
+target_link_libraries(sgl_example_gl_loader PRIVATE sgl::sgl)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(sgl_example_gl_loader PRIVATE -Wall -Wextra -Wpedantic)
+endif()

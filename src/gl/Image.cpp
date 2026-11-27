@@ -18,6 +18,7 @@
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <utility>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -495,25 +496,27 @@ void Swap(Image &first, Image &second) noexcept { first.swap(second); }
 
 // ─── Laden und Speichern ────────────────────────────────────────────────────
 
-Image ImageIO::Load(const std::filesystem::path &file,
-                     const LoadOptions &options) {
+std::expected<Image, ImageError>
+ImageIO::TryLoad(const std::filesystem::path &file, const LoadOptions &options) {
   std::ifstream input(file, std::ios::binary);
   if (!input) {
-    throw ImageError("Bilddatei konnte nicht geöffnet werden: " +
-                     file.string());
+    return std::unexpected(ImageError(
+        "Bilddatei konnte nicht geöffnet werden: " + file.string()));
   }
   const std::vector<u8> bytes{std::istreambuf_iterator<char>(input),
                               std::istreambuf_iterator<char>()};
   if (bytes.empty()) {
-    throw ImageError("Bilddatei ist leer: " + file.string());
+    return std::unexpected(
+        ImageError("Bilddatei ist leer: " + file.string()));
   }
-  return ImageIO::LoadFromMemory(bytes, options);
+  return ImageIO::TryLoadFromMemory(bytes, options);
 }
 
-Image ImageIO::LoadFromMemory(std::span<const u8> data,
-                               const LoadOptions &options) {
+std::expected<Image, ImageError> ImageIO::TryLoadFromMemory(
+    std::span<const u8> data, const LoadOptions &options) {
   if (data.empty()) {
-    throw ImageError("loadFromMemory: keine Daten übergeben");
+    return std::unexpected(
+        ImageError("LoadFromMemory: keine Daten übergeben"));
   }
   i32 width = 0;
   i32 height = 0;
@@ -526,7 +529,8 @@ Image ImageIO::LoadFromMemory(std::span<const u8> data,
       stbi_load_from_memory(data.data(), static_cast<i32>(data.size()), &width,
                             &height, &sourceChannels, desired);
   if (decoded == nullptr) {
-    throw ImageError("Bild konnte nicht dekodiert werden: " + FailureReason());
+    return std::unexpected(ImageError(
+        "Bild konnte nicht dekodiert werden: " + FailureReason()));
   }
 
   const ImageFormat format =
@@ -538,9 +542,9 @@ Image ImageIO::LoadFromMemory(std::span<const u8> data,
   Image image;
   try {
     image = Image(width, height, format, std::span<const u8>(decoded, size));
-  } catch (...) {
+  } catch (const std::exception &error) {
     stbi_image_free(decoded);
-    throw;
+    return std::unexpected(ImageError(error.what()));
   }
   stbi_image_free(decoded);
 
@@ -552,76 +556,133 @@ Image ImageIO::LoadFromMemory(std::span<const u8> data,
   return image;
 }
 
-std::vector<u8> ImageIO::Encode(const Image &source, const ImageFileFormat format,
-                                 const SaveOptions &options) {
-  if (source.isEmpty()) {
-    throw ImageError("encode: Bild ist leer");
-  }
-  const Image prepared = PrepareForEncoding(source, format);
-  const i32 components = prepared.channelCount();
-  std::vector<u8> bytes;
-  bytes.reserve(prepared.byteSize() / 2 + 64);
+std::expected<std::vector<u8>, ImageError>
+ImageIO::TryEncode(const Image &source, const ImageFileFormat format,
+                   const SaveOptions &options) {
+  try {
+    if (source.isEmpty()) {
+      return std::unexpected(ImageError("Encode: Bild ist leer"));
+    }
+    const Image prepared = PrepareForEncoding(source, format);
+    const i32 components = prepared.channelCount();
+    std::vector<u8> bytes;
+    bytes.reserve(prepared.byteSize() / 2 + 64);
 
-  i32 written = 0;
-  switch (format) {
-  case ImageFileFormat::Png:
-    written = stbi_write_png_to_func(
-        AppendToVector, &bytes, prepared.width(), prepared.height(), components,
-        prepared.data(), static_cast<i32>(prepared.rowStride()));
-    break;
-  case ImageFileFormat::Jpeg:
-    written = stbi_write_jpg_to_func(
-        AppendToVector, &bytes, prepared.width(), prepared.height(), components,
-        prepared.data(), std::clamp(options.jpegQuality, 1, 100));
-    break;
-  case ImageFileFormat::Bmp:
-    written =
-        stbi_write_bmp_to_func(AppendToVector, &bytes, prepared.width(),
-                               prepared.height(), components, prepared.data());
-    break;
-  case ImageFileFormat::Tga:
-    written =
-        stbi_write_tga_to_func(AppendToVector, &bytes, prepared.width(),
-                               prepared.height(), components, prepared.data());
-    break;
+    i32 written = 0;
+    switch (format) {
+    case ImageFileFormat::Png:
+      written = stbi_write_png_to_func(
+          AppendToVector, &bytes, prepared.width(), prepared.height(),
+          components, prepared.data(),
+          static_cast<i32>(prepared.rowStride()));
+      break;
+    case ImageFileFormat::Jpeg:
+      written = stbi_write_jpg_to_func(
+          AppendToVector, &bytes, prepared.width(), prepared.height(),
+          components, prepared.data(),
+          std::clamp(options.jpegQuality, 1, 100));
+      break;
+    case ImageFileFormat::Bmp:
+      written =
+          stbi_write_bmp_to_func(AppendToVector, &bytes, prepared.width(),
+                                 prepared.height(), components, prepared.data());
+      break;
+    case ImageFileFormat::Tga:
+      written =
+          stbi_write_tga_to_func(AppendToVector, &bytes, prepared.width(),
+                                 prepared.height(), components, prepared.data());
+      break;
+    }
+    if (written == 0 || bytes.empty()) {
+      return std::unexpected(ImageError(
+          "Bild konnte nicht als " + std::string(ToString(format)) +
+          " kodiert werden"));
+    }
+    return bytes;
+  } catch (const std::exception &error) {
+    return std::unexpected(ImageError(error.what()));
   }
-  if (written == 0 || bytes.empty()) {
-    throw ImageError("Bild konnte nicht als " + std::string(ToString(format)) +
-                     " kodiert werden");
-  }
-  return bytes;
 }
 
-void ImageIO::Save(const Image &image, const std::filesystem::path &file,
-                   const SaveOptions &options) {
+std::expected<void, ImageError>
+ImageIO::TrySave(const Image &image, const std::filesystem::path &file,
+                 const SaveOptions &options) {
   if (image.isEmpty()) {
-    throw ImageError("Speichern: Bild ist leer");
+    return std::unexpected(ImageError("Speichern: Bild ist leer"));
   }
-  const ImageFileFormat format = FileFormatFromPath(file);
-  const std::vector<u8> bytes = ImageIO::Encode(image, format, options);
+
+  ImageFileFormat format;
+  try {
+    format = FileFormatFromPath(file);
+  } catch (const std::exception &error) {
+    return std::unexpected(ImageError(error.what()));
+  }
+
+  const auto bytes = ImageIO::TryEncode(image, format, options);
+  if (!bytes) {
+    return std::unexpected(bytes.error());
+  }
 
   const std::filesystem::path parent = file.parent_path();
   if (!parent.empty()) {
     std::error_code ec;
     std::filesystem::create_directories(parent, ec);
     if (ec) {
-      throw ImageError("Verzeichnis konnte nicht angelegt werden: " +
-                       parent.string() + " (" + ec.message() + ")");
+      return std::unexpected(ImageError(
+          "Verzeichnis konnte nicht angelegt werden: " + parent.string() +
+          " (" + ec.message() + ")"));
     }
   }
   std::ofstream output(file, std::ios::binary | std::ios::trunc);
   if (!output) {
-    throw ImageError("Bilddatei konnte nicht geschrieben werden: " +
-                     file.string());
+    return std::unexpected(ImageError(
+        "Bilddatei konnte nicht geschrieben werden: " + file.string()));
   }
-  output.write(reinterpret_cast<const char *>(bytes.data()),
-               static_cast<std::streamsize>(bytes.size()));
+  output.write(reinterpret_cast<const char *>(bytes->data()),
+               static_cast<std::streamsize>(bytes->size()));
   if (!output) {
-    throw ImageError("Schreiben der Bilddatei fehlgeschlagen: " +
-                     file.string());
+    return std::unexpected(ImageError(
+        "Schreiben der Bilddatei fehlgeschlagen: " + file.string()));
   }
-  SLOGD << "Bild gespeichert: " << file.string() << " (" << bytes.size()
+  SLOGD << "Bild gespeichert: " << file.string() << " (" << bytes->size()
        << " Bytes)";
+  return {};
+}
+
+Image ImageIO::Load(const std::filesystem::path &file,
+                    const LoadOptions &options) {
+  auto result = ImageIO::TryLoad(file, options);
+  if (!result) {
+    throw result.error();
+  }
+  return std::move(*result);
+}
+
+Image ImageIO::LoadFromMemory(std::span<const u8> data,
+                              const LoadOptions &options) {
+  auto result = ImageIO::TryLoadFromMemory(data, options);
+  if (!result) {
+    throw result.error();
+  }
+  return std::move(*result);
+}
+
+std::vector<u8> ImageIO::Encode(const Image &source,
+                               const ImageFileFormat format,
+                               const SaveOptions &options) {
+  auto result = ImageIO::TryEncode(source, format, options);
+  if (!result) {
+    throw result.error();
+  }
+  return std::move(*result);
+}
+
+void ImageIO::Save(const Image &image, const std::filesystem::path &file,
+                   const SaveOptions &options) {
+  auto result = ImageIO::TrySave(image, file, options);
+  if (!result) {
+    throw result.error();
+  }
 }
 
 // ─── Umwandeln und Ausschneiden ─────────────────────────────────────────────

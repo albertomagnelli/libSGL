@@ -29,10 +29,10 @@
 
 namespace sgl {
 
-enum AnimationDirection {
-  ANIMATION_FORWARD = 0,
-  ANIMATION_REVERSE,
-  ANIMATION_PINGPONG,
+enum class AnimationDirection {
+  Forward = 0,
+  Reverse,
+  PingPong,
 };
 
 struct AnimationFrame {
@@ -47,7 +47,7 @@ struct Animation {
   std::string                name;
   std::vector<AnimationFrame> frames;
   bool                       loop{true};
-  AnimationDirection         direction{ANIMATION_FORWARD};
+  AnimationDirection         direction{AnimationDirection::Forward};
 };
 
 class AnimatedSprite {

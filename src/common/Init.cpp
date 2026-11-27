@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 
+#include "sgl/Version.hpp"
+
 #include "backend/Backend.hpp"
 #include "common/Internal.hpp"
 
@@ -64,11 +66,11 @@ void SetInitHint(InitHint hint, bool value) {
 }
 
 Version GetVersion() {
-    return Version{0, 1, 0};
+    return Version{SGL_VERSION_MAJOR, SGL_VERSION_MINOR, SGL_VERSION_PATCH};
 }
 
 std::string GetVersionString() {
-    return "sgl 0.1.0";
+    return "sgl " SGL_VERSION_STRING;
 }
 
 Platform GetPlatform() {

@@ -1,0 +1,191 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CTEST_OUTPUT_ON_FAILURE: 1
+
+jobs:
+  linux:
+    name: Linux (X11 + Wayland, -Werror)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Abhängigkeiten installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build libglm-dev \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxi-dev libxext-dev libgl1-mesa-dev libegl1-mesa-dev \
+            libwayland-dev wayland-protocols \
+            libxkbcommon-dev libgl1-mesa-dri mesa-utils xvfb
+
+      - name: Konfigurieren
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_FLAGS="-Werror"
+          -DSGL_HEADLESS_RENDER_TESTS=ON
+
+      - name: Bauen
+        run: cmake --build build
+
+      - name: Tests (Xvfb, Software-Rendering)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: >
+          xvfb-run -a -s "-screen 0 1280x720x24"
+          ctest --test-dir build --output-on-failure
+
+      - name: Installation und find_package prüfen
+        run: |
+          cmake --install build --prefix "$PWD/install"
+          cmake -S tests/package -B consumer-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$PWD/install"
+          cmake --build consumer-build
+          ./consumer-build/sgl_package_consumer
+
+  wayland-only:
+    name: Linux (nur Wayland)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Abhängigkeiten installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build libglm-dev \
+            libwayland-dev wayland-protocols \
+            libxkbcommon-dev libegl1-mesa-dev
+
+      - name: Bauen
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_FLAGS="-Werror"
+          -DSGL_BACKEND_X11=OFF
+          -DSGL_BACKEND_WAYLAND=ON
+          -DSGL_BACKEND_OSMESA=OFF
+          -DSGL_BUILD_EXAMPLES=ON
+          && cmake --build build
+
+  sanitizers:
+    name: Linux (ASan + UBSan)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Abhängigkeiten installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build libglm-dev \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxi-dev libxext-dev libgl1-mesa-dev libegl1-mesa-dev \
+            libwayland-dev wayland-protocols \
+            libxkbcommon-dev libgl1-mesa-dri xvfb
+
+      - name: Konfigurieren
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          -DSGL_SANITIZE=address,undefined
+          -DSGL_BUILD_EXAMPLES=OFF
+          -DSGL_HEADLESS_RENDER_TESTS=OFF
+
+      - name: Bauen
+        run: cmake --build build
+
+      - name: Tests
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: >
+          xvfb-run -a -s "-screen 0 1280x720x24"
+          ctest --test-dir build --output-on-failure
+
+  clang-tidy:
+    name: clang-tidy (Namenskonventionen)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Abhängigkeiten installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build libglm-dev clang-tidy \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxi-dev libxext-dev libgl1-mesa-dev libegl1-mesa-dev \
+            libwayland-dev wayland-protocols libxkbcommon-dev
+
+      - name: Konfigurieren
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          -DSGL_BUILD_EXAMPLES=ON
+
+      - name: Namensregeln prüfen
+        run: |
+          RCT="$(command -v run-clang-tidy || command -v run-clang-tidy-18)"
+          "$RCT" -p build -config-file="$PWD/.clang-tidy" \
+            -checks="-*,readability-identifier-naming" \
+            -header-filter="^$PWD/(include|src|examples|tests)/.*$" \
+            -source-filter="^$PWD/(src|examples|tests)/" \
+            -j 2 > clang-tidy.log 2>&1 || true
+          cat clang-tidy.log
+          if grep -q "warning:" clang-tidy.log; then
+            echo "::error::clang-tidy hat Namensverstöße gefunden."
+            exit 1
+          fi
+
+  windows:
+    name: Windows (beratend)
+    runs-on: windows-2022
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: GLM installieren
+        run: vcpkg install glm:x64-windows
+
+      - name: Konfigurieren
+        run: >
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          -DSGL_BUILD_EXAMPLES=OFF
+
+      - name: Bauen
+        run: cmake --build build --config Release
+
+      - name: Tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+  macos:
+    name: macOS (beratend)
+    runs-on: macos-14
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Abhängigkeiten installieren
+        run: brew install glm ninja
+
+      - name: Konfigurieren
+        run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DSGL_BUILD_EXAMPLES=OFF
+
+      - name: Bauen
+        run: cmake --build build
+
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure

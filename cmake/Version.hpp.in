@@ -1,0 +1,8 @@
+#pragma once
+
+// Automatisch erzeugt aus cmake/Version.hpp.in. Nicht direkt bearbeiten.
+
+#define SGL_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define SGL_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define SGL_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#define SGL_VERSION_STRING "@PROJECT_VERSION@"

@@ -4,7 +4,7 @@
 // Ablauf:
 //   1. sgl initialisieren und ein Fenster mit Core-Profile-Kontext erzeugen
 //   2. Kontext aktuell machen (erst danach dürfen GL-Funktionen geladen werden!)
-//   3. GL::Load() aufrufen – lädt alle Funktionszeiger über sgl::getProcAddress
+//   3. gl::Load() aufrufen – lädt alle Funktionszeiger über sgl::GetProcAddress
 //   4. Render-Schleife: Farbe animieren, Buffer leeren, Fenster aktualisieren
 //
 // Beenden mit ESC oder durch Schließen des Fensters.
@@ -19,8 +19,8 @@
 
 namespace {
 
-void framebufferSizeCallback(ivec2 size) {
-    GL::glViewport(0, 0, size.x, size.y);
+void FramebufferSizeCallback(ivec2 size) {
+    gl::glViewport(0, 0, size.x, size.y);
 }
 
 } // namespace
@@ -59,19 +59,19 @@ int main() {
     window->setSwapInterval(1); // VSync
 
     // Wichtig: erst jetzt, mit aktuellem Kontext, die Funktionen laden.
-    const GL::LoadReport report = GL::Load();
+    const gl::LoadReport report = gl::Load();
     SLOGI("%zu/%zu OpenGL-Funktionen geladen%s\n", report.loaded, report.total,
                 report.complete() ? " (vollständig)" : " (Treiber bietet nicht alles an)");
 
-    if (GL::glGetString) {
-        const auto* vendor = reinterpret_cast<const char*>(GL::glGetString(GL_VENDOR));
-        const auto* renderer = reinterpret_cast<const char*>(GL::glGetString(GL_RENDERER));
-        const auto* version = reinterpret_cast<const char*>(GL::glGetString(GL_VERSION));
+    if (gl::glGetString) {
+        const auto* vendor = reinterpret_cast<const char*>(gl::glGetString(GL_VENDOR));
+        const auto* renderer = reinterpret_cast<const char*>(gl::glGetString(GL_RENDERER));
+        const auto* version = reinterpret_cast<const char*>(gl::glGetString(GL_VERSION));
         SLOGI("Vendor:   %s\nRenderer: %s\nVersion:  %s\n", vendor, renderer, version);
     }
 
     // Ohne diese Basis-Funktionen ist der Kontext unbrauchbar.
-    if (!GL::glClear || !GL::glClearColor || !GL::glViewport) {
+    if (!gl::glClear || !gl::glClearColor || !gl::glViewport) {
         SLOGE("Grundlegende GL-Funktionen fehlen.\n");
         window.reset();
         sgl::Terminate();
@@ -79,8 +79,8 @@ int main() {
     }
 
     const ivec2 framebufferSize = window->getFramebufferSize();
-    GL::glViewport(0, 0, framebufferSize.x, framebufferSize.y);
-    window->setFramebufferSizeCallback(framebufferSizeCallback);
+    gl::glViewport(0, 0, framebufferSize.x, framebufferSize.y);
+    window->setFramebufferSizeCallback(FramebufferSizeCallback);
 
     while (!window->isCloseRequested()) {
         if (window->isKeyPressed(sgl::Key::Escape)) {
@@ -89,11 +89,11 @@ int main() {
 
         // Farbe sanft animieren, damit man sieht, dass die Schleife läuft.
         const auto t = static_cast<float>(sgl::GetTime());
-        GL::glClearColor(0.5f + 0.5f * std::sin(t),
+        gl::glClearColor(0.5f + 0.5f * std::sin(t),
                          0.5f + 0.5f * std::sin(t + 2.094f),
                          0.5f + 0.5f * std::sin(t + 4.189f),
                          1.0f);
-        GL::glClear(GL_COLOR_BUFFER_BIT);
+        gl::glClear(GL_COLOR_BUFFER_BIT);
 
         window->swapBuffers();
         sgl::PollEvents();
