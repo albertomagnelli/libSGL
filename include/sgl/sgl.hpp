@@ -17,6 +17,7 @@
 #include "sgl/Input.hpp"
 #include "sgl/Joystick.hpp"
 #include "sgl/Log.hpp"
+#include "sgl/Material.hpp"
 #include "sgl/MeshFont.hpp"
 #include "sgl/Monitor.hpp"
 #include "sgl/Native.hpp"

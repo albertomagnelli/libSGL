@@ -7,6 +7,7 @@ add_executable(sgl_tests
     test_meshfont.cpp
     test_shader_texture.cpp
     test_color_geometry.cpp
+    test_material.cpp
     test_noise.cpp
     test_collision_animatedsprite.cpp
     test_audio.cpp
