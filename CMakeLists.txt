@@ -47,6 +47,7 @@ set(SGL_SOURCES
     src/gl/Color.cpp
     src/gl/Geometry.cpp
     src/gl/Material.cpp
+    src/gl/MeshVertex.cpp
     src/gl/Noise.cpp
     src/gl/Shader.cpp
     src/gl/Texture.cpp

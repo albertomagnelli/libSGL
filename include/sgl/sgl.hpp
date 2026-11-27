@@ -19,6 +19,7 @@
 #include "sgl/Log.hpp"
 #include "sgl/Material.hpp"
 #include "sgl/MeshFont.hpp"
+#include "sgl/MeshVertex.hpp"
 #include "sgl/Monitor.hpp"
 #include "sgl/Native.hpp"
 #include "sgl/Noise.hpp"
