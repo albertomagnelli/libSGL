@@ -152,10 +152,9 @@ jobs:
           fi
 
   windows:
-    name: Windows (beratend)
+    name: Windows (WGL)
     runs-on: windows-2022
     timeout-minutes: 45
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -175,10 +174,9 @@ jobs:
         run: ctest --test-dir build -C Release --output-on-failure --timeout 300
 
   macos:
-    name: macOS (beratend)
+    name: macOS (Cocoa)
     runs-on: macos-latest
     timeout-minutes: 45
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

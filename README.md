@@ -1,5 +1,7 @@
 # sgl – eine moderne C++23-Alternative zu GLFW 3.4
 
+[![CI](https://github.com/albertomagnelli/libSGL/actions/workflows/ci.yml/badge.svg)](https://github.com/albertomagnelli/libSGL/actions/workflows/ci.yml)
+
 `sgl` ist eine eigenständige, plattformübergreifende Bibliothek für Fenster,
 OpenGL-Kontexte, Eingabe, Monitore und Joysticks. Die API ist modernes C++23
 mit RAII, `std::expected`, `std::function`, `std::span` und `std::string_view`.
@@ -298,8 +300,8 @@ und die festen XInput-Bereiche unter Windows.
 - **Wayland** wird gebaut; Laufzeittests benötigen einen Compositor
   (z. B. Weston). Pointer-Lock, Rohmausbewegung und Fensterpositionierung sind
   durch Wayland nicht verfügbar und werden als `FeatureUnavailable` gemeldet.
-- **Windows** und **macOS** sind code-complete, konnten in dieser Umgebung
-  aber nicht kompiliert oder getestet werden.
+- **Windows** und **macOS** werden in der CI gebaut und die Testsuite läuft
+  dort ebenfalls; Laufzeittests mit echter GPU und Treibern stehen noch aus.
 - **macOS** unterstützt maximal OpenGL 4.1. Ein 4.6-Kontext schlägt dort
   erwartungsgemäß mit `VersionUnavailable` fehl.
 - **EGL** wird für Wayland und optional für X11 verwendet; X11 kann auch GLX,
@@ -322,9 +324,8 @@ registriert, die Font-2D, Font-3D und den Model-Viewer headless als PNG
 rendern. Sie benötigen eine funktionierende EGL-/OSMesa-Umgebung.
 
 Unter `.github/workflows/ci.yml` laufen Build, Tests, Sanitizer, clang-tidy
-und die Headless-Renders auf Linux; Windows und macOS werden mindestens
-kompiliert (derzeit als beratende Jobs, bis die Backends dort verifiziert
-sind).
+und die Headless-Renders auf Linux; Windows (WGL) und macOS (Cocoa) werden
+ebenfalls gebaut und getestet.
 
 ## Lizenzhinweise
 

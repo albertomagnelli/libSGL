@@ -79,8 +79,8 @@ tests/                Catch2-Tests
 | P2 – X11-Monitore, Vollbild, Clipboard, Cursor, Icons, Opacity, Gamma, Drag & Drop | umgesetzt |
 | P3 – Linux-Joystick/Gamepad über evdev mit Hotplug | umgesetzt |
 | P4 – Wayland/xdg-shell/EGL/xkbcommon/Clipboard | umgesetzt, Laufzeittest offen |
-| P5 – Win32/WGL/XInput | code-complete, nicht kompiliert/getestet |
-| P6 – Cocoa/NSOpenGL/IOKit-HID | code-complete, nicht kompiliert/getestet |
+| P5 – Win32/WGL/XInput | gebaut und getestet in CI |
+| P6 – Cocoa/NSOpenGL/IOKit-HID | gebaut und getestet in CI |
 | P7 – EGL (Wayland) und OSMesa | EGL umgesetzt; OSMesa optional |
 | P8 – Paritätsaudit, Doku, Tests | umgesetzt, siehe `docs/GLFW_PARITY.md` |
 
@@ -90,7 +90,7 @@ tests/                Catch2-Tests
 - `sgl_example_gl_loader` erzeugt einen OpenGL-4.6-Core-Kontext und lädt 656/656 Funktionen.
 - `ldd` enthält kein `libglfw`.
 - Wayland wird gebaut, aber ohne laufenden Compositor nicht zur Laufzeit getestet.
-- Windows/macOS bleiben ohne Toolchain unverifiziert.
+- Windows/macOS werden in der CI gebaut und getestet.
 
 ### Bewusste Abweichungen
 

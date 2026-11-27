@@ -206,8 +206,8 @@ Kalibrierung:
 - Wayland: Pointer-Lock, Rohmausbewegung und `setPosition` sind
   protokollbedingt nicht verfügbar.
 - X11: GLX und EGL werden unterstützt. Win32: bisher nur WGL (kein ANGLE/EGL).
-- Windows/macOS: code-complete, in dieser Umgebung nicht kompilier- oder
-  testbar.
+- Windows/macOS: werden in der CI gebaut und getestet; Laufzeittests mit
+  echter GPU stehen noch aus.
 - OSMesa: nur wenn `libosmesa` installiert ist.
 - Gamepad-Mapping: Die SDL_GameControllerDB ist eingebettet (zlib). Geräte
   ohne passenden Eintrag gelten nicht als Gamepad. Eigene Mappings können
