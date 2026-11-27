@@ -3,17 +3,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // sgl · Model
 //
-// CPU-seitiges glTF-2.0-Modell (cgltf) ohne OpenGL-, Texture- oder
+// CPU-seitiges glTF-/FBX-Modell (cgltf/ufbx) ohne OpenGL-, Texture- oder
 // Shader-Bindung:
 //
 //   Model             Meshes, Nodes und Skins
 //   Mesh              MeshVertex-Puffer, Indizes und Material
-//   ModelIO           Laden von .gltf/.glb inklusive Materialien
+//   ModelIO           Laden von .gltf/.glb/.fbx inklusive Materialien
 //   ModelAnimation    fertig geladene Animationsdaten
-//   ModelAnimationIO  Laden von Animationen aus .gltf/.glb
+//   ModelAnimationIO  Laden von Animationen aus .gltf/.glb/.fbx
 //
-// Bilder werden über sgl::ImageIO geladen (externe Dateien, GLB-Buffer-Views
-// und Data-URIs). Materialien werden als sgl::Material gespeichert und von
+// Bilder werden über sgl::ImageIO geladen (externe Dateien, GLB-Buffer-Views,
+// Data-URIs und eingebettete FBX-Texturen). Materialien werden als sgl::Material gespeichert und von
 // mehreren Meshes gemeinsam genutzt.
 //
 // Beispiel:
@@ -70,6 +70,8 @@ public:
     std::vector<u32> indices;
     std::shared_ptr<Material> material;
     MeshPrimitiveMode primitiveMode{MeshPrimitiveMode::Triangles};
+    // Node, der dieses Mesh instanziiert (-1 = unbekannt).
+    i32 nodeIndex{-1};
 
     [[nodiscard]] bool isValid() const noexcept;
 };
@@ -108,6 +110,9 @@ public:
 
 struct ModelLoadOptions {
     bool loadMaterials{true};
+    // FBX speichert UVs mit Ursprung unten links; sgl/glTF verwenden oben
+    // links. Standardmäßig wird V beim FBX-Import gedreht.
+    bool flipFbxV{true};
 };
 
 class ModelIO {

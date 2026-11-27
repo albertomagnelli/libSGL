@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // model_viewer – glTF-Modelle mit sgl laden und rendern
 //
-// Zeigt character.glb und turrican.glb nebeneinander. Beide Modelle rotieren
-// kontinuierlich um die Y-Achse. Die Meshes werden mit ihren Materialien
+// Zeigt character.glb, turrican.glb und zombie.fbx nebeneinander. Alle
+// Modelle rotieren kontinuierlich um die Y-Achse. Die Meshes werden mit ihren Materialien
 // (Albedo, Metallic, Roughness, AO, Normal, Emissive) über einen einfachen
 // PBR-Metallic-Roughness-Shader gezeichnet.
 //
@@ -40,8 +40,8 @@ using namespace GL;
 
 namespace {
 
-constexpr f32 kTargetHeight = 1.8f;
-constexpr f32 kModelSpacing = 1.35f;
+constexpr f32 kTargetHeight = 1.7f;
+constexpr f32 kModelSpacing = 1.9f;
 
 const char* const kModelShader = R"(
 #pragma stage vertex
@@ -326,7 +326,10 @@ std::optional<ModelInstance> LoadInstance(const std::filesystem::path& path,
 
     for (std::size_t i = 0; i < instance.model.meshes.size(); ++i) {
         GpuMesh& gpu = instance.meshes[i];
-        const i32 node = FindMeshNode(instance.model, static_cast<i32>(i));
+        const Mesh& mesh = instance.model.meshes[i];
+        const i32 node = mesh.nodeIndex >= 0
+                             ? mesh.nodeIndex
+                             : FindMeshNode(instance.model, static_cast<i32>(i));
         gpu.nodeTransform = NodeWorldTransform(instance.model, node);
 
         if (!UploadMesh(instance.model.meshes[i], gpu)) {
@@ -397,8 +400,8 @@ void DrawInstance(const ModelInstance& instance, const Shader& shader, const f32
     glBindVertexArray(0);
 }
 
-void RenderScene(const Shader& shader, const ModelInstance& left, const ModelInstance& right,
-                 const f32 time, const ivec2 framebuffer) {
+void RenderScene(const Shader& shader, const ModelInstance& left, const ModelInstance& middle,
+                 const ModelInstance& right, const f32 time, const ivec2 framebuffer) {
     glViewport(0, 0, framebuffer.x, framebuffer.y);
     glClearColor(0.045f, 0.055f, 0.075f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -406,7 +409,7 @@ void RenderScene(const Shader& shader, const ModelInstance& left, const ModelIns
     const f32 aspect =
         static_cast<f32>(framebuffer.x) / static_cast<f32>(std::max(1, framebuffer.y));
 
-    const vec3 cameraPosition(0.0f, 1.15f, 4.4f);
+    const vec3 cameraPosition(0.0f, 1.25f, 5.6f);
     const mat4 view = glm::lookAt(cameraPosition, vec3(0.0f, 0.85f, 0.0f),
                                   vec3(0.0f, 1.0f, 0.0f));
     const mat4 projection =
@@ -427,6 +430,7 @@ void RenderScene(const Shader& shader, const ModelInstance& left, const ModelIns
     shader.setUniform("uEmissive", 5);
 
     DrawInstance(left, shader, time, -kModelSpacing);
+    DrawInstance(middle, shader, time, 0.0f);
     DrawInstance(right, shader, time, kModelSpacing);
 }
 
@@ -507,9 +511,10 @@ int main(int argc, char** argv) {
     const std::filesystem::path resources = SGL_MODEL_RESOURCES;
 
     auto left = LoadInstance(resources / "character.glb", 0.0f);
-    auto right = LoadInstance(resources / "turrican.glb", 3.14159265f);
+    auto middle = LoadInstance(resources / "turrican.glb", 3.14159265f);
+    auto right = LoadInstance(resources / "zombie.fbx", 1.57079633f);
 
-    if (!left || !right) {
+    if (!left || !middle || !right) {
         window.reset();
         sgl::terminate();
         return 1;
@@ -528,7 +533,7 @@ int main(int argc, char** argv) {
                              ? options.time
                              : static_cast<f32>(sgl::getTime() - startTime);
 
-        RenderScene(shader, *left, *right, time, window->getFramebufferSize());
+        RenderScene(shader, *left, *middle, *right, time, window->getFramebufferSize());
 
         if (options.headless) {
             SaveFrame(*window, options.frame);

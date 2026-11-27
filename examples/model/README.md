@@ -1,13 +1,15 @@
 # Model-Beispiel
 
-`sgl_example_model_viewer` lädt beide glTF-Modelle aus `resources/`:
+`sgl_example_model_viewer` lädt drei Modelle aus `resources/`:
 
-- `character.glb` (CesiumMan)
-- `turrican.glb`
+- `character.glb` (CesiumMan, glTF)
+- `turrican.glb` (glTF)
+- `zombie.fbx` (FBX)
 
-Beide Modelle werden nebeneinander als PBR-Metallic-Roughness-Meshes gerendert
+Alle Modelle werden nebeneinander als PBR-Metallic-Roughness-Meshes gerendert
 und rotieren kontinuierlich um die Y-Achse. Albedo, Metallic, Roughness, AO,
 Normal und Emissive werden aus den geladenen `sgl::Material`-Maps verwendet.
+FBX-Dateien werden über ufbx geladen, glTF/GLB über cgltf.
 
 Die Modelle werden in ihrer Bind-Pose gezeigt; Animationen werden in diesem
 Beispiel nicht angewendet.

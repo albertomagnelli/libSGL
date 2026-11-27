@@ -110,6 +110,63 @@ TEST_CASE("ModelIO und ModelAnimationIO laden aus dem Speicher", "[model][gltf]"
     REQUIRE_FALSE(animations->empty());
 }
 
+
+TEST_CASE("ModelIO und ModelAnimationIO laden FBX", "[model][fbx]") {
+    const std::filesystem::path path =
+        std::filesystem::path(SGL_TEST_MODEL_RESOURCES) / "zombie.fbx";
+    REQUIRE(std::filesystem::exists(path));
+
+    const auto result = ModelIO::load(path);
+    REQUIRE(result);
+
+    const Model& model = *result;
+    REQUIRE(model.isValid());
+    REQUIRE(model.meshes.size() >= 2);
+    REQUIRE_FALSE(model.nodes.empty());
+    REQUIRE_FALSE(model.skins.empty());
+
+    const Mesh& mesh = model.meshes.front();
+    REQUIRE(mesh.isValid());
+    REQUIRE_FALSE(mesh.vertices.empty());
+    REQUIRE_FALSE(mesh.indices.empty());
+    REQUIRE(mesh.material != nullptr);
+    REQUIRE(mesh.material->isValid());
+    REQUIRE(mesh.material->getAlbedoMap().width() > 1);
+    REQUIRE(mesh.nodeIndex >= 0);
+
+    // Regression: ufbx_triangulate_face() liefert Dreiecke, nicht Indizes.
+    REQUIRE(model.meshes.size() >= 2);
+    REQUIRE(model.meshes[0].indices.size() == 492);
+    REQUIRE(model.meshes[1].indices.size() == 13152);
+
+    for (const Mesh& candidate : model.meshes) {
+        REQUIRE(candidate.indices.size() % 3 == 0);
+    }
+
+    const bool hasSkinning =
+        std::any_of(mesh.vertices.begin(), mesh.vertices.end(),
+                    [](const MeshVertex& vertex) { return vertex.hasSkinning(); });
+    REQUIRE(hasSkinning);
+
+    const auto animations = ModelAnimationIO::load(path);
+    REQUIRE(animations);
+    REQUIRE_FALSE(animations->empty());
+
+    const ModelAnimation& animation = animations->front();
+    REQUIRE(animation.isValid());
+    REQUIRE(animation.duration > 0.0f);
+    REQUIRE_FALSE(animation.channels.empty());
+
+    ModelLoadOptions rawOptions;
+    rawOptions.flipFbxV = false;
+    const auto raw = ModelIO::load(path, rawOptions);
+    REQUIRE(raw);
+    REQUIRE(raw->meshes.size() == model.meshes.size());
+    REQUIRE(raw->meshes[0].vertices.size() == mesh.vertices.size());
+    REQUIRE(mesh.vertices[0].uv.y ==
+            Catch::Approx(1.0f - raw->meshes[0].vertices[0].uv.y));
+}
+
 TEST_CASE("ModelIO meldet fehlende Dateien", "[model][gltf]") {
     const auto result = ModelIO::load(
         std::filesystem::path(SGL_TEST_MODEL_RESOURCES) / "does-not-exist.glb");

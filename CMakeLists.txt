@@ -65,6 +65,7 @@ set(SGL_SOURCES
     third_party/audio/qoa_impl.c
     third_party/audio/jar_xm_impl.c
     third_party/model/cgltf_impl.c
+    third_party/model/ufbx.c
 )
 
 set(SGL_DEFINITIONS "")
@@ -242,6 +243,7 @@ set(SGL_THIRD_PARTY_C_SOURCES
     third_party/audio/qoa_impl.c
     third_party/audio/jar_xm_impl.c
     third_party/model/cgltf_impl.c
+    third_party/model/ufbx.c
 )
 
 if(MSVC)
