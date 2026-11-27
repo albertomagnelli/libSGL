@@ -15,7 +15,7 @@ cmake --build build
 | `cursor.cpp` | `sgl_example_cursor` | Standard-Cursor, eigener RGBA-Cursor, Cursor-Modi |
 | `frameless.cpp` | `sgl_example_frameless` | rahmenloses Fenster, eigene Titelleiste, Ziehen per Maus |
 | `icon.cpp` | `sgl_example_icon` | `setIcon` mit mehreren RGBA-Größen, Icon-Wechsel |
-| `fullscreen.cpp` | `sgl_example_fullscreen` | Vollbild-Umschaltung mit F11 und Monitorauswahl |
+| `fullscreen.cpp` | `sgl_example_fullscreen` | Vollbild-Umschaltung mit F11, Monitorauswahl und Wiederherstellung von Position/Größe |
 | `window_attributes.cpp` | `sgl_example_window_attributes` | Dekoration, Resizable, Floating, Maximieren, Minimieren, Opazität, Titel, Limits, Verstecken |
 | `input.cpp` | `sgl_example_input` | Key-, Char-, Maus-, Scroll-, Fokus- und Cursor-Callbacks |
 | `clipboard.cpp` | `sgl_example_clipboard` | `setClipboardString` / `getClipboardString` |
@@ -41,7 +41,8 @@ cmake --build build
   `sgl`-Bibliothek.
 - `fullscreen.cpp`, `frameless.cpp` und `window_attributes.cpp` funktionieren
   unter X11 am vollständigsten. Wayland erlaubt keine Fensterpositionierung;
-  `frameless` verschiebt dort nicht.
+  `frameless` verschiebt dort nicht. `fullscreen` stellt unter Wayland nur die
+  Größe wieder her, nicht die Position.
 - Unter macOS ist maximal OpenGL 4.1 verfügbar; der 4.6-Versuch fällt auf 3.3
   zurück. Für Beispiele, die zwingend 4.6 benötigen, ist das nicht relevant.
 - `joystick.cpp` benötigt ein angeschlossenes Gamepad/Joystick; sonst zeigt es
