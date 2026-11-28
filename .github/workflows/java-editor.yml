@@ -66,7 +66,7 @@ jobs:
 
   macos:
     name: Java 25 (macOS)
-    runs-on: macos-14
+    runs-on: macos-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
