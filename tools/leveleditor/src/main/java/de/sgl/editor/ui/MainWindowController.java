@@ -179,11 +179,16 @@ public class MainWindowController {
         final Stage stage = stages.main();
         if (stage == null || stage.getScene() == installedScene) return;
         installedScene = stage.getScene();
+        installedScene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+            if (playtest.isRunning()) playtest.handleKeyReleased(event);
+        });
         installedScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (playtest.isRunning()) {
                 if (event.getCode() == KeyCode.ESCAPE || event.getCode() == KeyCode.F5) {
                     playtest.stop();
                     event.consume();
+                } else {
+                    playtest.handleKeyPressed(event);
                 }
                 return;
             }

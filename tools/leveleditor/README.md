@@ -99,11 +99,17 @@ mvn -q package
 | `G` / `M` | Raster / Minimap |
 | `F5` | Vorschau starten/beenden |
 | `Esc` | Vorschau beenden |
+| `A/D`, `←/→` | In der Vorschau laufen |
+| `Leertaste`/`W`/`↑` | In der Vorschau springen |
 | `Entf` | Ausgewählte Entity löschen |
 | Mittlere Maustaste | Pan |
 | Mausrad | Zoom um den Cursor |
 | Tab ziehen | Panel andocken oder lösen |
 | Tab doppelklicken | Panel als Fenster lösen |
+
+In der Vorschau sind Ebenen mit `Hintergrund` oder `Background` im Namen reine
+Deko und tragen keine Kollision. Gibt es nur eine Kachelebene, wird sie immer
+als feste Geometrie behandelt.
 
 ## Projektlayout
 

@@ -45,6 +45,62 @@ class ModelTest {
     }
 
     @Test
+    void playtestIgnoresBackgroundLayerWhenWalking() {
+        final Level level = Project.createLevel(10, 8, 32, 32, "hintergrund");
+        final TileLayer background = level.tileLayers.getFirst();
+        background.name = "Hintergrund";
+        final TileLayer ground = new TileLayer();
+        ground.name = "Kacheln";
+        ground.tiles = new int[level.width * level.height];
+        level.tileLayers.add(ground);
+        for (int x = 0; x < level.width; x++) {
+            background.tiles[4 * level.width + x] = 1;
+            ground.tiles[5 * level.width + x] = 1;
+        }
+        final Entity start = new Entity();
+        start.id = level.nextEntityId++;
+        start.def = "Startpunkt";
+        start.x = 64;
+        start.y = 96;
+        start.w = 32;
+        start.h = 64;
+        level.objectLayers.getFirst().entities.add(start);
+
+        final Playtest playtest = new Playtest();
+        playtest.reset(level);
+        final double startX = playtest.x();
+        for (int i = 0; i < 30; i++) playtest.step(level, 1.0 / 60.0, 1, false);
+        assertTrue(playtest.x() > startX + 20, "Figur darf nicht in der Hintergrundebene feststecken");
+        assertTrue(playtest.grounded());
+        assertEquals(5 * 32, playtest.y() + playtest.height(), 0.6);
+    }
+
+    @Test
+    void playtestLiftsSpawnOutOfSolidTiles() {
+        final Level level = Project.createLevel(8, 8, 32, 32, "spawn");
+        for (int x = 0; x < level.width; x++) {
+            level.setTileAt(level.tileLayers.getFirst(), x, 4, 1);
+            level.setTileAt(level.tileLayers.getFirst(), x, 5, 1);
+        }
+        final Entity start = new Entity();
+        start.id = level.nextEntityId++;
+        start.def = "Startpunkt";
+        start.x = 64;
+        start.y = 128;
+        start.w = 32;
+        start.h = 64;
+        level.objectLayers.getFirst().entities.add(start);
+
+        final Playtest playtest = new Playtest();
+        playtest.reset(level);
+        assertTrue(playtest.y() + playtest.height() <= 4 * 32 + 0.01,
+                "Startpunkt muss aus fester Geometrie herausgehoben werden");
+        for (int i = 0; i < 90; i++) playtest.step(level, 1.0 / 60.0, 0, false);
+        assertTrue(playtest.grounded());
+        assertEquals(4 * 32, playtest.y() + playtest.height(), 0.6);
+    }
+
+    @Test
     void animatedTilesResolveFrames() {
         final Level level = Project.createLevel(2, 2, 32, 32, "anim");
         final TileSet tileSet = new TileSet();

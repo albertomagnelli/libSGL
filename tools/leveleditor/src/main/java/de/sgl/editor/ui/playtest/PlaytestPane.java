@@ -43,8 +43,6 @@ public class PlaytestPane extends StackPane {
         setVisible(false);
         setFocusTraversable(true);
         canvas.setFocusTraversable(true);
-        canvas.setOnKeyPressed(this::onKeyPressed);
-        canvas.setOnKeyReleased(event -> keys.remove(event.getCode()));
     }
 
     public void setOnExit(Runnable callback) {
@@ -95,7 +93,7 @@ public class PlaytestPane extends StackPane {
         if (onExit != null) onExit.run();
     }
 
-    private void onKeyPressed(KeyEvent event) {
+    public void handleKeyPressed(KeyEvent event) {
         if (event.getCode() == KeyCode.ESCAPE || event.getCode() == KeyCode.F5) {
             stop();
             event.consume();
@@ -103,6 +101,10 @@ public class PlaytestPane extends StackPane {
         }
         keys.add(event.getCode());
         event.consume();
+    }
+
+    public void handleKeyReleased(KeyEvent event) {
+        keys.remove(event.getCode());
     }
 
     private void draw(Level level) {

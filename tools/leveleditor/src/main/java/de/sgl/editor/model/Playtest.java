@@ -28,9 +28,25 @@ public class Playtest {
                 if (!entity.def.equals("Startpunkt") && !entity.attributes.containsKey("Start")) continue;
                 x = entity.x + (entity.w - width) * 0.5;
                 y = entity.y + entity.h - height;
+                liftOutOfSolid(level);
                 return;
             }
         }
+        liftOutOfSolid(level);
+    }
+
+    /**
+     * Startpunkte liegen häufig genau auf der Oberkante einer Kachel. Liegt die
+     * Spielfigur dennoch in fester Geometrie, wird sie vorsichtig nach oben
+     * geschoben, damit sie nicht in der Wand feststeckt.
+     */
+    private void liftOutOfSolid(Level level) {
+        final int maxSteps = Math.max(1, (int) Math.ceil(height) * 4);
+        int steps = 0;
+        while (y > 0 && overlapsSolid(level, x, y) && steps++ < maxSteps) {
+            y -= 1;
+        }
+        if (y < 0) y = 0;
     }
 
     public void step(Level level, double dt, double move, boolean jump) {
@@ -71,6 +87,10 @@ public class Playtest {
         final int y1 = (int) Math.floor((py + height - 0.001) / level.tileH);
         for (final TileLayer layer : level.tileLayers) {
             if (!layer.visible) continue;
+            // Reine Hintergrund-/Dekoebenen tragen keine Kollision. Die Prüfung
+            // greift nur, wenn es zusätzlich eine echte Kachelebene gibt, damit
+            // eine einzelne Ebene namens "Hintergrund" nicht durchlässig wird.
+            if (level.tileLayers.size() > 1 && isDecorative(layer)) continue;
             for (int ty = y0; ty <= y1; ty++) {
                 for (int tx = x0; tx <= x1; tx++) {
                     if (tx < 0 || ty < 0 || tx >= level.width || ty >= level.height) continue;
@@ -79,6 +99,11 @@ public class Playtest {
             }
         }
         return false;
+    }
+
+    private boolean isDecorative(TileLayer layer) {
+        final String name = layer.name == null ? "" : layer.name.toLowerCase(java.util.Locale.ROOT);
+        return name.contains("hintergrund") || name.contains("background");
     }
 
     public double x() { return x; }
