@@ -20,6 +20,7 @@ public class AssetsPanelController {
     @FXML
     public void initialize() {
         projects.project().addListener((observable, oldValue, newValue) -> refresh());
+        projects.tilesetsRevision().addListener((observable, oldValue, newValue) -> refresh());
         projects.documents().addListener((javafx.collections.ListChangeListener<Document>) change -> refresh());
         refresh();
     }

@@ -29,6 +29,7 @@ public class ProjectService {
     private final ObservableList<Document> documents = FXCollections.observableArrayList();
     private final ObjectProperty<Document> activeDocument = new SimpleObjectProperty<>();
     private final BooleanProperty dirty = new SimpleBooleanProperty(false);
+    private final IntegerProperty tilesetsRevision = new SimpleIntegerProperty(0);
     private Path projectFile;
 
     @Inject
@@ -40,8 +41,14 @@ public class ProjectService {
     public ObservableList<Document> documents() { return documents; }
     public ObjectProperty<Document> activeDocument() { return activeDocument; }
     public BooleanProperty dirty() { return dirty; }
+    public IntegerProperty tilesetsRevision() { return tilesetsRevision; }
     public Path projectFile() { return projectFile; }
     public Project currentProject() { return project.get(); }
+
+    /** Signal an die Panels, dass sich die Tileset-Listen von Projekt oder aktivem Level geändert haben. */
+    private void bumpTilesetsRevision() {
+        tilesetsRevision.set(tilesetsRevision.get() + 1);
+    }
 
     public Level activeLevel() {
         final Document document = activeDocument.get();
@@ -193,6 +200,7 @@ public class ProjectService {
         if (document != null && document.undo.undo(document.level)) {
             document.dirty = true;
             dirty.set(true);
+            bumpTilesetsRevision();
             log.log("Rückgängig.");
         }
     }
@@ -202,6 +210,7 @@ public class ProjectService {
         if (document != null && document.undo.redo(document.level)) {
             document.dirty = true;
             dirty.set(true);
+            bumpTilesetsRevision();
             log.log("Wiederholt.");
         }
     }
@@ -260,6 +269,7 @@ public class ProjectService {
             value.ensureEntityDef("Startpunkt");
             dirty.set(true);
             document.dirty = true;
+            bumpTilesetsRevision();
             log.log("Tileset importiert: " + tileSet.name + " (" + tileSet.tileCount + " Kacheln)");
         } catch (IOException exception) {
             log.log("Tileset-Import fehlgeschlagen: " + exception.getMessage());

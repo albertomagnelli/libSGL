@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// model_viewer – glTF-Modelle mit sgl laden und rendern
+// model_viewer – glTF-/FBX-/OBJ-Modelle mit sgl laden und rendern
 //
-// Zeigt character.glb, turrican.glb und zombie.fbx nebeneinander. Alle
-// Modelle rotieren kontinuierlich um die Y-Achse. Die Meshes werden mit ihren Materialien
+// Zeigt character.glb, turrican.glb, zombie.fbx und FuturisticGirl.obj
+// nebeneinander. Alle Modelle rotieren kontinuierlich um die Y-Achse.
+// Die OBJ-Figur hat keine Animation und wird nur gedreht. Die Meshes werden mit ihren Materialien
 // (Albedo, Metallic, Roughness, AO, Normal, Emissive) über einen einfachen
 // PBR-Metallic-Roughness-Shader gezeichnet.
 //
@@ -629,7 +630,8 @@ void DrawInstance(const ModelInstance& instance, const Shader& shader, const f32
 }
 
 void RenderScene(const Shader& shader, const ModelInstance& left, const ModelInstance& middle,
-                 const ModelInstance& right, const f32 time, const ivec2 framebuffer) {
+                 const ModelInstance& right, const ModelInstance& obj, const f32 time,
+                 const ivec2 framebuffer) {
     glViewport(0, 0, framebuffer.x, framebuffer.y);
     glClearColor(0.045f, 0.055f, 0.075f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -637,7 +639,7 @@ void RenderScene(const Shader& shader, const ModelInstance& left, const ModelIns
     const f32 aspect =
         static_cast<f32>(framebuffer.x) / static_cast<f32>(std::max(1, framebuffer.y));
 
-    const vec3 cameraPosition(0.0f, 1.25f, 5.6f);
+    const vec3 cameraPosition(0.0f, 1.25f, 6.6f);
     const mat4 view = glm::lookAt(cameraPosition, vec3(0.0f, 0.85f, 0.0f),
                                   vec3(0.0f, 1.0f, 0.0f));
     const mat4 projection =
@@ -657,9 +659,10 @@ void RenderScene(const Shader& shader, const ModelInstance& left, const ModelIns
     shader.setUniform("uNormal", 4);
     shader.setUniform("uEmissive", 5);
 
-    DrawInstance(left, shader, time, -kModelSpacing);
-    DrawInstance(middle, shader, time, 0.0f);
-    DrawInstance(right, shader, time, kModelSpacing);
+    DrawInstance(left, shader, time, -1.5f * kModelSpacing);
+    DrawInstance(middle, shader, time, -0.5f * kModelSpacing);
+    DrawInstance(right, shader, time, 0.5f * kModelSpacing);
+    DrawInstance(obj, shader, time, 1.5f * kModelSpacing);
 }
 
 void SaveFrame(const Window& window, const std::filesystem::path& path) {
@@ -745,8 +748,10 @@ int main(int argc, char** argv) {
     auto left = LoadInstance(resources / "character.glb", 0.0f);
     auto middle = LoadInstance(resources / "turrican.glb", 3.14159265f);
     auto right = LoadInstance(resources / "zombie.fbx", 1.57079633f);
+    // OBJ hat keine Animation; die Figur wird nur ueber die Zeit gedreht.
+    auto obj = LoadInstance(resources / "FuturisticGirl.obj", 0.78539816f);
 
-    if (!left || !middle || !right) {
+    if (!left || !middle || !right || !obj) {
         window.reset();
         sgl::Terminate();
         return 1;
@@ -800,7 +805,7 @@ int main(int argc, char** argv) {
                              ? options.time
                              : static_cast<f32>(sgl::GetTime() - startTime);
 
-        RenderScene(shader, *left, *middle, *right, time, window->getFramebufferSize());
+        RenderScene(shader, *left, *middle, *right, *obj, time, window->getFramebufferSize());
 
         if (options.headless) {
             SaveFrame(*window, options.frame);

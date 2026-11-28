@@ -31,6 +31,7 @@ public class ProjectPanelController {
     public void initialize() {
         projects.project().addListener((observable, oldValue, newValue) -> refresh());
         projects.activeDocument().addListener((observable, oldValue, newValue) -> refresh());
+        projects.tilesetsRevision().addListener((observable, oldValue, newValue) -> refresh());
         projects.documents().addListener((ListChangeListener<Document>) change -> refresh());
         levels.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {

@@ -3,12 +3,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // sgl · Model
 //
-// CPU-seitiges glTF-/FBX-Modell (cgltf/ufbx) ohne OpenGL-, Texture- oder
-// Shader-Bindung:
+// CPU-seitiges glTF-/FBX-/OBJ-Modell (cgltf/ufbx/tinyobjloader) ohne OpenGL-,
+// Texture- oder Shader-Bindung:
 //
 //   Model             Meshes, Nodes und Skins
 //   Mesh              MeshVertex-Puffer, Indizes und Material
-//   ModelIO           Laden von .gltf/.glb/.fbx inklusive Materialien
+//   ModelIO           Laden von .gltf/.glb/.fbx/.obj inklusive Materialien
 //   ModelAnimation    fertig geladene Animationsdaten
 //   ModelAnimationIO  Laden von Animationen aus .gltf/.glb/.fbx
 //
@@ -152,6 +152,9 @@ struct ModelLoadOptions {
     // FBX speichert UVs mit Ursprung unten links; sgl/glTF verwenden oben
     // links. Standardmäßig wird V beim FBX-Import gedreht.
     bool flipFbxV{true};
+    // OBJ/MTL verwenden ebenfalls den Ursprung unten links. Standardmäßig
+    // wird V beim OBJ-Import gedreht.
+    bool flipObjV{true};
 };
 
 class ModelIO {

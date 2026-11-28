@@ -55,6 +55,7 @@ public class PalettePanelController {
         tilesetChoice.valueProperty().addListener((observable, oldValue, newValue) -> draw());
         projects.activeDocument().addListener((observable, oldValue, newValue) -> refresh());
         projects.project().addListener((observable, oldValue, newValue) -> refresh());
+        projects.tilesetsRevision().addListener((observable, oldValue, newValue) -> refresh());
         canvas.setOnMousePressed(event -> {
             final TileSet tileSet = tilesetChoice.getValue();
             if (tileSet == null) return;

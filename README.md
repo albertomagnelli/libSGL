@@ -29,8 +29,8 @@ lädt einen OpenGL-4.6-Core-Kontext.
 
 Die Regeln sind in `.clang-tidy` hinterlegt (`readability-identifier-naming`)
 und lassen sich damit prüfen. `.clang-format` beschreibt den Formatierstil.
-Vendorte C-Bibliotheken (`cgltf_*`, `ufbx_*`, `ma_*`, `qoa_*`, `jar_xm_*`)
-behalten ihre Originalnamen.
+Vendorte Fremdbibliotheken (`cgltf_*`, `ufbx_*`, `tinyobj*`, `mapbox*`,
+`ma_*`, `qoa_*`, `jar_xm_*`) behalten ihre Originalnamen.
 
 ## Funktionsumfang
 
@@ -71,9 +71,11 @@ behalten ihre Originalnamen.
 - Geometrie: `sgl::Rectangle` mit Kollision, Schnittmengen und Rotation
 - PBR-Materialien: Albedo, Metallic, Roughness, AO, Normal, Height und Emissive
   als `sgl::Image`-Maps, inkl. 1x1-Bildern für konstante Werte (`sgl::Material`)
-- Modelle: glTF/GLB und FBX laden mit Meshes, Materialien, Nodes, Skins und
-  Animationen ohne OpenGL-Bindung (`sgl::Model`, `sgl::ModelIO`,
-  `sgl::ModelAnimationIO`)
+- Modelle: glTF/GLB, FBX und OBJ laden mit Meshes, Materialien, Nodes und
+  (bei glTF/FBX) Skins und Animationen ohne OpenGL-Bindung (`sgl::Model`,
+  `sgl::ModelIO`, `sgl::ModelAnimationIO`). OBJ unterstuetzt MTL-Materialien,
+  Texturmaps, Smoothing-Gruppen und Triangulierung; Animationen gibt es dort
+  nicht.
 - Noise: Perlin-/Simplex-Rauschtexturen per Compute-Shader, 1D/2D/3D
   (`sgl::Noise`)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
@@ -105,6 +107,8 @@ behalten ihre Originalnamen.
 | jar_xm.h | XM-Modul-Player | unter `third_party/audio` vendort (WTFPL v2), direkt in `sgl` kompiliert |
 | cgltf 1.15 | glTF-/GLB-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
 | ufbx | FBX-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
+| tinyobjloader 2.0.0rc13 | OBJ-/MTL-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
+| mapbox/earcut.hpp | robuste Polygon-Triangulierung fuer OBJ | unter `third_party/model/mapbox` vendort (ISC) |
 | DejaVu Sans (Teilmenge) | eingebettete Standardschrift | Daten in `src/gl/DefaultFont.cpp` |
 | JavaFX 25 | UI des Leveleditors | Maven-Abhängigkeit (GPLv2+CE) |
 | Weld SE 6 | CDI-Container des Leveleditors | Maven-Abhängigkeit (Apache 2) |

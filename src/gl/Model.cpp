@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "ModelObj.hpp"
 #include "cgltf.h"
 #include "ufbx.h"
 
@@ -1461,6 +1462,8 @@ std::expected<Model, ModelError> ModelIO::Load(const std::filesystem::path& file
     return BuildFbxModel(*scene, file.parent_path(), file.stem().string(), options);
   }
 
+  if (detail::IsObjFile(file)) return detail::LoadObjFile(file, options);
+
   auto parsed = ParseFile(file);
   if (!parsed) return std::unexpected(std::move(parsed.error()));
 
@@ -1480,6 +1483,8 @@ std::expected<Model, ModelError> ModelIO::LoadFromMemory(std::span<const u8> dat
     return BuildFbxModel(*scene, basePath, "model", options);
   }
 
+  if (detail::LooksLikeObj(data)) return detail::LoadObjMemory(data, basePath, options);
+
   auto parsed = ParseMemory(data, basePath);
   if (!parsed) return std::unexpected(std::move(parsed.error()));
 
@@ -1490,6 +1495,11 @@ std::expected<Model, ModelError> ModelIO::LoadFromMemory(std::span<const u8> dat
 
 std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::Load(
     const std::filesystem::path& file) {
+  if (detail::IsObjFile(file)) {
+    // OBJ/MTL enthaelt keine Animationsdaten.
+    return std::vector<ModelAnimation>{};
+  }
+
   if (IsFbxFile(file)) {
     auto parsed = LoadFbxFile(file, false);
     if (!parsed) return std::unexpected(std::move(parsed.error()));
@@ -1508,6 +1518,11 @@ std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::Load(
 
 std::expected<std::vector<ModelAnimation>, ModelError> ModelAnimationIO::LoadFromMemory(
     std::span<const u8> data, const std::filesystem::path& basePath) {
+  if (detail::LooksLikeObj(data)) {
+    // OBJ/MTL enthaelt keine Animationsdaten.
+    return std::vector<ModelAnimation>{};
+  }
+
   if (IsFbxMemory(data)) {
     auto parsed = LoadFbxMemory(data, basePath, false);
     if (!parsed) return std::unexpected(std::move(parsed.error()));

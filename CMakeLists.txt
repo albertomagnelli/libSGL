@@ -76,6 +76,8 @@ set(SGL_SOURCES
     src/gl/Material.cpp
     src/gl/MeshVertex.cpp
     src/gl/Model.cpp
+    src/gl/ModelObj.cpp
+    src/gl/TinyObjLoaderImpl.cpp
     src/gl/Noise.cpp
     src/gl/Shader.cpp
     src/gl/Texture.cpp
@@ -275,8 +277,14 @@ set(SGL_THIRD_PARTY_C_SOURCES
     third_party/model/ufbx.c
 )
 
+# C++-Wrapper um vendorte Header (Implementierung mit Warnungen deaktiviert).
+set(SGL_THIRD_PARTY_CPP_SOURCES
+    src/gl/TinyObjLoaderImpl.cpp
+)
+
 if(MSVC)
     set_source_files_properties(${SGL_THIRD_PARTY_C_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
+    set_source_files_properties(${SGL_THIRD_PARTY_CPP_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
 else()
     set(SGL_THIRD_PARTY_COMPILE_OPTIONS "-w")
     if(SGL_SANITIZE)
@@ -285,6 +293,8 @@ else()
         list(APPEND SGL_THIRD_PARTY_COMPILE_OPTIONS "-fno-sanitize=${SGL_SANITIZE}")
     endif()
     set_source_files_properties(${SGL_THIRD_PARTY_C_SOURCES}
+        PROPERTIES COMPILE_OPTIONS "${SGL_THIRD_PARTY_COMPILE_OPTIONS}")
+    set_source_files_properties(${SGL_THIRD_PARTY_CPP_SOURCES}
         PROPERTIES COMPILE_OPTIONS "${SGL_THIRD_PARTY_COMPILE_OPTIONS}")
 endif()
 

@@ -10,6 +10,7 @@ add_executable(sgl_tests
     test_material.cpp
     test_meshvertex.cpp
     test_model.cpp
+    test_obj.cpp
     test_noise.cpp
     test_collision_animatedsprite.cpp
     test_audio.cpp
