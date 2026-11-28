@@ -73,11 +73,11 @@ behalten ihre Originalnamen.
 - Noise: Perlin-/Simplex-Rauschtexturen per Compute-Shader, 1D/2D/3D
   (`sgl::Noise`)
 - Zeit, Ereignisschleife, `postEmptyEvent`, Fehler-Callbacks
-- Leveleditor: in-house GUI mit andockbaren Panels, Projektverwaltung,
-  Kachel-/Objekt-Layer, Entities mit Attributen, Undo/Redo, Kachelanimationen,
-  Tiled-Import/Export (TMJ/TMX, Templates, Wang-Metadaten) und
-  Playtest-Vorschau (`tools/leveleditor`, siehe
-  [Editor-README](tools/leveleditor/README.md))
+- Leveleditor: Java-25-/JavaFX-25-Anwendung mit FXML, CDI (Weld SE),
+  andockbaren und schwebenden Panels, Projektverwaltung, Kachel-/Objekt-Layer,
+  Entities mit Attributen, Undo/Redo, Kachelanimationen, Tiled-Import/Export
+  (TMJ/TMX, Templates, Wang-Metadaten) und Playtest-Vorschau
+  (`tools/leveleditor`, siehe [Editor-README](tools/leveleditor/README.md))
 - Native Zugriffe für X11, Wayland, Win32, Cocoa, EGL und OSMesa
 
 ## Abhängigkeiten
@@ -102,9 +102,10 @@ behalten ihre Originalnamen.
 | cgltf 1.15 | glTF-/GLB-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
 | ufbx | FBX-Loader | unter `third_party/model` vendort (MIT), direkt in `sgl` kompiliert |
 | DejaVu Sans (Teilmenge) | eingebettete Standardschrift | Daten in `src/gl/DefaultFont.cpp` |
-| tinyxml2 | TMX-Import/-Export im Leveleditor | unter `tools/leveleditor/third_party/tinyxml2` vendort (zlib) |
-| miniz | zlib/gzip in Tiled-Kacheldaten | unter `tools/leveleditor/third_party/miniz` vendort (MIT) |
-| DejaVu Sans (TTF) | UI-Schrift des Leveleditors | unter `tools/leveleditor/assets/fonts` (Bitstream Vera) |
+| JavaFX 25 | UI des Leveleditors | Maven-Abhängigkeit (GPLv2+CE) |
+| Weld SE 6 | CDI-Container des Leveleditors | Maven-Abhängigkeit (Apache 2) |
+| Jackson 2 | JSON/TMJ im Leveleditor | Maven-Abhängigkeit (Apache 2) |
+| JUnit 5 | Java-Tests | Maven-Abhängigkeit (EPL 2) |
 
 ## Bauen
 
@@ -113,8 +114,9 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure
 ./build/examples/gl_loader/sgl_example_gl_loader
-./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo
 ```
+
+Der Leveleditor wird separat mit Maven gebaut (siehe unten).
 
 Optionen:
 
@@ -127,7 +129,6 @@ Optionen:
 -DSGL_BUILD_TESTS=ON
 -DSGL_BUILD_EXAMPLES=ON
 -DSGL_BUILD_SHARED=OFF        # sgl als Shared Library bauen
--DSGL_BUILD_EDITOR=ON         # Leveleditor unter tools/leveleditor bauen
 -DSGL_INSTALL=ON              # Install-/find_package-Regeln erzeugen
 -DSGL_SANITIZE=""             # z. B. "address,undefined" (GCC/Clang)
 -DSGL_HEADLESS_RENDER_TESTS=OFF  # Headless-Render-Smoke-Tests in CTest
@@ -202,26 +203,28 @@ Details: [`examples/model/README.md`](examples/model/README.md).
 
 ## Leveleditor
 
-Unter `tools/leveleditor` liegt ein eigenständiger 2D-Leveleditor mit eigener
-Immediate-Mode-GUI (kein ImGui/Qt). Er nutzt `sgl` für Fenster, Eingabe,
-Bildladen und Schriftnetze und bringt einen eigenen OpenGL-3.3-Renderer mit,
-damit er auch auf macOS (OpenGL 4.1) läuft.
+Unter `tools/leveleditor` liegt der 2D-Leveleditor als **Java-25-Anwendung**
+mit **JavaFX 25**, **FXML** und **CDI (Weld SE)**. Er ersetzt den früheren
+C++-Editor; die C++-Bibliothek `sgl` bleibt unabhängig davon bestehen.
 
 ![Leveleditor](tools/leveleditor/docs/screenshot.png)
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo
-./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo --play
+cd tools/leveleditor
+mvn -q javafx:run
+# Demo-Projekt:
+mvn -q javafx:run -Djavafx.args="--demo"
+# Headless-Screenshot:
+mvn -q javafx:run -Djavafx.args="--demo --frame target/editor.png"
 ```
 
 Funktionen: Projektverwaltung mit mehreren Levels, Kachel- und Objektebenen,
 Tileset-Import, Stift/Rechteck/Linie/Füllen/Pipette, Entities mit typisierten
-Attributen, Inspector, Undo/Redo, Minimap, Autosave, andockbare Panels,
-Kachelanimationen, Playtest-Vorschau (`F5`) sowie Tiled-Import und -Export als
-`.tmj` und `.tmx` – inklusive CSV/Base64/zlib/gzip, Templates und
-Wang-Metadaten.
+Attributen, Inspector, Undo/Redo, Autosave, Kachelanimationen, Playtest (`F5`),
+Tiled-Import/-Export (`.tmj`/`.tmx`, CSV/Base64/zlib/gzip, Templates,
+Wang-Metadaten) sowie **andockbare und schwebende Panels**. Tabs lassen sich
+zwischen linkem, rechtem und unterem Dock verschieben oder per Doppelklick in
+ein eigenes Fenster lösen; das Layout wird in `.sgl/layout.json` gespeichert.
 
 Details, Tastenkürzel und Projektformat:
 [`tools/leveleditor/README.md`](tools/leveleditor/README.md).
@@ -343,7 +346,7 @@ und die festen XInput-Bereiche unter Windows.
   erwartungsgemäß mit `VersionUnavailable` fehl.
 - `sgl::Texture2d` und `sgl::Framebuffer` nutzen Direct State Access und
   benötigen OpenGL 4.5; auf macOS 4.1 stehen sie daher nicht zur Verfügung.
-  Der Leveleditor umgeht sie bewusst mit einem eigenen GL-3.3-Renderer.
+  Der Java-Leveleditor ist davon unabhängig (JavaFX).
 - **EGL** wird für Wayland und optional für X11 verwendet; X11 kann auch GLX,
   Win32 nutzt WGL, macOS NSOpenGL.
 - **OSMesa** wird nur gebaut, wenn `libosmesa` per pkg-config gefunden wird.
@@ -353,27 +356,27 @@ und die festen XInput-Bereiche unter Windows.
 Die Catch2-Tests decken Fehlerbehandlung, Hints, Zeit, Null-Plattform,
 Initialisierungsfehler, Bild-, Font-, Shader-/Textur-, Audio-, Modell- und
 Geometrie-API ab; bei gesetztem `DISPLAY` kommen X11-Fenster und Monitore
-hinzu. Die Editor-Tests (`[editor]`) prüfen Projekt-/Level-JSON, Undo/Redo,
-TMJ-/TMX-Roundtrips und Pfad-/Farbhelfer.
+hinzu. Die Java-Editor-Tests laufen separat über Maven (`mvn test`).
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
 
-Mit `-DSGL_HEADLESS_RENDER_TESTS=ON` werden zusätzlich vier Smoke-Tests
-registriert: Font-2D, Font-3D, Model-Viewer und der Leveleditor rendern
-headless als PNG. Sie benötigen eine funktionierende EGL-/OSMesa- bzw.
-Xvfb-Umgebung.
+Mit `-DSGL_HEADLESS_RENDER_TESTS=ON` werden zusätzlich drei Smoke-Tests
+registriert: Font-2D, Font-3D und der Model-Viewer rendern headless als PNG.
+Sie benötigen eine funktionierende EGL-/OSMesa- bzw. Xvfb-Umgebung.
 
 Unter `.github/workflows/ci.yml` laufen Build, Tests, Sanitizer, clang-tidy
 und die Headless-Renders auf Linux; Windows (WGL) und macOS (Cocoa) werden
-ebenfalls gebaut und getestet.
+ebenfalls gebaut und getestet. Der separate Workflow
+`.github/workflows/java-editor.yml` baut und testet den Java-Editor und
+erzeugt unter Xvfb einen Screenshot.
 
 ## Lizenzhinweise
 
 Catch2 steht unter BSL-1.0, GLM unter MIT, SDL_GameControllerDB unter zlib.
 Die Lizenztexte liegen unter `third_party/catch2/LICENSE.txt` bzw.
 `third_party/gamecontrollerdb/LICENSE.txt`; GLM wird über das Systempaket
-bezogen. Der Leveleditor nutzt zusätzlich tinyxml2 (zlib), miniz (MIT) und
-DejaVu Sans (Bitstream Vera); die Lizenztexte liegen unter
-`tools/leveleditor/third_party/` bzw. `tools/leveleditor/assets/fonts/`.
+bezogen. Der Java-Editor nutzt JavaFX (GPLv2+CE), Weld SE (Apache 2),
+Jackson (Apache 2) und JUnit 5 (EPL 2); die Abhängigkeiten werden über Maven
+bezogen.

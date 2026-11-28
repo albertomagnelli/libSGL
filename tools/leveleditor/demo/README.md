@@ -7,7 +7,8 @@ Entities (Startpunkt, Gegner, Beute, Trigger).
 Öffnen:
 
 ```bash
-./build/tools/leveleditor/sgl_editor --project tools/leveleditor/demo
+cd tools/leveleditor
+mvn -q javafx:run -Djavafx.args="--demo"
 ```
 
 Die Leveldatei ist Tiled-kompatibel (`levels/demo.tmj`) und kann auch direkt

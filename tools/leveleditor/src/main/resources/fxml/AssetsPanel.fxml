@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="de.sgl.editor.ui.panels.AssetsPanelController"
+      spacing="6" styleClass="panel">
+    <Label text="Assets" styleClass="panel-title"/>
+    <ListView fx:id="assets" VBox.vgrow="ALWAYS"/>
+    <HBox spacing="6">
+        <Button text="Tileset…" onAction="#onTileset" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button text="Level…" onAction="#onLevel" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+    </HBox>
+</VBox>

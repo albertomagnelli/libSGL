@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="de.sgl.editor.ui.panels.InspectorPanelController"
+      spacing="4" styleClass="panel">
+    <Label text="Inspector" styleClass="panel-title"/>
+    <ScrollPane fx:id="scroll" fitToWidth="true" VBox.vgrow="ALWAYS">
+        <VBox fx:id="content" spacing="7"/>
+    </ScrollPane>
+</VBox>

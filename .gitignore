@@ -3,6 +3,11 @@
 
 # Editor-Autosave
 tools/leveleditor/demo/.sgl/
+tools/leveleditor/.sgl/
+
+# Java
+*.class
+target/
 
 # Build directories
 build/

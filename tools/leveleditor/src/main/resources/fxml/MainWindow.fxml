@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="de.sgl.editor.ui.MainWindowController"
+           fx:id="shell">
+    <BorderPane fx:id="root">
+        <top>
+            <VBox>
+                <MenuBar>
+                    <Menu text="Datei">
+                        <MenuItem text="Neues Projekt…" onAction="#onNewProject"/>
+                        <MenuItem text="Projekt öffnen…" onAction="#onOpenProject"/>
+                        <MenuItem text="Projekt speichern" onAction="#onSave"/>
+                        <MenuItem text="Projekt speichern unter…" onAction="#onSaveAs"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Level importieren (TMJ/TMX)…" onAction="#onImportLevel"/>
+                        <MenuItem text="Level exportieren…" onAction="#onExportLevel"/>
+                        <MenuItem text="Tileset importieren…" onAction="#onImportTileset"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Beenden" onAction="#onExit"/>
+                    </Menu>
+                    <Menu text="Bearbeiten">
+                        <MenuItem text="Rückgängig" onAction="#onUndo"/>
+                        <MenuItem text="Wiederholen" onAction="#onRedo"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Ebene duplizieren" onAction="#onDuplicateLayer"/>
+                        <MenuItem text="Ebene löschen" onAction="#onDeleteLayer"/>
+                    </Menu>
+                    <Menu text="Ansicht">
+                        <CheckMenuItem fx:id="gridItem" text="Raster" onAction="#onToggleGrid"/>
+                        <CheckMenuItem fx:id="minimapItem" text="Minimap" onAction="#onToggleMinimap"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Vorschau (F5)" onAction="#onPreview"/>
+                        <MenuItem text="Layout zurücksetzen" onAction="#onResetLayout"/>
+                        <MenuItem text="Ansicht einpassen" onAction="#onFitView"/>
+                    </Menu>
+                    <Menu text="Ebene">
+                        <MenuItem text="Kachelebene hinzufügen" onAction="#onAddTileLayer"/>
+                        <MenuItem text="Objektebene hinzufügen" onAction="#onAddObjectLayer"/>
+                    </Menu>
+                    <Menu text="Hilfe">
+                        <MenuItem text="Tastenkürzel" onAction="#onShortcuts"/>
+                        <MenuItem text="Über den Editor" onAction="#onAbout"/>
+                    </Menu>
+                </MenuBar>
+                <ToolBar fx:id="toolBar"/>
+            </VBox>
+        </top>
+        <center>
+            <StackPane fx:id="dockHost"/>
+        </center>
+        <bottom>
+            <HBox styleClass="status-bar">
+                <Label fx:id="statusLeft" HBox.hgrow="ALWAYS"/>
+                <Label fx:id="statusRight"/>
+            </HBox>
+        </bottom>
+    </BorderPane>
+</StackPane>

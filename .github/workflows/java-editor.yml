@@ -1,0 +1,79 @@
+name: Java Leveleditor
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "tools/leveleditor/**"
+      - ".github/workflows/java-editor.yml"
+  pull_request:
+    paths:
+      - "tools/leveleditor/**"
+      - ".github/workflows/java-editor.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: tools/leveleditor
+
+jobs:
+  linux:
+    name: Java 25 (Linux, Tests + Screenshot)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Abhängigkeiten installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libgtk-3-0t64 libxtst6 libgl1 libgl1-mesa-dri
+      - name: Tests
+        run: mvn -B -q test
+      - name: Paket bauen
+        run: mvn -B -q package -DskipTests
+      - name: Headless-Screenshot
+        run: >
+          xvfb-run -a -s "-screen 0 1600x1000x24"
+          mvn -q javafx:run -Djavafx.args="--demo --frame target/editor.png"
+      - name: Screenshot hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-editor-screenshot
+          path: tools/leveleditor/target/editor.png
+          if-no-files-found: error
+
+  windows:
+    name: Java 25 (Windows)
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Tests und Paket
+        run: mvn -B -q package
+
+  macos:
+    name: Java 25 (macOS)
+    runs-on: macos-14
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+      - name: Tests und Paket
+        run: mvn -B -q package

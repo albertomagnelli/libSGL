@@ -142,8 +142,8 @@ jobs:
           RCT="$(command -v run-clang-tidy || command -v run-clang-tidy-18)"
           "$RCT" -p build -config-file="$PWD/.clang-tidy" \
             -checks="-*,readability-identifier-naming" \
-            -header-filter="^$PWD/(include|src|examples|tests|tools/leveleditor)/.*$" \
-            -source-filter="^$PWD/(src|examples|tests)/|^$PWD/tools/leveleditor/(app|doc|ui)/" \
+            -header-filter="^$PWD/(include|src|examples|tests)/.*$" \
+            -source-filter="^$PWD/(src|examples|tests)/" \
             -j 2 > clang-tidy.log 2>&1 || true
           cat clang-tidy.log
           if grep -q "warning:" clang-tidy.log; then

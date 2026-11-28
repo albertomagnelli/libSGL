@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="de.sgl.editor.ui.panels.ProjectPanelController"
+      spacing="6" styleClass="panel">
+    <Label text="Projekt" styleClass="panel-title"/>
+    <Label fx:id="projectName" styleClass="project-name"/>
+    <Label fx:id="projectPath" styleClass="dim" wrapText="true" prefWidth="240" maxWidth="240"/>
+    <Label text="Levels" styleClass="section"/>
+    <ListView fx:id="levels" VBox.vgrow="ALWAYS"/>
+    <HBox spacing="6">
+        <Button text="Neues Level" onAction="#onNewLevel" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+        <Button text="Öffnen…" onAction="#onOpenProject"/>
+    </HBox>
+    <Label text="Tilesets" styleClass="section"/>
+    <ListView fx:id="tilesets" prefHeight="110"/>
+</VBox>

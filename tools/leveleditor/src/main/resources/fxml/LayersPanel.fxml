@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="de.sgl.editor.ui.panels.LayersPanelController"
+      spacing="4" styleClass="panel">
+    <Label text="Ebenen" styleClass="panel-title"/>
+    <ListView fx:id="rows" VBox.vgrow="ALWAYS"/>
+    <HBox spacing="4">
+        <Button text="+ Kachel" onAction="#onAddTile"/>
+        <Button text="+ Objekt" onAction="#onAddObject"/>
+        <Button text="Kopie" onAction="#onDuplicate"/>
+        <Button text="Löschen" onAction="#onDelete"/>
+        <Button text="▲" onAction="#onUp"/>
+        <Button text="▼" onAction="#onDown"/>
+    </HBox>
+</VBox>

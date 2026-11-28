@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="de.sgl.editor.ui.panels.EntitiesPanelController"
+      spacing="6" styleClass="panel">
+    <Label text="Entities" styleClass="panel-title"/>
+    <Label text="Auswahl mit dem Entity-Werkzeug platzieren." styleClass="dim" wrapText="true"/>
+    <ListView fx:id="entities" VBox.vgrow="ALWAYS"/>
+    <Button text="Neue Definition…" onAction="#onNewDefinition" maxWidth="Infinity"/>
+</VBox>

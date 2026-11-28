@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="de.sgl.editor.ui.panels.ConsolePanelController"
+      spacing="4" styleClass="panel">
+    <HBox spacing="6">
+        <Label text="Konsole" styleClass="panel-title" HBox.hgrow="ALWAYS"/>
+        <Button text="Leeren" onAction="#onClear"/>
+    </HBox>
+    <ListView fx:id="lines" VBox.vgrow="ALWAYS"/>
+</VBox>
