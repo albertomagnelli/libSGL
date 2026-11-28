@@ -5,10 +5,10 @@
 //
 //   TextureError, Texture2d, FromImage, FromMemory, Unbind
 //   ScopedBind, upload, updateRegion, generateMipmaps, setWrap/setFilter,
-//   wrapS, wrapT, minFilter, magFilter, mipmaps, anisotropy, borderColor,
+//   getWrapS, getWrapT, getMinFilter, getMagFilter, getMipmaps, getAnisotropy, getBorderColor,
 //   setAnisotropy, setBorderColor, readBack, applyParameters
 //   release, CubeMap, FromImages, FromCrossLayout, uploadFace
-//   setSeamless, faceImage, InternalFormatFor, PixelFormatFor
+//   setSeamless, getFaceImage, InternalFormatFor, PixelFormatFor
 //
 // Beispiel:
 //
@@ -35,7 +35,7 @@
 //   * CubeMap aus sechs Einzelbildern oder aus einem Kreuz-Layout
 //     (3x4-Raster), Face-Reihenfolge wie in GL (+X, -X, +Y, -Y, +Z, -Z);
 //     nahtlose Filterung an den Kanten ist voreingestellt
-//   * readBack()/faceImage() lesen den Inhalt zurück (Tests, Screenshots)
+//   * readBack()/getFaceImage() lesen den Inhalt zurück (Tests, Screenshots)
 //   * Residency (bindless) für Treiber mit GL_ARB_bindless_texture: Handle
 //     erzeugen, resident machen, im Shader als sampler2D/samplerCube nutzen
 //
@@ -56,7 +56,7 @@
 //   const Image bild = ImageIO::Load("assets/tex/dirt.png");
 //   Texture2d boden = Texture2d::FromImage(bild, TextureOptions{.mipmaps = MipmapMode::Linear});
 //   boden.use(0);                       // an Einheit 0 binden
-//   shader.setTexture("uAlbedo", boden.id(), 0);
+//   shader.setTexture("uAlbedo", boden.getId(), 0);
 //
 //   const CubeMap himmel = CubeMap::FromCrossLayout(ImageIO::Load("sky_cross.png"));
 //   {
@@ -137,18 +137,18 @@ public:
 
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept { return m_id != 0; }
-    [[nodiscard]] GLuint id() const noexcept { return m_id; }
-    [[nodiscard]] i32 width() const noexcept { return m_width; }
-    [[nodiscard]] i32 height() const noexcept { return m_height; }
-    [[nodiscard]] ImageFormat format() const noexcept { return m_format; }
-    [[nodiscard]] const TextureOptions& options() const noexcept { return m_options; }
-    [[nodiscard]] TextureWrap wrapS() const noexcept { return m_options.wrapS; }
-    [[nodiscard]] TextureWrap wrapT() const noexcept { return m_options.wrapT; }
-    [[nodiscard]] TextureFilter minFilter() const noexcept { return m_options.minFilter; }
-    [[nodiscard]] TextureFilter magFilter() const noexcept { return m_options.magFilter; }
-    [[nodiscard]] MipmapMode mipmaps() const noexcept { return m_options.mipmaps; }
-    [[nodiscard]] f32 anisotropy() const noexcept { return m_options.anisotropy; }
-    [[nodiscard]] std::array<u8, 4> borderColor() const noexcept { return m_options.borderColor; }
+    [[nodiscard]] GLuint getId() const noexcept { return m_id; }
+    [[nodiscard]] i32 getWidth() const noexcept { return m_width; }
+    [[nodiscard]] i32 getHeight() const noexcept { return m_height; }
+    [[nodiscard]] ImageFormat getFormat() const noexcept { return m_format; }
+    [[nodiscard]] const TextureOptions& getOptions() const noexcept { return m_options; }
+    [[nodiscard]] TextureWrap getWrapS() const noexcept { return m_options.wrapS; }
+    [[nodiscard]] TextureWrap getWrapT() const noexcept { return m_options.wrapT; }
+    [[nodiscard]] TextureFilter getMinFilter() const noexcept { return m_options.minFilter; }
+    [[nodiscard]] TextureFilter getMagFilter() const noexcept { return m_options.magFilter; }
+    [[nodiscard]] MipmapMode getMipmaps() const noexcept { return m_options.mipmaps; }
+    [[nodiscard]] f32 getAnisotropy() const noexcept { return m_options.anisotropy; }
+    [[nodiscard]] std::array<u8, 4> getBorderColor() const noexcept { return m_options.borderColor; }
     [[nodiscard]] bool hasMipmaps() const noexcept { return m_options.mipmaps != MipmapMode::None; }
     [[nodiscard]] bool isSrgb() const noexcept { return m_options.isSrgb; }
 
@@ -197,7 +197,7 @@ public:
     // glUniformHandleui64ARB auf ein sampler2D lehnt Mesa 25.2.8 ab.
     [[nodiscard]] static bool IsResidencySupported();
     // 64-Bit-Handle der Textur (wird einmal erzeugt und gemerkt)
-    [[nodiscard]] u64 textureHandle() const;
+    [[nodiscard]] u64 getTextureHandle() const;
     [[nodiscard]] bool makeResident();
     [[nodiscard]] bool makeNonResident();
     [[nodiscard]] bool isResident() const;
@@ -246,18 +246,18 @@ public:
 
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept { return m_id != 0; }
-    [[nodiscard]] GLuint id() const noexcept { return m_id; }
-    [[nodiscard]] u32 size() const noexcept { return m_size; }
-    [[nodiscard]] ImageFormat format() const noexcept { return m_format; }
-    [[nodiscard]] const TextureOptions& options() const noexcept { return m_options; }
-    [[nodiscard]] TextureWrap wrapS() const noexcept { return m_options.wrapS; }
-    [[nodiscard]] TextureWrap wrapT() const noexcept { return m_options.wrapT; }
-    [[nodiscard]] TextureWrap wrapR() const noexcept { return m_options.wrapR; }
-    [[nodiscard]] TextureFilter minFilter() const noexcept { return m_options.minFilter; }
-    [[nodiscard]] TextureFilter magFilter() const noexcept { return m_options.magFilter; }
-    [[nodiscard]] MipmapMode mipmaps() const noexcept { return m_options.mipmaps; }
-    [[nodiscard]] f32 anisotropy() const noexcept { return m_options.anisotropy; }
-    [[nodiscard]] std::array<u8, 4> borderColor() const noexcept { return m_options.borderColor; }
+    [[nodiscard]] GLuint getId() const noexcept { return m_id; }
+    [[nodiscard]] u32 getSize() const noexcept { return m_size; }
+    [[nodiscard]] ImageFormat getFormat() const noexcept { return m_format; }
+    [[nodiscard]] const TextureOptions& getOptions() const noexcept { return m_options; }
+    [[nodiscard]] TextureWrap getWrapS() const noexcept { return m_options.wrapS; }
+    [[nodiscard]] TextureWrap getWrapT() const noexcept { return m_options.wrapT; }
+    [[nodiscard]] TextureWrap getWrapR() const noexcept { return m_options.wrapR; }
+    [[nodiscard]] TextureFilter getMinFilter() const noexcept { return m_options.minFilter; }
+    [[nodiscard]] TextureFilter getMagFilter() const noexcept { return m_options.magFilter; }
+    [[nodiscard]] MipmapMode getMipmaps() const noexcept { return m_options.mipmaps; }
+    [[nodiscard]] f32 getAnisotropy() const noexcept { return m_options.anisotropy; }
+    [[nodiscard]] std::array<u8, 4> getBorderColor() const noexcept { return m_options.borderColor; }
     [[nodiscard]] bool hasMipmaps() const noexcept { return m_options.mipmaps != MipmapMode::None; }
     [[nodiscard]] bool isSrgb() const noexcept { return m_options.isSrgb; }
     // nahtlose Filterung an den Kanten (siehe TextureOptions::isSeamless)
@@ -291,11 +291,11 @@ public:
     void setSeamless(bool seamless);
 
     // Gesicht zurücklesen (Ebene 0).
-    [[nodiscard]] Image faceImage(CubeFace face) const;
+    [[nodiscard]] Image getFaceImage(CubeFace face) const;
 
     // ── Residency (bindless, siehe Texture2d) ────────────────────────────────
     [[nodiscard]] static bool IsResidencySupported();
-    [[nodiscard]] u64 textureHandle() const;
+    [[nodiscard]] u64 getTextureHandle() const;
     [[nodiscard]] bool makeResident();
     [[nodiscard]] bool makeNonResident();
     [[nodiscard]] bool isResident() const;

@@ -146,7 +146,7 @@ Image ReadTexture(const GLuint id, const i32 face, const i32 width, const i32 he
     const PackGuard guard(1);
     glGetTextureSubImage(id, 0, 0, 0, std::max(face, 0), width, height, 1,
                          PixelFormatFor(format), GL_UNSIGNED_BYTE,
-                         static_cast<GLsizei>(image.byteSize()), image.data());
+                         static_cast<GLsizei>(image.getByteSize()), image.getData());
     return image;
 }
 
@@ -330,8 +330,8 @@ Texture2d Texture2d::FromImage(const Image& image, const TextureOptions& options
     if (image.isEmpty()) {
         throw TextureError("Texture2d: Bild ist leer");
     }
-    return FromMemory(image.width(), image.height(), image.format(),
-                      std::span<const u8>(image.data(), image.byteSize()), options);
+    return FromMemory(image.getWidth(), image.getHeight(), image.getFormat(),
+                      std::span<const u8>(image.getData(), image.getByteSize()), options);
 }
 
 void Texture2d::applyParameters() {
@@ -348,22 +348,22 @@ void Texture2d::upload(const Image& image) {
     // Maße oder Format geändert: glTextureStorage* legt den Speicher
     // unveränderlich fest, ein zweites Storage auf demselben Objekt wäre
     // GL_INVALID_OPERATION. Also ein frisches Texturobjekt anlegen und tauschen.
-    if (image.width() != m_width || image.height() != m_height || image.format() != m_format) {
+    if (image.getWidth() != m_width || image.getHeight() != m_height || image.getFormat() != m_format) {
         GLuint fresh = 0;
         glCreateTextures(GL_TEXTURE_2D, 1, &fresh);
         if (fresh == 0) {
             throw TextureError("upload: glCreateTextures ist fehlgeschlagen");
         }
-        const i32 levels = hasMipmaps() ? LevelCount(image.width(), image.height()) : 1;
+        const i32 levels = hasMipmaps() ? LevelCount(image.getWidth(), image.getHeight()) : 1;
         const GLenum internalFormat =
-            (m_options.isHdr && (image.format() == ImageFormat::Rgba))
+            (m_options.isHdr && (image.getFormat() == ImageFormat::Rgba))
                 ? GL_RGBA16F
-                : static_cast<GLenum>(InternalFormatFor(image.format(), m_options.isSrgb));
-        glTextureStorage2D(fresh, levels, internalFormat, image.width(), image.height());
+                : static_cast<GLenum>(InternalFormatFor(image.getFormat(), m_options.isSrgb));
+        glTextureStorage2D(fresh, levels, internalFormat, image.getWidth(), image.getHeight());
         {
             const UnpackGuard guard;
-            glTextureSubImage2D(fresh, 0, 0, 0, image.width(), image.height(),
-                                PixelFormatFor(image.format()), GL_UNSIGNED_BYTE, image.data());
+            glTextureSubImage2D(fresh, 0, 0, 0, image.getWidth(), image.getHeight(),
+                                PixelFormatFor(image.getFormat()), GL_UNSIGNED_BYTE, image.getData());
         }
         ApplyParameters2d(fresh, m_options);
         if (hasMipmaps()) {
@@ -371,16 +371,16 @@ void Texture2d::upload(const Image& image) {
         }
         glDeleteTextures(1, &m_id);
         m_id = fresh;
-        m_width = image.width();
-        m_height = image.height();
-        m_format = image.format();
+        m_width = image.getWidth();
+        m_height = image.getHeight();
+        m_format = image.getFormat();
         SLOGD << "Textur neu angelegt: " << m_width << "x" << m_height << " " << ToString(m_format);
         return;
     }
     {
         const UnpackGuard guard;
         glTextureSubImage2D(m_id, 0, 0, 0, m_width, m_height, PixelFormatFor(m_format),
-                            GL_UNSIGNED_BYTE, image.data());
+                            GL_UNSIGNED_BYTE, image.getData());
     }
     applyParameters();
     if (hasMipmaps()) {
@@ -392,7 +392,7 @@ void Texture2d::updateRegion(const Rectangle& region, const Image& image) {
     if (m_id == 0) {
         throw TextureError("updateRegion: Textur ist ungültig");
     }
-    if (image.format() != m_format) {
+    if (image.getFormat() != m_format) {
         throw TextureError("updateRegion: Bildformat passt nicht zur Textur");
     }
     const i32 x = static_cast<i32>(std::lround(region.x));
@@ -403,18 +403,18 @@ void Texture2d::updateRegion(const Rectangle& region, const Image& image) {
         y + height > m_height) {
         throw TextureError("updateRegion: Bereich liegt außerhalb der Textur");
     }
-    if (image.width() != width || image.height() != height) {
-        throw TextureError("updateRegion: Bildmaße (" + std::to_string(image.width()) + "x" +
-                           std::to_string(image.height()) + ") passen nicht zum Bereich (" +
+    if (image.getWidth() != width || image.getHeight() != height) {
+        throw TextureError("updateRegion: Bildmaße (" + std::to_string(image.getWidth()) + "x" +
+                           std::to_string(image.getHeight()) + ") passen nicht zum Bereich (" +
                            std::to_string(width) + "x" + std::to_string(height) + ")");
     }
 
     const UnpackGuard guard;
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(image.rowStride() /
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(image.getRowStride() /
                                                            static_cast<std::size_t>(
-                                                               image.channelCount())));
+                                                               image.getChannelCount())));
     glTextureSubImage2D(m_id, 0, x, y, width, height, PixelFormatFor(m_format), GL_UNSIGNED_BYTE,
-                        image.data());
+                        image.getData());
     if (hasMipmaps()) {
         glGenerateTextureMipmap(m_id);
     }
@@ -481,7 +481,7 @@ Texture2d::ScopedBind::ScopedBind(const Texture2d& texture, i32 unit) : m_unit(u
     // Bindung der Einheit indexiert abfragen – ohne die aktive Einheit zu ändern.
     glGetIntegeri_v(GL_TEXTURE_BINDING_2D, static_cast<GLuint>(std::max(unit, 0)),
                     &m_previousTexture);
-    glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), texture.id());
+    glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), texture.getId());
 }
 
 Texture2d::ScopedBind::~ScopedBind() {
@@ -552,9 +552,9 @@ bool Texture2d::IsResidencySupported() {
     return Bindless().isSupported;
 }
 
-u64 Texture2d::textureHandle() const {
+u64 Texture2d::getTextureHandle() const {
     if (m_id == 0) {
-        throw TextureError("textureHandle: Textur ist ungültig");
+        throw TextureError("getTextureHandle: Textur ist ungültig");
     }
     BindlessApi& api = Bindless();
     if (!api.isSupported) {
@@ -604,9 +604,9 @@ bool CubeMap::IsResidencySupported() {
     return Bindless().isSupported;
 }
 
-u64 CubeMap::textureHandle() const {
+u64 CubeMap::getTextureHandle() const {
     if (m_id == 0) {
-        throw TextureError("textureHandle: CubeMap ist ungültig");
+        throw TextureError("getTextureHandle: CubeMap ist ungültig");
     }
     BindlessApi& api = Bindless();
     if (!api.isSupported) {
@@ -711,18 +711,18 @@ CubeMap CubeMap::FromImages(const std::array<Image, 6>& faces, const TextureOpti
         if (faces[index].isEmpty()) {
             throw TextureError("CubeMap: Gesicht " + std::to_string(index) + " ist leer");
         }
-        if (faces[index].width() != faces[0].width() ||
-            faces[index].height() != faces[0].height()) {
+        if (faces[index].getWidth() != faces[0].getWidth() ||
+            faces[index].getHeight() != faces[0].getHeight()) {
             throw TextureError("CubeMap: alle Gesichter müssen gleich groß sein");
         }
-        if (faces[index].format() != faces[0].format()) {
+        if (faces[index].getFormat() != faces[0].getFormat()) {
             throw TextureError("CubeMap: alle Gesichter müssen dasselbe Format haben");
         }
     }
 
     CubeMap cubeMap;
-    cubeMap.m_size = static_cast<u32>(faces[0].width());
-    cubeMap.m_format = faces[0].format();
+    cubeMap.m_size = static_cast<u32>(faces[0].getWidth());
+    cubeMap.m_format = faces[0].getFormat();
     cubeMap.m_options = options;
 
     glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubeMap.m_id);
@@ -740,7 +740,7 @@ CubeMap CubeMap::FromImages(const std::array<Image, 6>& faces, const TextureOpti
             // Bei Cube-Maps adressiert der z-Offset das Gesicht.
             glTextureSubImage3D(cubeMap.m_id, 0, 0, 0, static_cast<GLint>(index), size, size, 1,
                                 PixelFormatFor(cubeMap.m_format), GL_UNSIGNED_BYTE,
-                                faces[index].data());
+                                faces[index].getData());
         }
     }
     cubeMap.applyParameters();
@@ -756,8 +756,8 @@ CubeMap CubeMap::FromCrossLayout(const Image& cross, const TextureOptions& optio
     if (cross.isEmpty()) {
         throw TextureError("CubeMap: Kreuz-Layout ist leer");
     }
-    const i32 width = cross.width();
-    const i32 height = cross.height();
+    const i32 width = cross.getWidth();
+    const i32 height = cross.getHeight();
 
     // 4x3 (waagerecht) oder 3x4 (senkrecht)
     i32 cell = 0;
@@ -818,7 +818,7 @@ void CubeMap::Unbind(const i32 unit) {
 CubeMap::ScopedBind::ScopedBind(const CubeMap& cubeMap, i32 unit) : m_unit(unit) {
     glGetIntegeri_v(GL_TEXTURE_BINDING_CUBE_MAP, static_cast<GLuint>(std::max(unit, 0)),
                     &m_previousTexture);
-    glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), cubeMap.id());
+    glBindTextureUnit(static_cast<GLuint>(std::max(unit, 0)), cubeMap.getId());
 }
 
 CubeMap::ScopedBind::~ScopedBind() {
@@ -833,18 +833,18 @@ void CubeMap::uploadFace(CubeFace face, const Image& image) {
     if (image.isEmpty()) {
         throw TextureError("uploadFace: Bild ist leer");
     }
-    if (image.format() != m_format) {
+    if (image.getFormat() != m_format) {
         throw TextureError("uploadFace: Bildformat passt nicht zur CubeMap");
     }
-    if (static_cast<u32>(image.width()) != m_size ||
-        static_cast<u32>(image.height()) != m_size) {
+    if (static_cast<u32>(image.getWidth()) != m_size ||
+        static_cast<u32>(image.getHeight()) != m_size) {
         throw TextureError("uploadFace: Bildmaße passen nicht zur CubeMap (" +
                            std::to_string(m_size) + " px erwartet)");
     }
     {
         const UnpackGuard guard;
-        glTextureSubImage3D(m_id, 0, 0, 0, static_cast<GLint>(face), image.width(), image.height(),
-                            1, PixelFormatFor(m_format), GL_UNSIGNED_BYTE, image.data());
+        glTextureSubImage3D(m_id, 0, 0, 0, static_cast<GLint>(face), image.getWidth(), image.getHeight(),
+                            1, PixelFormatFor(m_format), GL_UNSIGNED_BYTE, image.getData());
     }
     if (hasMipmaps()) {
         glGenerateTextureMipmap(m_id);
@@ -894,9 +894,9 @@ void CubeMap::setSeamless(const bool seamless) {
     }
 }
 
-Image CubeMap::faceImage(CubeFace face) const {
+Image CubeMap::getFaceImage(CubeFace face) const {
     if (m_id == 0) {
-        throw TextureError("faceImage: CubeMap ist ungültig");
+        throw TextureError("getFaceImage: CubeMap ist ungültig");
     }
     return ReadTexture(m_id, static_cast<i32>(face), static_cast<i32>(m_size),
                        static_cast<i32>(m_size), m_format);

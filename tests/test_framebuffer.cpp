@@ -63,8 +63,8 @@ TEST_CASE("Framebuffer legt Anhaenge an und liest Pixel zurueck", "[gl][framebuf
 
     REQUIRE(framebuffer.isValid());
     REQUIRE(framebuffer.isComplete());
-    REQUIRE(framebuffer.width() == 32);
-    REQUIRE(framebuffer.height() == 32);
+    REQUIRE(framebuffer.getWidth() == 32);
+    REQUIRE(framebuffer.getHeight() == 32);
     REQUIRE(framebuffer.hasDepth());
     REQUIRE_FALSE(framebuffer.isMultisampled());
     REQUIRE_FALSE(framebuffer.describe().empty());
@@ -72,9 +72,9 @@ TEST_CASE("Framebuffer legt Anhaenge an und liest Pixel zurueck", "[gl][framebuf
     framebuffer.clear(Color(255, 0, 0, 255));
 
     const Image image = framebuffer.readPixels();
-    REQUIRE(image.width() == 32);
-    REQUIRE(image.height() == 32);
-    REQUIRE(image.pixelAt(0, 0) == std::array<u8, 4>{255, 0, 0, 255});
+    REQUIRE(image.getWidth() == 32);
+    REQUIRE(image.getHeight() == 32);
+    REQUIRE(image.getPixel(0, 0) == std::array<u8, 4>{255, 0, 0, 255});
 
     std::array<u8, 4> pixel{};
     REQUIRE(framebuffer.readPixel(5, 5, pixel.data()));
@@ -83,15 +83,15 @@ TEST_CASE("Framebuffer legt Anhaenge an und liest Pixel zurueck", "[gl][framebuf
     REQUIRE(pixel[2] == 0);
     REQUIRE(pixel[3] == 255);
 
-    const GLuint id = framebuffer.id();
+    const GLuint id = framebuffer.getId();
     framebuffer.resize(16, 16);
-    REQUIRE(framebuffer.id() == id);
-    REQUIRE(framebuffer.width() == 16);
-    REQUIRE(framebuffer.height() == 16);
+    REQUIRE(framebuffer.getId() == id);
+    REQUIRE(framebuffer.getWidth() == 16);
+    REQUIRE(framebuffer.getHeight() == 16);
     REQUIRE(framebuffer.isComplete());
 
     framebuffer.clear(Color(0, 0, 255, 255));
-    REQUIRE(framebuffer.readPixels().pixelAt(0, 0) == std::array<u8, 4>{0, 0, 255, 255});
+    REQUIRE(framebuffer.readPixels().getPixel(0, 0) == std::array<u8, 4>{0, 0, 255, 255});
 }
 
 TEST_CASE("Sprite zeichnet in ein Framebuffer", "[gl][framebuffer][sprite]") {
@@ -122,7 +122,7 @@ TEST_CASE("Sprite zeichnet in ein Framebuffer", "[gl][framebuffer][sprite]") {
     Framebuffer::BindDefault();
 
     const Image result = framebuffer.readPixels();
-    const std::array<u8, 4> pixel = result.pixelAt(16, 16);
+    const std::array<u8, 4> pixel = result.getPixel(16, 16);
     REQUIRE(pixel[0] > 200);
     REQUIRE(pixel[1] < 50);
     REQUIRE(pixel[2] < 50);
@@ -151,5 +151,5 @@ TEST_CASE("MSAA-Framebuffer laesst sich aufloesen", "[gl][framebuffer]") {
     ResolveFramebuffer(multisampled, resolved);
 
     const Image image = resolved.readPixels();
-    REQUIRE(image.pixelAt(0, 0) == std::array<u8, 4>{0, 255, 0, 255});
+    REQUIRE(image.getPixel(0, 0) == std::array<u8, 4>{0, 255, 0, 255});
 }

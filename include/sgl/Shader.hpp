@@ -7,7 +7,7 @@
 //   ResolvedSource, SplitStages, ResolveSource, ResolveFile, Shader
 //   FromFile, FromFiles, FromSource, FromSources, reload
 //   Unbind, ScopedBind, setUniform, IndexedName, setTexture
-//   setUniformBlockBinding, setStorageBlockBinding, uniformLocation, hasUniform, uniformType
+//   setUniformBlockBinding, setStorageBlockBinding, getUniformLocation, hasUniform, getUniformType
 //   ensureCurrentProgram, build, release, queryActiveUniforms, resetCache
 //
 // Beispiel:
@@ -15,7 +15,7 @@
 //   Shader shader = Shader::FromFile("assets/shaders/mesh.vert");
 //   shader.use();
 //   shader.setUniform("uMvp", mvp);
-//   shader.setTexture("uAlbedo", texture.id(), 0);
+//   shader.setTexture("uAlbedo", texture.getId(), 0);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ public:
     ResolvedSource() = default;
     ResolvedSource(std::string text, std::vector<std::pair<std::string, i32>> lineMap);
 
-    [[nodiscard]] const std::string& text() const noexcept { return m_text; }
+    [[nodiscard]] const std::string& getText() const noexcept { return m_text; }
     // Liefert "assets/lit.glsl:12"; bei generierten Zeilen den Stufennamen.
     std::string originOf(std::size_t generatedLine) const;
 
@@ -222,17 +222,17 @@ public:
                               ShaderSourceOptions options = {});
 
     // Liest alle Stufen erneut ein (Hot-Reload). Schlägt der Neuaufbau fehl,
-    // bleibt das bisherige Programm unverändert und lastError() beschreibt den
+    // bleibt das bisherige Programm unverändert und getLastError() beschreibt den
     // Fehler. Liefert true bei Erfolg.
     [[nodiscard]] bool reload();
 
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept { return m_program != 0 && m_isLinked; }
     [[nodiscard]] bool isLinked() const noexcept { return m_isLinked; }
-    [[nodiscard]] GLuint id() const noexcept { return m_program; }
-    [[nodiscard]] const std::string& label() const noexcept { return m_label; }
-    [[nodiscard]] const std::string& lastError() const noexcept { return m_lastError; }
-    [[nodiscard]] const std::vector<UniformInfo>& activeUniforms() const noexcept { return m_uniforms; }
+    [[nodiscard]] GLuint getId() const noexcept { return m_program; }
+    [[nodiscard]] const std::string& getLabel() const noexcept { return m_label; }
+    [[nodiscard]] const std::string& getLastError() const noexcept { return m_lastError; }
+    [[nodiscard]] const std::vector<UniformInfo>& getActiveUniforms() const noexcept { return m_uniforms; }
 
     void use() const;          // glUseProgram
     static void Unbind();      // glUseProgram(0)
@@ -339,11 +339,11 @@ public:
 
     // ── Abfragen (Ergebnisse werden gecacht) ─────────────────────────────────
     // -1, wenn der Name nicht existiert; setzt zugleich den Cache-Eintrag.
-    [[nodiscard]] GLint uniformLocation(std::string_view name) const;
+    [[nodiscard]] GLint getUniformLocation(std::string_view name) const;
     [[nodiscard]] bool hasUniform(std::string_view name) const;
-    [[nodiscard]] GLenum uniformType(std::string_view name) const;
+    [[nodiscard]] GLenum getUniformType(std::string_view name) const;
     // Anzahl der Cache-Einträge (Diagnose/Tests)
-    [[nodiscard]] std::size_t uniformCacheSize() const noexcept { return m_uniformCache.size(); }
+    [[nodiscard]] std::size_t getUniformCacheSize() const noexcept { return m_uniformCache.size(); }
 
 private:
     static std::string IndexedName(std::string_view name, std::size_t index);

@@ -61,7 +61,7 @@ int main() {
     // Wichtig: erst jetzt, mit aktuellem Kontext, die Funktionen laden.
     const gl::LoadReport report = gl::Load();
     SLOGI("%zu/%zu OpenGL-Funktionen geladen%s\n", report.loaded, report.total,
-                report.complete() ? " (vollständig)" : " (Treiber bietet nicht alles an)");
+                report.isComplete() ? " (vollständig)" : " (Treiber bietet nicht alles an)");
 
     if (gl::glGetString) {
         const auto* vendor = reinterpret_cast<const char*>(gl::glGetString(GL_VENDOR));

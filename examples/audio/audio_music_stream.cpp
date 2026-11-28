@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    SLOGI << path << ": " << audiodemo::FormatTime(music.timeLength())
+    SLOGI << path << ": " << audiodemo::FormatTime(music.getTimeLength())
           << ", streaming=" << (music.isStreaming() ? "ja" : "nein");
 
     music.setVolume(0.6f);
@@ -68,8 +68,8 @@ int main(int argc, char** argv) {
         music.update();
 
         if ((static_cast<i32>(elapsed * 4.0f) % 4) == 0) {
-            SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.timePlayed()) << " / "
-                  << audiodemo::FormatTime(music.timeLength());
+            SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.getTimePlayed()) << " / "
+                  << audiodemo::FormatTime(music.getTimeLength());
         }
     }
 

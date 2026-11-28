@@ -89,7 +89,7 @@ TextGeometry BuildText(const Font2d& font, const std::vector<std::string>& lines
     TextGeometry geometry;
     // Farbe je Glyphe: Farbton wandert über den Text
     u32 glyphCounter = 0;
-    f32 baseline = originY + font.ascent() * pixelSize;
+    f32 baseline = originY + font.getAscent() * pixelSize;
 
     for (const std::string& line : lines) {
         f32 penX = originX;
@@ -149,7 +149,7 @@ TextGeometry BuildText(const Font2d& font, const std::vector<std::string>& lines
             previous = codepoint;
             kerningPending = true;
         }
-        baseline += font.lineHeight() * pixelSize * 1.15f;
+        baseline += font.getLineHeight() * pixelSize * 1.15f;
     }
 
     geometry.width = 0.0f;
@@ -387,15 +387,15 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
     std::vector<std::string> lines = WrapText(font, kText, pixelSize, width * 2.0f - 160.0f);
     const std::vector<std::string> subLines = WrapText(font, kSubText, pixelSize * 0.7f,
                                                       width * 2.0f - 160.0f);
-    const f32 blockHeight = static_cast<f32>(lines.size()) * font.lineHeight() * pixelSize * 1.15f +
-                            static_cast<f32>(subLines.size()) * font.lineHeight() * pixelSize * 0.7f *
+    const f32 blockHeight = static_cast<f32>(lines.size()) * font.getLineHeight() * pixelSize * 1.15f +
+                            static_cast<f32>(subLines.size()) * font.getLineHeight() * pixelSize * 0.7f *
                                 1.15f;
     const f32 originY = std::max((height * 2.0f - blockHeight) * 0.5f, 40.0f);
     const TextGeometry mainGeometry = BuildText(font, lines, pixelSize, 80.0f * 2.0f, originY);
     TextGeometry geometry = mainGeometry;
 
     // Unterzeile kleiner darunter setzen
-    const f32 subY = originY + static_cast<f32>(lines.size()) * font.lineHeight() * pixelSize * 1.15f;
+    const f32 subY = originY + static_cast<f32>(lines.size()) * font.getLineHeight() * pixelSize * 1.15f;
     const TextGeometry subGeometry = BuildText(font, subLines, pixelSize * 0.7f, 80.0f * 2.0f, subY);
     const u32 offset = static_cast<u32>(geometry.vertices.size());
     geometry.vertices.insert(geometry.vertices.end(), subGeometry.vertices.begin(),
@@ -409,7 +409,7 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
     std::vector<u8> pixels(static_cast<std::size_t>(renderWidth) * renderHeight * 4);
     glReadPixels(0, 0, renderWidth, renderHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
     Image image(renderWidth, renderHeight, ImageFormat::Rgba);
-    std::memcpy(image.data(), pixels.data(), pixels.size());
+    std::memcpy(image.getData(), pixels.data(), pixels.size());
     image.flipVertically();
     ImageIO::Save(image.scaled(0.5, Interpolation::Bilinear), file);
 
@@ -465,7 +465,7 @@ int main(int argc, char** argv) {
 
     const f32 pixelSize = 30.0f;
     const std::vector<std::string> lines = WrapText(font, kText, pixelSize, 1280.0f - 160.0f);
-    const f32 blockHeight = static_cast<f32>(lines.size()) * font.lineHeight() * pixelSize * 1.15f;
+    const f32 blockHeight = static_cast<f32>(lines.size()) * font.getLineHeight() * pixelSize * 1.15f;
     const TextGeometry geometry = BuildText(font, lines, pixelSize, 40.0f,
                                             std::max((720.0f - blockHeight) * 0.5f, 40.0f));
     UploadGeometry(scene, geometry);

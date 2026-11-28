@@ -5,7 +5,7 @@
 //
 //   FontError, Font, FromBitmap, FromSdf, load, LoadDefault
 //   g_defaultFont
-//   save, isValid, hasGlyph, kerning, missingAdvance
+//   save, isValid, hasGlyph, kerning, getMissingAdvance
 //   setMetrics, addGlyph, addGlyphs, addKerning, setFallback
 //   bounds, LineCount, KerningKey, rebuildIndex, DecodeUtf8
 //   EncodeUtf8
@@ -111,19 +111,19 @@ public:
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept;
     [[nodiscard]] bool isSdf() const noexcept { return m_kind == FontKind::Sdf; }
-    [[nodiscard]] FontKind kind() const noexcept { return m_kind; }
-    [[nodiscard]] const Image& atlas() const noexcept { return m_atlas; }
-    [[nodiscard]] const FontMetrics& metrics() const noexcept { return m_metrics; }
-    [[nodiscard]] f32 spread() const noexcept { return m_spread; }
-    [[nodiscard]] const std::vector<Glyph>& glyphs() const noexcept { return m_glyphs; }
+    [[nodiscard]] FontKind getKind() const noexcept { return m_kind; }
+    [[nodiscard]] const Image& getAtlas() const noexcept { return m_atlas; }
+    [[nodiscard]] const FontMetrics& getMetrics() const noexcept { return m_metrics; }
+    [[nodiscard]] f32 getSpread() const noexcept { return m_spread; }
+    [[nodiscard]] const std::vector<Glyph>& getGlyphs() const noexcept { return m_glyphs; }
 
     // nullptr, wenn der Codepoint nicht vorhanden ist
-    [[nodiscard]] const Glyph* glyph(u32 codepoint) const;
+    [[nodiscard]] const Glyph* getGlyph(u32 codepoint) const;
     [[nodiscard]] bool hasGlyph(u32 codepoint) const;
     // Anpassung des Vorschubs für ein Paar (0, wenn kein Kerning hinterlegt ist)
     [[nodiscard]] f32 kerning(u32 left, u32 right) const;
     // Vorschub für Zeichen, die in der Schrift fehlen (Anteil der em-Größe)
-    [[nodiscard]] f32 missingAdvance() const noexcept;
+    [[nodiscard]] f32 getMissingAdvance() const noexcept;
 
     // ── Aufbau ───────────────────────────────────────────────────────────────
     void setMetrics(const FontMetrics& metrics);
@@ -132,7 +132,7 @@ public:
     void addKerning(u32 left, u32 right, f32 adjustment);
     // Zeichen für unbekannte Codepoints (z. B. '?')
     void setFallback(u32 codepoint);
-    [[nodiscard]] std::optional<u32> fallback() const noexcept { return m_fallback; }
+    [[nodiscard]] std::optional<u32> getFallback() const noexcept { return m_fallback; }
 
     // ── Vermessen (pixelSize = gewünschte em-Größe in Pixeln) ────────────────
     // Breite der breitesten Zeile

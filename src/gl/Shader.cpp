@@ -645,8 +645,8 @@ GLuint CompileStage(const StageSource& stage, const ShaderSourceOptions& options
                           "' fehlgeschlagen");
     }
 
-    const char* text = resolved.text().c_str();
-    const auto length = static_cast<GLint>(resolved.text().size());
+    const char* text = resolved.getText().c_str();
+    const auto length = static_cast<GLint>(resolved.getText().size());
     glShaderSource(shader, 1, &text, &length);
     glCompileShader(shader);
 
@@ -990,7 +990,7 @@ void Shader::queryActiveUniforms() {
     }
 }
 
-GLint Shader::uniformLocation(const std::string_view name) const {
+GLint Shader::getUniformLocation(const std::string_view name) const {
     const std::string key(name);
     if (const auto cached = m_uniformCache.find(key); cached != m_uniformCache.end()) {
         return cached->second;
@@ -1008,10 +1008,10 @@ GLint Shader::uniformLocation(const std::string_view name) const {
 }
 
 bool Shader::hasUniform(const std::string_view name) const {
-    return uniformLocation(name) >= 0;
+    return getUniformLocation(name) >= 0;
 }
 
-GLenum Shader::uniformType(const std::string_view name) const {
+GLenum Shader::getUniformType(const std::string_view name) const {
     const std::string key(name);
     if (const auto cached = m_uniformTypes.find(key); cached != m_uniformTypes.end()) {
         return cached->second;
@@ -1035,7 +1035,7 @@ std::string Shader::IndexedName(const std::string_view name, const std::size_t i
 // ─── Uniforms: Skalare ──────────────────────────────────────────────────────
 
 void Shader::setUniform(const std::string_view name, const bool value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1044,7 +1044,7 @@ void Shader::setUniform(const std::string_view name, const bool value) const {
 }
 
 void Shader::setUniform(const std::string_view name, const i32 value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1053,7 +1053,7 @@ void Shader::setUniform(const std::string_view name, const i32 value) const {
 }
 
 void Shader::setUniform(const std::string_view name, const u32 value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1062,7 +1062,7 @@ void Shader::setUniform(const std::string_view name, const u32 value) const {
 }
 
 void Shader::setUniform(const std::string_view name, const f32 value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1071,7 +1071,7 @@ void Shader::setUniform(const std::string_view name, const f32 value) const {
 }
 
 void Shader::setUniform(const std::string_view name, const f64 value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1083,7 +1083,7 @@ void Shader::setUniform(const std::string_view name, const f64 value) const {
 
 #define LIBRAY_UNIFORM_VECTOR(cppType, glFunction)                      \
     void Shader::setUniform(std::string_view name, const cppType& value) const { \
-        const GLint location = uniformLocation(name);                   \
+        const GLint location = getUniformLocation(name);                   \
         ensureCurrentProgram();                                         \
         if (location < 0) {                                             \
             return;                                                     \
@@ -1108,7 +1108,7 @@ LIBRAY_UNIFORM_VECTOR(dvec4, glUniform4dv)
 
 // bvec wird als int-Vektor übertragen – bool-Arrays sind im GLSL-Speicher ints.
 void Shader::setUniform(const std::string_view name, const glm::bvec2& value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1118,7 +1118,7 @@ void Shader::setUniform(const std::string_view name, const glm::bvec2& value) co
 }
 
 void Shader::setUniform(const std::string_view name, const glm::bvec3& value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1128,7 +1128,7 @@ void Shader::setUniform(const std::string_view name, const glm::bvec3& value) co
 }
 
 void Shader::setUniform(const std::string_view name, const glm::bvec4& value) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;
@@ -1142,7 +1142,7 @@ void Shader::setUniform(const std::string_view name, const glm::bvec4& value) co
 
 #define LIBRAY_UNIFORM_MATRIX(cppType, glFunction)                          \
     void Shader::setUniform(std::string_view name, const cppType& value) const { \
-        const GLint location = uniformLocation(name);                       \
+        const GLint location = getUniformLocation(name);                       \
         ensureCurrentProgram();                                             \
         if (location < 0) {                                                 \
             return;                                                         \
@@ -1176,7 +1176,7 @@ LIBRAY_UNIFORM_MATRIX(glm::dmat4x3, glUniformMatrix4x3dv)
 #define LIBRAY_UNIFORM_ARRAY(cppType, glFunction, cppValueType)                       \
     void Shader::setUniform(std::string_view name, const cppType* values,             \
                             GLsizei count) const {                                    \
-        const GLint location = uniformLocation(name);                                 \
+        const GLint location = getUniformLocation(name);                                 \
         ensureCurrentProgram();                                                       \
         if (location < 0 || values == nullptr || count <= 0) {                        \
             return;                                                                    \
@@ -1202,7 +1202,7 @@ LIBRAY_UNIFORM_ARRAY(uvec4, glUniform4uiv, GLuint)
 #define LIBRAY_UNIFORM_MATRIX_ARRAY(cppType, glFunction, cppValueType)                  \
     void Shader::setUniform(std::string_view name, const cppType* values, GLsizei count, \
                             bool transpose) const {                                     \
-        const GLint location = uniformLocation(name);                                   \
+        const GLint location = getUniformLocation(name);                                   \
         ensureCurrentProgram();                                                         \
         if (location < 0 || values == nullptr || count <= 0) {                          \
             return;                                                                      \
@@ -1222,7 +1222,7 @@ LIBRAY_UNIFORM_MATRIX_ARRAY(glm::dmat4, glUniformMatrix4dv, f64)
 
 void Shader::setTexture(const std::string_view name, const GLuint texture, const i32 unit,
                         const GLenum target) const {
-    const GLint location = uniformLocation(name);
+    const GLint location = getUniformLocation(name);
     ensureCurrentProgram();
     if (location < 0) {
         return;

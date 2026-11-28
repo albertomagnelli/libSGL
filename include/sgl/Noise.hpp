@@ -66,43 +66,43 @@ public:
 
     bool create();
     bool create(const NoiseConfig& config);
-    // Wie create(); paart mit config().
+    // Wie create(); paart mit getConfig().
     bool setConfig(const NoiseConfig& config) { return create(config); }
 
     void unload();
     [[nodiscard]] bool isValid() const noexcept { return m_texture != 0 && m_program.isValid(); }
 
     bool generate();
-    // Neue Texturgröße; paart mit width(), height() und depth().
+    // Neue Texturgröße; paart mit getWidth(), getHeight() und getDepth().
     bool setSize(const i32 width, const i32 height, const i32 depth);
 
     // ── Einstellungen ───────────────────────────────────────────────────────
     void setSeed(const u32 seed);
-    [[nodiscard]] u32 seed() const noexcept { return m_config.seed; }
+    [[nodiscard]] u32 getSeed() const noexcept { return m_config.seed; }
     void setOctaves(const i32 octaves);
-    [[nodiscard]] i32 octaves() const noexcept { return m_config.octaves; }
+    [[nodiscard]] i32 getOctaves() const noexcept { return m_config.octaves; }
     void setFrequency(const f32 frequency);
-    [[nodiscard]] f32 frequency() const noexcept { return m_config.frequency; }
+    [[nodiscard]] f32 getFrequency() const noexcept { return m_config.frequency; }
     void setPeriod(const i32 period);
-    [[nodiscard]] i32 period() const noexcept { return m_config.period; }
+    [[nodiscard]] i32 getPeriod() const noexcept { return m_config.period; }
     void setTileable(const bool isTileable);
     [[nodiscard]] bool isTileable() const noexcept { return m_config.isTileable; }
     void setLacunarity(const f32 lacunarity);
-    [[nodiscard]] f32 lacunarity() const noexcept { return m_config.lacunarity; }
+    [[nodiscard]] f32 getLacunarity() const noexcept { return m_config.lacunarity; }
     void setGain(const f32 gain);
-    [[nodiscard]] f32 gain() const noexcept { return m_config.gain; }
+    [[nodiscard]] f32 getGain() const noexcept { return m_config.gain; }
     void setType(const NoiseType type);
-    [[nodiscard]] NoiseType type() const noexcept { return m_config.type; }
+    [[nodiscard]] NoiseType getType() const noexcept { return m_config.type; }
     void setDimension(const i32 dimension);
-    [[nodiscard]] i32 dimension() const noexcept { return m_config.dimension; }
+    [[nodiscard]] i32 getDimension() const noexcept { return m_config.dimension; }
 
-    [[nodiscard]] const NoiseConfig& config() const noexcept { return m_config; }
+    [[nodiscard]] const NoiseConfig& getConfig() const noexcept { return m_config; }
 
     // ── Ergebnis ────────────────────────────────────────────────────────────
-    [[nodiscard]] u32 textureId() const noexcept { return m_texture; }
-    [[nodiscard]] i32 width() const noexcept { return m_config.width; }
-    [[nodiscard]] i32 height() const noexcept { return m_config.height; }
-    [[nodiscard]] i32 depth() const noexcept { return m_config.depth; }
+    [[nodiscard]] u32 getTextureId() const noexcept { return m_texture; }
+    [[nodiscard]] i32 getWidth() const noexcept { return m_config.width; }
+    [[nodiscard]] i32 getHeight() const noexcept { return m_config.height; }
+    [[nodiscard]] i32 getDepth() const noexcept { return m_config.depth; }
     [[nodiscard]] bool is3D() const noexcept { return m_config.dimension == 3; }
 
     // Werte aus der Textur lesen (RGBA16F -> 8 Bit, R/G/B wie im Shader).

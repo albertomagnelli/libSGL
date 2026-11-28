@@ -12,7 +12,6 @@
 #include "Context.hpp"
 #include "Cursor.hpp"
 #include "Error.hpp"
-#include "Init.hpp"
 #include "Input.hpp"
 #include "Monitor.hpp"
 #include "Native.hpp"

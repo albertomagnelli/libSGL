@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    SLOGI << "mini1111.xm: " << audiodemo::FormatTime(music.timeLength())
+    SLOGI << "mini1111.xm: " << audiodemo::FormatTime(music.getTimeLength())
           << " (XM-Modul, als PCM gerendert)";
 
     music.setVolume(0.5f);
@@ -46,8 +46,8 @@ int main(int argc, char** argv) {
         audiodemo::SleepSeconds(step);
         elapsed += step;
 
-        SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.timePlayed()) << " / "
-              << audiodemo::FormatTime(music.timeLength());
+        SLOGI << "Wiedergabe: " << audiodemo::FormatTime(music.getTimePlayed()) << " / "
+              << audiodemo::FormatTime(music.getTimeLength());
     }
 
     music.stop();

@@ -40,11 +40,11 @@ TEST_CASE("Color-Hilfsfunktionen", "[color]") {
 
 TEST_CASE("Rectangle-Kollisionen und Rotation", "[geometry]") {
     const Rectangle box(10.0f, 20.0f, 100.0f, 50.0f);
-    REQUIRE(box.left() == 10.0f);
-    REQUIRE(box.top() == 20.0f);
-    REQUIRE(box.right() == 110.0f);
-    REQUIRE(box.bottom() == 70.0f);
-    REQUIRE(box.center() == vec2(60.0f, 45.0f));
+    REQUIRE(box.getLeft() == 10.0f);
+    REQUIRE(box.getTop() == 20.0f);
+    REQUIRE(box.getRight() == 110.0f);
+    REQUIRE(box.getBottom() == 70.0f);
+    REQUIRE(box.getCenter() == vec2(60.0f, 45.0f));
     REQUIRE(box.contains(vec2(50.0f, 40.0f)));
     REQUIRE_FALSE(box.contains(vec2(0.0f, 0.0f)));
     REQUIRE(box.contains(Rectangle(20.0f, 30.0f, 20.0f, 20.0f)));

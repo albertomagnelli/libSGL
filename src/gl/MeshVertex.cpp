@@ -4,15 +4,13 @@
 
 namespace sgl {
 
-bool MeshVertex::hasSkinning() const noexcept {
-  return influenceCount() > 0;
-}
+bool MeshVertex::hasSkinning() const noexcept { return getInfluenceCount() > 0; }
 
-u32 MeshVertex::influenceCount() const noexcept {
+u32 MeshVertex::getInfluenceCount() const noexcept {
   u32 count = 0;
 
   for (u32 i = 0; i < kMaxBoneInfluences; ++i) {
-    if (boneWeights[i] > 0.0f) ++count;
+    if (m_boneWeights[i] > 0.0f) ++count;
   }
 
   return count;
@@ -21,14 +19,14 @@ u32 MeshVertex::influenceCount() const noexcept {
 bool MeshVertex::setBoneInfluence(const u32 slot, const u32 boneId, const f32 weight) {
   if (slot >= kMaxBoneInfluences) return false;
 
-  boneIds[slot]     = boneId;
-  boneWeights[slot] = std::max(0.0f, weight);
+  m_boneIds[slot]     = boneId;
+  m_boneWeights[slot] = std::max(0.0f, weight);
 
   return true;
 }
 
 void MeshVertex::normalizeBoneWeights() {
-  const f32 sum = boneWeights.x + boneWeights.y + boneWeights.z + boneWeights.w;
+  const f32 sum = m_boneWeights.x + m_boneWeights.y + m_boneWeights.z + m_boneWeights.w;
 
   if (sum <= 0.0f) {
     clearBoneInfluences();
@@ -37,12 +35,12 @@ void MeshVertex::normalizeBoneWeights() {
   }
 
   const f32 inverse = 1.0f / sum;
-  boneWeights *= inverse;
+  m_boneWeights *= inverse;
 }
 
 void MeshVertex::clearBoneInfluences() {
-  boneWeights = vec4(0.0f);
-  boneIds     = uvec4(0u);
+  m_boneWeights = vec4(0.0f);
+  m_boneIds     = uvec4(0u);
 }
 
 }  // namespace sgl

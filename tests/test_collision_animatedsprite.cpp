@@ -18,10 +18,10 @@ TEST_CASE("CollisionShape arbeitet mit einer Alpha-Maske", "[collision][geometry
 
     const CollisionShape shape = CollisionShape::FromAlphaMask(mask.data(), 4, 4);
     REQUIRE(shape.isValid());
-    REQUIRE(shape.width() == 4);
-    REQUIRE(shape.height() == 4);
-    REQUIRE(shape.opaqueCount() == 1);
-    REQUIRE(shape.coverage() == Catch::Approx(1.0f / 16.0f));
+    REQUIRE(shape.getWidth() == 4);
+    REQUIRE(shape.getHeight() == 4);
+    REQUIRE(shape.getOpaqueCount() == 1);
+    REQUIRE(shape.getCoverage() == Catch::Approx(1.0f / 16.0f));
 
     // Standard-Pivot ist die Mitte (2,2); lokale Koordinate (0,0) trifft Pixel (2,2).
     REQUIRE(shape.containsPoint(vec2(0.0f, 0.0f)));
@@ -45,8 +45,8 @@ TEST_CASE("Sprite baut ohne GL-Kontext eine Deckungsform", "[sprite]") {
     REQUIRE(sprite.loadFromImage(image));
     REQUIRE_FALSE(sprite.isValid());  // ohne GL-Kontext keine Textur
     REQUIRE(sprite.hasShape());
-    REQUIRE(sprite.width() == 4);
-    REQUIRE(sprite.height() == 4);
+    REQUIRE(sprite.getWidth() == 4);
+    REQUIRE(sprite.getHeight() == 4);
 
     REQUIRE(sprite.containsPoint(vec2(2.0f, 2.0f), vec2(2.0f, 2.0f), 0.0f));
     REQUIRE_FALSE(sprite.containsPoint(vec2(20.0f, 20.0f), vec2(2.0f, 2.0f), 0.0f));
@@ -59,19 +59,19 @@ TEST_CASE("AnimatedSprite spielt Raster-Animationen ab", "[animatedsprite]") {
     AnimatedSprite sprite;
     REQUIRE(sprite.loadFromGrid(sheet, 4, 4, 0.1f));
     REQUIRE(sprite.isValid());
-    REQUIRE(sprite.animationCount() == 1);
-    REQUIRE(sprite.totalFrameCount() == 4);
-    REQUIRE(sprite.frameCount() == 4);
-    REQUIRE(sprite.currentAnimation() == "default");
+    REQUIRE(sprite.getAnimationCount() == 1);
+    REQUIRE(sprite.getTotalFrameCount() == 4);
+    REQUIRE(sprite.getFrameCount() == 4);
+    REQUIRE(sprite.getCurrentAnimation() == "default");
     REQUIRE(sprite.hasShape());
-    REQUIRE(sprite.shape().isValid());
-    REQUIRE(sprite.size() == vec2(4.0f, 4.0f));
+    REQUIRE(sprite.getShape().isValid());
+    REQUIRE(sprite.getSize() == vec2(4.0f, 4.0f));
 
-    REQUIRE(sprite.frameIndex() == 0);
+    REQUIRE(sprite.getFrameIndex() == 0);
     sprite.update(0.15f);
-    REQUIRE(sprite.frameIndex() == 1);
-    sprite.setFrame(3);
-    REQUIRE(sprite.frameIndex() == 3);
+    REQUIRE(sprite.getFrameIndex() == 1);
+    sprite.setFrameIndex(3);
+    REQUIRE(sprite.getFrameIndex() == 3);
 
     REQUIRE(sprite.containsPoint(vec2(2.0f, 2.0f), vec2(2.0f, 2.0f), 0.0f));
 }
@@ -106,13 +106,13 @@ TEST_CASE("AnimatedSprite liest Aseprite-Metadaten", "[animatedsprite][json]") {
     AnimatedSprite sprite;
     REQUIRE(sprite.loadFromFile(imageFile.string()));
     REQUIRE(sprite.isValid());
-    REQUIRE(sprite.animationCount() == 1);
+    REQUIRE(sprite.getAnimationCount() == 1);
     REQUIRE(sprite.hasAnimation("laufen"));
-    REQUIRE(sprite.totalFrameCount() == 2);
+    REQUIRE(sprite.getTotalFrameCount() == 2);
     REQUIRE(sprite.play("laufen"));
-    REQUIRE(sprite.currentAnimation() == "laufen");
-    REQUIRE(sprite.frameCount() == 2);
-    REQUIRE(sprite.currentFrameDuration() == Catch::Approx(0.1f));
+    REQUIRE(sprite.getCurrentAnimation() == "laufen");
+    REQUIRE(sprite.getFrameCount() == 2);
+    REQUIRE(sprite.getCurrentFrameDuration() == Catch::Approx(0.1f));
 
     std::filesystem::remove(imageFile);
     std::filesystem::remove(jsonFile);

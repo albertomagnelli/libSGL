@@ -77,7 +77,7 @@ vec2 CollisionShape::LocalFrame::toWorld(const vec2 &local) const {
   return m_position + vec2((local.x * m_cos) + (local.y * m_sin), (-local.x * m_sin) + (local.y * m_cos));
 }
 
-vec2 CollisionShape::LocalFrame::position() const { return m_position; }
+vec2 CollisionShape::LocalFrame::getPosition() const { return m_position; }
 
 CollisionShape CollisionShape::FromAlphaMask(const u8 *mask, const i32 width, const i32 height, const u8 threshold) {
   CollisionShape shape;
@@ -109,20 +109,20 @@ CollisionShape CollisionShape::FromImage(const Image &image, const u8 threshold)
     return {};
   }
 
-  const i32 width    = image.width();
-  const i32 height   = image.height();
-  const i32 channels = image.channelCount();
+  const i32 width    = image.getWidth();
+  const i32 height   = image.getHeight();
+  const i32 channels = image.getChannelCount();
 
   if (channels == 1) {
     // reine Deckungsmaske: die Werte sind bereits die Deckung
-    return FromAlphaMask(image.data(), width, height, threshold);
+    return FromAlphaMask(image.getData(), width, height, threshold);
   }
 
   // Alpha-Kanal herausschneiden; ohne Alpha (3 Kanaele) gilt alles als deckend
   std::vector<u8> mask(static_cast<std::size_t>(width) * height, 255);
 
   if ((channels == 4) || (channels == 2)) {
-    const u8 *pixels = image.data();
+    const u8 *pixels = image.getData();
     const auto stride = static_cast<std::size_t>(channels);
 
     for (std::size_t i = 0; i < mask.size(); ++i) mask[i] = pixels[(i * stride) + (stride - 1)];
@@ -139,16 +139,16 @@ CollisionShape CollisionShape::FromImage(const Image &image, const u8 threshold,
     return {};
   }
 
-  if ((width <= 0) || (height <= 0) || (x < 0) || (y < 0) || ((x + width) > image.width()) ||
-      ((y + height) > image.height())) {
+  if ((width <= 0) || (height <= 0) || (x < 0) || (y < 0) || ((x + width) > image.getWidth()) ||
+      ((y + height) > image.getHeight())) {
     SLOGE << "CollisionShape: Ausschnitt " << width << "x" << height << " bei " << x << "," << y << " passt nicht in "
-          << image.width() << "x" << image.height();
+          << image.getWidth() << "x" << image.getHeight();
 
     return {};
   }
 
-  const i32 channels = image.channelCount();
-  const u8 *pixels   = image.data();
+  const i32 channels = image.getChannelCount();
+  const u8 *pixels   = image.getData();
 
   std::vector<u8> mask(static_cast<std::size_t>(width) * height, 255);
 
@@ -156,7 +156,7 @@ CollisionShape CollisionShape::FromImage(const Image &image, const u8 threshold,
     const i32 alpha = channels - 1;
 
     for (i32 row = 0; row < height; ++row) {
-      const u8 *source = pixels + ((static_cast<std::size_t>(y + row) * image.width() + x) * channels);
+      const u8 *source = pixels + ((static_cast<std::size_t>(y + row) * image.getWidth() + x) * channels);
 
       for (i32 column = 0; column < width; ++column) {
         mask[(static_cast<std::size_t>(row) * width) + column] = source[(column * channels) + alpha];
@@ -166,7 +166,7 @@ CollisionShape CollisionShape::FromImage(const Image &image, const u8 threshold,
     // RGB ohne Alpha: alles deckend
   } else {
     for (i32 row = 0; row < height; ++row) {
-      const u8 *source = pixels + (static_cast<std::size_t>(y + row) * image.width() + x);
+      const u8 *source = pixels + (static_cast<std::size_t>(y + row) * image.getWidth() + x);
 
       std::copy_n(source, static_cast<std::size_t>(width), mask.begin() + (static_cast<std::size_t>(row) * width));
     }
@@ -177,13 +177,13 @@ CollisionShape CollisionShape::FromImage(const Image &image, const u8 threshold,
 
 bool CollisionShape::isValid() const { return (m_width > 0) && (m_height > 0) && !m_solid.empty(); }
 
-i32 CollisionShape::width() const { return m_width; }
+i32 CollisionShape::getWidth() const { return m_width; }
 
-i32 CollisionShape::height() const { return m_height; }
+i32 CollisionShape::getHeight() const { return m_height; }
 
-i32 CollisionShape::opaqueCount() const { return m_opaque; }
+i32 CollisionShape::getOpaqueCount() const { return m_opaque; }
 
-f32 CollisionShape::coverage() const {
+f32 CollisionShape::getCoverage() const {
   if (!isValid()) return 0.0f;
 
   return static_cast<f32>(m_opaque) / static_cast<f32>(static_cast<std::size_t>(m_width) * m_height);
@@ -191,15 +191,15 @@ f32 CollisionShape::coverage() const {
 
 void CollisionShape::setPivot(const vec2 &pivot) { m_pivot = pivot; }
 
-const vec2 &CollisionShape::pivot() const { return m_pivot; }
+const vec2 &CollisionShape::getPivot() const { return m_pivot; }
 
-vec2 CollisionShape::boundsMin() const { return -m_pivot; }
+vec2 CollisionShape::getBoundsMin() const { return -m_pivot; }
 
-vec2 CollisionShape::boundsMax() const { return vec2(static_cast<f32>(m_width), static_cast<f32>(m_height)) - m_pivot; }
+vec2 CollisionShape::getBoundsMax() const { return vec2(static_cast<f32>(m_width), static_cast<f32>(m_height)) - m_pivot; }
 
-f32 CollisionShape::boundingRadius() const {
-  const vec2 min = boundsMin();
-  const vec2 max = boundsMax();
+f32 CollisionShape::getBoundingRadius() const {
+  const vec2 min = getBoundsMin();
+  const vec2 max = getBoundsMax();
 
   // groesster Abstand Pivot -> Ecke
   return std::max(glm::length(min), glm::length(max));
@@ -241,8 +241,8 @@ bool CollisionShape::containsWorldPoint(const vec2 &worldPoint, const LocalFrame
 }
 
 void CollisionShape::worldCorners(const LocalFrame &frame, vec2 corners[4]) const {
-  const vec2 min = boundsMin();
-  const vec2 max = boundsMax();
+  const vec2 min = getBoundsMin();
+  const vec2 max = getBoundsMax();
 
   corners[0] = frame.toWorld(vec2(min.x, min.y));
   corners[1] = frame.toWorld(vec2(max.x, min.y));
@@ -251,8 +251,8 @@ void CollisionShape::worldCorners(const LocalFrame &frame, vec2 corners[4]) cons
 }
 
 void CollisionShape::worldCorners(const vec2 &position, const f32 rotationDegrees, vec2 corners[4]) const {
-  const vec2 min = boundsMin();
-  const vec2 max = boundsMax();
+  const vec2 min = getBoundsMin();
+  const vec2 max = getBoundsMax();
 
   corners[0] = LocalToWorld(vec2(min.x, min.y), position, rotationDegrees);
   corners[1] = LocalToWorld(vec2(max.x, min.y), position, rotationDegrees);
@@ -307,7 +307,7 @@ bool CollisionShape::overlaps(const CollisionShape &other, const vec2 &position,
   // 1. Umkreis: billige Abweisung
   const f32 distance = glm::length(otherPosition - position);
 
-  if (distance > (boundingRadius() + other.boundingRadius())) return false;
+  if (distance > (getBoundingRadius() + other.getBoundingRadius())) return false;
 
   // 2. gedrehte Bounding Boxes (Drehungen einmal vorberechnen)
   const LocalFrame frame(position, rotationDegrees);

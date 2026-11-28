@@ -52,7 +52,7 @@ void Terminate();
 
 void SetInitHint(InitHint hint, i64 value);
 void SetInitHint(InitHint hint, bool value);
-inline void SetInitHint(InitHint hint, int value) { SetInitHint(hint, static_cast<i64>(value)); }
+inline void SetInitHint(const InitHint hint, const int value) { SetInitHint(hint, static_cast<i64>(value)); }
 
 Version GetVersion();
 std::string GetVersionString();

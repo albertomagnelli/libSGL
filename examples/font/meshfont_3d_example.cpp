@@ -106,7 +106,7 @@ Mesh BuildTextMesh(const Font3d& font, const std::vector<std::string>& lines, f3
         previous = static_cast<f32>(codepoint);
         ++glyphIndex;
     }
-    baseline -= font.lineHeight() * pixelSize * 1.05f;
+    baseline -= font.getLineHeight() * pixelSize * 1.05f;
     }
     (void)widest;
     return mesh;
@@ -381,7 +381,7 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
     const f32 pixelSize = 1900.0f / widestEm;
     const f32 depthEm = 0.34f;
     Mesh textMesh = BuildTextMesh(font, {kLine1, kLine2}, pixelSize, depthEm);
-    scene.textCenter = vec3(0.0f, font.lineHeight() * pixelSize * 0.5f, 0.0f);
+    scene.textCenter = vec3(0.0f, font.getLineHeight() * pixelSize * 0.5f, 0.0f);
     scene.textExtent = vec2(1900.0f * 0.55f, 1900.0f * 0.14f);
     scene.text = Upload(textMesh);
     scene.floor = Upload(BuildFloor(5200.0f, -120.0f));
@@ -391,7 +391,7 @@ bool RenderFrameToFile(const std::string& file, i32 width, i32 height, f32 time)
     std::vector<u8> pixels(static_cast<std::size_t>(renderWidth) * renderHeight * 4);
     glReadPixels(0, 0, renderWidth, renderHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
     Image image(renderWidth, renderHeight, ImageFormat::Rgba);
-    std::memcpy(image.data(), pixels.data(), pixels.size());
+    std::memcpy(image.getData(), pixels.data(), pixels.size());
     image.flipVertically();
     ImageIO::Save(image.scaled(0.5, Interpolation::Bilinear), file);
 
@@ -438,7 +438,7 @@ int main(int argc, char** argv) {
     const f32 widestEm = std::max(font.measure(kLine1, 1.0f), font.measure(kLine2, 1.0f));
     const f32 pixelSize = 1900.0f / widestEm;
     scene.text = Upload(BuildTextMesh(font, {kLine1, kLine2}, pixelSize, 0.34f));
-    scene.textCenter = vec3(0.0f, font.lineHeight() * pixelSize * 0.5f, 0.0f);
+    scene.textCenter = vec3(0.0f, font.getLineHeight() * pixelSize * 0.5f, 0.0f);
     scene.textExtent = vec2(1900.0f * 0.55f, 1900.0f * 0.14f);
     scene.floor = Upload(BuildFloor(5200.0f, -120.0f));
 

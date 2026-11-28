@@ -52,16 +52,16 @@ Image ToGray(const Image& image, const i32 channel, const char* name) {
     throw MaterialError(std::string("Material: ") + name + " ist leer");
   }
 
-  if (channel < 0 || channel >= image.channelCount()) {
+  if (channel < 0 || channel >= image.getChannelCount()) {
     throw MaterialError(std::string("Material: Kanal ") + std::to_string(channel) +
                         " liegt ausserhalb von " + name);
   }
 
-  Image result(image.width(), image.height(), ImageFormat::Gray);
+  Image result(image.getWidth(), image.getHeight(), ImageFormat::Gray);
 
-  for (i32 y = 0; y < image.height(); ++y) {
-    for (i32 x = 0; x < image.width(); ++x) {
-      result.setAt(x, y, 0, image.at(x, y, channel));
+  for (i32 y = 0; y < image.getHeight(); ++y) {
+    for (i32 x = 0; x < image.getWidth(); ++x) {
+      result.setChannel(x, y, 0, image.getChannel(x, y, channel));
     }
   }
 
@@ -69,13 +69,13 @@ Image ToGray(const Image& image, const i32 channel, const char* name) {
 }
 
 bool IsConstant(const Image& image) noexcept {
-  return !image.isEmpty() && image.width() == 1 && image.height() == 1;
+  return !image.isEmpty() && image.getWidth() == 1 && image.getHeight() == 1;
 }
 
 f32 FirstValue(const Image& image) noexcept {
   if (image.isEmpty()) return 0.0f;
 
-  return FromByte(image.at(0, 0, 0));
+  return FromByte(image.getChannel(0, 0, 0));
 }
 
 }  // namespace
@@ -109,12 +109,12 @@ bool Material::hasConsistentTextureSize() const noexcept {
 
   for (const Image* image : maps) {
     if (image->isEmpty()) return false;
-    if (image->width() == 1 && image->height() == 1) continue;
+    if (image->getWidth() == 1 && image->getHeight() == 1) continue;
 
     if (width == 0) {
-      width  = image->width();
-      height = image->height();
-    } else if (image->width() != width || image->height() != height) {
+      width  = image->getWidth();
+      height = image->getHeight();
+    } else if (image->getWidth() != width || image->getHeight() != height) {
       return false;
     }
   }
@@ -127,8 +127,8 @@ i32 Material::getWidth() const noexcept { return m_width; }
 i32 Material::getHeight() const noexcept { return m_height; }
 
 void Material::updateSize() noexcept {
-  m_width  = m_albedoMap.width();
-  m_height = m_albedoMap.height();
+  m_width  = m_albedoMap.getWidth();
+  m_height = m_albedoMap.getHeight();
 }
 
 // ─── Albedo ──────────────────────────────────────────────────────────────────

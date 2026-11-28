@@ -204,13 +204,13 @@ std::optional<std::vector<u8>> DecodeDataUri(std::string_view uri) {
 }
 
 Image ExtractChannel(const Image& image, const i32 channel) {
-  const i32 selected = std::clamp(channel, 0, std::max(0, image.channelCount() - 1));
+  const i32 selected = std::clamp(channel, 0, std::max(0, image.getChannelCount() - 1));
 
-  Image result(image.width(), image.height(), ImageFormat::Gray);
+  Image result(image.getWidth(), image.getHeight(), ImageFormat::Gray);
 
-  for (i32 y = 0; y < image.height(); ++y) {
-    for (i32 x = 0; x < image.width(); ++x) {
-      result.setAt(x, y, 0, image.at(x, y, selected));
+  for (i32 y = 0; y < image.getHeight(); ++y) {
+    for (i32 x = 0; x < image.getWidth(); ++x) {
+      result.setChannel(x, y, 0, image.getChannel(x, y, selected));
     }
   }
 
@@ -220,11 +220,11 @@ Image ExtractChannel(const Image& image, const i32 channel) {
 Image MultiplyRgb(const Image& image, const vec3& factor) {
   Image result = image.converted(ImageFormat::Rgb);
 
-  for (i32 y = 0; y < result.height(); ++y) {
-    for (i32 x = 0; x < result.width(); ++x) {
-      result.setAt(x, y, 0, ToByte(FromByte(result.at(x, y, 0)) * factor.x));
-      result.setAt(x, y, 1, ToByte(FromByte(result.at(x, y, 1)) * factor.y));
-      result.setAt(x, y, 2, ToByte(FromByte(result.at(x, y, 2)) * factor.z));
+  for (i32 y = 0; y < result.getHeight(); ++y) {
+    for (i32 x = 0; x < result.getWidth(); ++x) {
+      result.setChannel(x, y, 0, ToByte(FromByte(result.getChannel(x, y, 0)) * factor.x));
+      result.setChannel(x, y, 1, ToByte(FromByte(result.getChannel(x, y, 1)) * factor.y));
+      result.setChannel(x, y, 2, ToByte(FromByte(result.getChannel(x, y, 2)) * factor.z));
     }
   }
 
@@ -232,9 +232,9 @@ Image MultiplyRgb(const Image& image, const vec3& factor) {
 }
 
 void MultiplyGray(Image& image, const f32 factor) {
-  for (i32 y = 0; y < image.height(); ++y) {
-    for (i32 x = 0; x < image.width(); ++x) {
-      image.setAt(x, y, 0, ToByte(FromByte(image.at(x, y, 0)) * factor));
+  for (i32 y = 0; y < image.getHeight(); ++y) {
+    for (i32 x = 0; x < image.getWidth(); ++x) {
+      image.setChannel(x, y, 0, ToByte(FromByte(image.getChannel(x, y, 0)) * factor));
     }
   }
 }
@@ -423,11 +423,11 @@ std::shared_ptr<Material> GetMaterial(LoadContext& context, const cgltf_material
 // ─── Modellaufbau ────────────────────────────────────────────────────────────
 
 void BuildNodes(const cgltf_data& data, Model& model) {
-  model.nodes.resize(static_cast<std::size_t>(data.nodes_count));
+  model.getNodes().resize(static_cast<std::size_t>(data.nodes_count));
 
   for (cgltf_size i = 0; i < data.nodes_count; ++i) {
     const cgltf_node& source = data.nodes[i];
-    ModelNode& node = model.nodes[static_cast<std::size_t>(i)];
+    ModelNode& node = model.getNodes()[static_cast<std::size_t>(i)];
 
     node.name = NameOr(source.name, "node" + std::to_string(i));
     node.parent = source.parent != nullptr
@@ -448,11 +448,11 @@ void BuildNodes(const cgltf_data& data, Model& model) {
 }
 
 void BuildSkins(const cgltf_data& data, Model& model) {
-  model.skins.resize(static_cast<std::size_t>(data.skins_count));
+  model.getSkins().resize(static_cast<std::size_t>(data.skins_count));
 
   for (cgltf_size i = 0; i < data.skins_count; ++i) {
     const cgltf_skin& source = data.skins[i];
-    ModelSkin& skin = model.skins[static_cast<std::size_t>(i)];
+    ModelSkin& skin = model.getSkins()[static_cast<std::size_t>(i)];
 
     skin.name = NameOr(source.name, "skin" + std::to_string(i));
     skin.skeleton = source.skeleton != nullptr
@@ -492,12 +492,12 @@ std::expected<Mesh, ModelError> BuildMesh(LoadContext& context, const cgltf_mesh
   }
 
   Mesh mesh;
-  mesh.name = NameOr(sourceMesh.name, "mesh" + std::to_string(meshIndex));
+  mesh.setName(NameOr(sourceMesh.name, "mesh" + std::to_string(meshIndex)));
   if (sourceMesh.primitives_count > 1) {
-    mesh.name += "/primitive" + std::to_string(primitiveIndex);
+    mesh.setName(mesh.getName() + "/primitive" + std::to_string(primitiveIndex));
   }
-  mesh.primitiveMode = ToPrimitiveMode(primitive.type);
-  mesh.material = GetMaterial(context, primitive.material != nullptr ? primitive.material : nullptr);
+  mesh.setPrimitiveMode(ToPrimitiveMode(primitive.type));
+  mesh.setMaterial(GetMaterial(context, primitive.material != nullptr ? primitive.material : nullptr));
 
   const cgltf_accessor* normals =
       cgltf_find_accessor(&primitive, cgltf_attribute_type_normal, 0);
@@ -511,55 +511,55 @@ std::expected<Mesh, ModelError> BuildMesh(LoadContext& context, const cgltf_mesh
       cgltf_find_accessor(&primitive, cgltf_attribute_type_weights, 0);
 
   const cgltf_size vertexCount = positions->count;
-  mesh.vertices.resize(static_cast<std::size_t>(vertexCount));
+  mesh.getVertices().resize(static_cast<std::size_t>(vertexCount));
 
   for (cgltf_size i = 0; i < vertexCount; ++i) {
-    MeshVertex& vertex = mesh.vertices[static_cast<std::size_t>(i)];
+    MeshVertex& vertex = mesh.getVertices()[static_cast<std::size_t>(i)];
 
     cgltf_float values[4] = {};
     if (cgltf_accessor_read_float(positions, i, values, 3)) {
-      vertex.position = vec3(values[0], values[1], values[2]);
+      vertex.setPosition(vec3(values[0], values[1], values[2]));
     }
 
     if (normals != nullptr && cgltf_accessor_read_float(normals, i, values, 3)) {
-      vertex.normal = vec3(values[0], values[1], values[2]);
+      vertex.setNormal(vec3(values[0], values[1], values[2]));
     }
 
     if (uvs != nullptr && cgltf_accessor_read_float(uvs, i, values, 2)) {
-      vertex.uv = vec2(values[0], values[1]);
+      vertex.setUv(vec2(values[0], values[1]));
     }
 
     if (tangents != nullptr && cgltf_accessor_read_float(tangents, i, values, 4)) {
-      vertex.tangent = vec4(values[0], values[1], values[2], values[3]);
+      vertex.setTangent(vec4(values[0], values[1], values[2], values[3]));
     }
 
     if (joints != nullptr) {
       cgltf_uint ids[4] = {};
       if (cgltf_accessor_read_uint(joints, i, ids, 4)) {
-        vertex.boneIds = uvec4(ids[0], ids[1], ids[2], ids[3]);
+        vertex.setBoneIds(uvec4(ids[0], ids[1], ids[2], ids[3]));
       }
     }
 
     if (weights != nullptr && cgltf_accessor_read_float(weights, i, values, 4)) {
-      vertex.boneWeights = vec4(values[0], values[1], values[2], values[3]);
+      vertex.setBoneWeights(vec4(values[0], values[1], values[2], values[3]));
       vertex.normalizeBoneWeights();
     }
   }
 
   if (primitive.indices != nullptr) {
-    mesh.indices.resize(static_cast<std::size_t>(primitive.indices->count));
+    mesh.getIndices().resize(static_cast<std::size_t>(primitive.indices->count));
     for (cgltf_size i = 0; i < primitive.indices->count; ++i) {
       const cgltf_size index = cgltf_accessor_read_index(primitive.indices, i);
       if (index >= vertexCount) {
         return std::unexpected(ModelError("Model: Index " + std::to_string(index) +
                                           " liegt ausserhalb der Vertexliste"));
       }
-      mesh.indices[static_cast<std::size_t>(i)] = static_cast<u32>(index);
+      mesh.getIndices()[static_cast<std::size_t>(i)] = static_cast<u32>(index);
     }
   } else {
-    mesh.indices.resize(static_cast<std::size_t>(vertexCount));
+    mesh.getIndices().resize(static_cast<std::size_t>(vertexCount));
     for (cgltf_size i = 0; i < vertexCount; ++i) {
-      mesh.indices[static_cast<std::size_t>(i)] = static_cast<u32>(i);
+      mesh.getIndices()[static_cast<std::size_t>(i)] = static_cast<u32>(i);
     }
   }
 
@@ -571,7 +571,7 @@ std::expected<Model, ModelError> BuildModel(const cgltf_data& data,
                                             std::string name,
                                             const ModelLoadOptions& options) {
   Model model;
-  model.name = std::move(name);
+  model.setName(std::move(name));
 
   LoadContext context(data, std::move(baseDir), options.loadMaterials);
 
@@ -584,11 +584,11 @@ std::expected<Model, ModelError> BuildModel(const cgltf_data& data,
                             primitiveIndex);
       if (!mesh) return std::unexpected(std::move(mesh.error()));
 
-      model.meshes.push_back(std::move(*mesh));
+      model.getMeshes().push_back(std::move(*mesh));
     }
   }
 
-  if (model.meshes.empty()) {
+  if (model.getMeshes().empty()) {
     return std::unexpected(ModelError("Model: keine Meshes gefunden"));
   }
 
@@ -596,7 +596,7 @@ std::expected<Model, ModelError> BuildModel(const cgltf_data& data,
   BuildSkins(data, model);
 
   if (data.scene != nullptr && data.scene->name != nullptr && data.scene->name[0] != '\0') {
-    model.name = data.scene->name;
+    model.setName(data.scene->name);
   }
 
   return model;
@@ -641,13 +641,13 @@ std::vector<ModelAnimation> BuildAnimations(const cgltf_data& data) {
     const cgltf_animation& source = data.animations[index];
 
     ModelAnimation animation;
-    animation.name = NameOr(source.name, "animation" + std::to_string(index));
+    animation.setName(NameOr(source.name, "animation" + std::to_string(index)));
 
-    animation.samplers.resize(static_cast<std::size_t>(source.samplers_count));
+    animation.getSamplers().resize(static_cast<std::size_t>(source.samplers_count));
 
     for (cgltf_size samplerIndex = 0; samplerIndex < source.samplers_count; ++samplerIndex) {
       const cgltf_animation_sampler& sourceSampler = source.samplers[samplerIndex];
-      AnimationSampler& sampler = animation.samplers[static_cast<std::size_t>(samplerIndex)];
+      AnimationSampler& sampler = animation.getSamplers()[static_cast<std::size_t>(samplerIndex)];
 
       sampler.interpolation = ToAnimationInterpolation(sourceSampler.interpolation);
 
@@ -659,7 +659,7 @@ std::vector<ModelAnimation> BuildAnimations(const cgltf_data& data) {
         sampler.input.resize(static_cast<std::size_t>(written));
 
         if (!sampler.input.empty()) {
-          animation.duration = std::max(animation.duration, sampler.input.back());
+          animation.setDuration(std::max(animation.getDuration(), sampler.input.back()));
         }
       }
 
@@ -682,7 +682,7 @@ std::vector<ModelAnimation> BuildAnimations(const cgltf_data& data) {
       }
     }
 
-    animation.channels.reserve(static_cast<std::size_t>(source.channels_count));
+    animation.getChannels().reserve(static_cast<std::size_t>(source.channels_count));
 
     for (cgltf_size channelIndex = 0; channelIndex < source.channels_count; ++channelIndex) {
       const cgltf_animation_channel& sourceChannel = source.channels[channelIndex];
@@ -698,7 +698,7 @@ std::vector<ModelAnimation> BuildAnimations(const cgltf_data& data) {
       channel.path = ToAnimationPath(sourceChannel.target_path);
       channel.sampler = static_cast<i32>(sourceChannel.sampler - source.samplers);
 
-      animation.channels.push_back(channel);
+      animation.getChannels().push_back(channel);
     }
 
     animations.push_back(std::move(animation));
@@ -988,11 +988,11 @@ std::shared_ptr<Material> GetFbxMaterial(FbxMaterialCache& cache,
 }
 
 void BuildFbxSkins(const ufbx_scene& scene, Model& model) {
-  model.skins.resize(scene.skin_deformers.count);
+  model.getSkins().resize(scene.skin_deformers.count);
 
   for (size_t i = 0; i < scene.skin_deformers.count; ++i) {
     const ufbx_skin_deformer& source = *scene.skin_deformers.data[i];
-    ModelSkin& skin = model.skins[i];
+    ModelSkin& skin = model.getSkins()[i];
 
     skin.name = FbxString(source.name);
     if (skin.name.empty()) skin.name = "skin" + std::to_string(i);
@@ -1011,11 +1011,11 @@ void BuildFbxSkins(const ufbx_scene& scene, Model& model) {
 }
 
 void BuildFbxNodes(const ufbx_scene& scene, Model& model) {
-  model.nodes.resize(scene.nodes.count);
+  model.getNodes().resize(scene.nodes.count);
 
   for (size_t i = 0; i < scene.nodes.count; ++i) {
     const ufbx_node& source = *scene.nodes.data[i];
-    ModelNode& node = model.nodes[i];
+    ModelNode& node = model.getNodes()[i];
 
     node.name = FbxString(source.name);
     if (node.name.empty()) node.name = "node" + std::to_string(i);
@@ -1030,7 +1030,7 @@ void BuildFbxNodes(const ufbx_scene& scene, Model& model) {
 
     if (source.mesh != nullptr && source.mesh->skin_deformers.count > 0) {
       const ufbx_skin_deformer* skin = source.mesh->skin_deformers.data[0];
-      if (skin->typed_id < model.skins.size()) node.skin = static_cast<i32>(skin->typed_id);
+      if (skin->typed_id < model.getSkins().size()) node.skin = static_cast<i32>(skin->typed_id);
     }
   }
 }
@@ -1039,39 +1039,39 @@ Mesh BuildFbxMeshPart(const ufbx_mesh& source, std::shared_ptr<Material> materia
                       const i32 nodeIndex, const size_t partIndex, const bool hasParts,
                       const bool flipV) {
   Mesh mesh;
-  mesh.name = FbxString(source.name);
-  if (mesh.name.empty()) mesh.name = "mesh";
-  if (hasParts) mesh.name += "/part" + std::to_string(partIndex);
+  mesh.setName(FbxString(source.name));
+  if (mesh.getName().empty()) mesh.setName("mesh");
+  if (hasParts) mesh.setName(mesh.getName() + "/part" + std::to_string(partIndex));
 
-  mesh.material = std::move(material);
-  mesh.nodeIndex = nodeIndex;
-  mesh.primitiveMode = MeshPrimitiveMode::Triangles;
+  mesh.setMaterial(std::move(material));
+  mesh.setNodeIndex(nodeIndex);
+  mesh.setPrimitiveMode(MeshPrimitiveMode::Triangles);
 
   const size_t vertexCount = source.num_indices;
-  mesh.vertices.resize(vertexCount);
+  mesh.getVertices().resize(vertexCount);
 
   const ufbx_skin_deformer* skin =
       source.skin_deformers.count > 0 ? source.skin_deformers.data[0] : nullptr;
 
   for (size_t index = 0; index < vertexCount; ++index) {
-    MeshVertex& vertex = mesh.vertices[index];
+    MeshVertex& vertex = mesh.getVertices()[index];
 
     if (source.vertex_position.exists) {
-      vertex.position = ToVec3(ufbx_get_vertex_vec3(&source.vertex_position, index));
+      vertex.setPosition(ToVec3(ufbx_get_vertex_vec3(&source.vertex_position, index)));
     }
 
     if (source.vertex_normal.exists) {
-      vertex.normal = ToVec3(ufbx_get_vertex_vec3(&source.vertex_normal, index));
+      vertex.setNormal(ToVec3(ufbx_get_vertex_vec3(&source.vertex_normal, index)));
     }
 
     if (source.vertex_uv.exists) {
       const vec2 uv = ToVec2(ufbx_get_vertex_vec2(&source.vertex_uv, index));
-      vertex.uv = flipV ? vec2(uv.x, 1.0f - uv.y) : uv;
+      vertex.setUv(flipV ? vec2(uv.x, 1.0f - uv.y) : uv);
     }
 
     if (source.vertex_tangent.exists) {
       const ufbx_vec3 tangent = ufbx_get_vertex_vec3(&source.vertex_tangent, index);
-      vertex.tangent = vec4(tangent.x, tangent.y, tangent.z, 1.0f);
+      vertex.setTangent(vec4(tangent.x, tangent.y, tangent.z, 1.0f));
     }
 
     if (skin != nullptr && index < source.vertex_indices.count) {
@@ -1080,15 +1080,20 @@ Mesh BuildFbxMeshPart(const ufbx_mesh& source, std::shared_ptr<Material> materia
         const ufbx_skin_vertex& skinVertex = skin->vertices.data[logical];
         const size_t count = std::min<size_t>(skinVertex.num_weights, 4);
 
+        uvec4 boneIds = vertex.getBoneIds();
+        vec4 boneWeights = vertex.getBoneWeights();
+
         for (size_t weightIndex = 0; weightIndex < count; ++weightIndex) {
           const size_t slot = skinVertex.weight_begin + weightIndex;
           if (slot >= skin->weights.count) break;
 
           const ufbx_skin_weight& weight = skin->weights.data[slot];
-          vertex.boneIds[weightIndex] = weight.cluster_index;
-          vertex.boneWeights[weightIndex] = weight.weight;
+          boneIds[weightIndex] = weight.cluster_index;
+          boneWeights[weightIndex] = weight.weight;
         }
 
+        vertex.setBoneIds(boneIds);
+        vertex.setBoneWeights(boneWeights);
         vertex.normalizeBoneWeights();
       }
     }
@@ -1111,7 +1116,7 @@ Mesh BuildFbxMeshPart(const ufbx_mesh& source, std::shared_ptr<Material> materia
     const size_t indexCount = static_cast<size_t>(triangleCount) * 3;
     if (indexCount > triangleIndices.size()) return;
 
-    mesh.indices.insert(mesh.indices.end(), triangleIndices.begin(),
+    mesh.getIndices().insert(mesh.getIndices().end(), triangleIndices.begin(),
                         triangleIndices.begin() + static_cast<std::ptrdiff_t>(indexCount));
   };
 
@@ -1134,7 +1139,7 @@ std::expected<Model, ModelError> BuildFbxModel(const ufbx_scene& scene,
                                                std::string name,
                                                const ModelLoadOptions& options) {
   Model model;
-  model.name = std::move(name);
+  model.setName(std::move(name));
 
   FbxMaterialCache materials(scene, std::move(baseDir), options.loadMaterials);
 
@@ -1175,15 +1180,15 @@ std::expected<Model, ModelError> BuildFbxModel(const ufbx_scene& scene,
                                    hasParts, options.flipFbxV);
 
       if (firstMesh[meshIndex] < 0) {
-        firstMesh[meshIndex] = static_cast<i32>(model.meshes.size());
-        if (nodeIndex >= 0) model.nodes[static_cast<size_t>(nodeIndex)].mesh = firstMesh[meshIndex];
+        firstMesh[meshIndex] = static_cast<i32>(model.getMeshes().size());
+        if (nodeIndex >= 0) model.getNodes()[static_cast<size_t>(nodeIndex)].mesh = firstMesh[meshIndex];
       }
 
-      model.meshes.push_back(std::move(mesh));
+      model.getMeshes().push_back(std::move(mesh));
     }
   }
 
-  if (model.meshes.empty()) {
+  if (model.getMeshes().empty()) {
     return std::unexpected(ModelError("FBX: keine Meshes gefunden"));
   }
 
@@ -1249,8 +1254,8 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
     }
 
     ModelAnimation animation;
-    animation.name = FbxString(stack.name);
-    if (animation.name.empty()) animation.name = "animation" + std::to_string(stackIndex);
+    animation.setName(FbxString(stack.name));
+    if (animation.getName().empty()) animation.setName("animation" + std::to_string(stackIndex));
 
     for (auto& [node, data] : channels) {
       if (data.times.empty()) continue;
@@ -1277,8 +1282,8 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         sampler.components = 3;
         sampler.valuesPerKey = 1;
         sampler.interpolation = AnimationInterpolation::Linear;
-        translationSampler = static_cast<i32>(animation.samplers.size());
-        animation.samplers.push_back(std::move(sampler));
+        translationSampler = static_cast<i32>(animation.getSamplers().size());
+        animation.getSamplers().push_back(std::move(sampler));
       }
 
       if (data.rotation) {
@@ -1287,8 +1292,8 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         sampler.components = 4;
         sampler.valuesPerKey = 1;
         sampler.interpolation = AnimationInterpolation::Linear;
-        rotationSampler = static_cast<i32>(animation.samplers.size());
-        animation.samplers.push_back(std::move(sampler));
+        rotationSampler = static_cast<i32>(animation.getSamplers().size());
+        animation.getSamplers().push_back(std::move(sampler));
       }
 
       if (data.scale) {
@@ -1297,8 +1302,8 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         sampler.components = 3;
         sampler.valuesPerKey = 1;
         sampler.interpolation = AnimationInterpolation::Linear;
-        scaleSampler = static_cast<i32>(animation.samplers.size());
-        animation.samplers.push_back(std::move(sampler));
+        scaleSampler = static_cast<i32>(animation.getSamplers().size());
+        animation.getSamplers().push_back(std::move(sampler));
       }
 
       for (const f64 time : data.times) {
@@ -1307,7 +1312,7 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
 
         if (translationSampler >= 0) {
           AnimationSampler& sampler =
-              animation.samplers[static_cast<size_t>(translationSampler)];
+              animation.getSamplers()[static_cast<size_t>(translationSampler)];
           sampler.output.push_back(static_cast<f32>(transform.translation.x));
           sampler.output.push_back(static_cast<f32>(transform.translation.y));
           sampler.output.push_back(static_cast<f32>(transform.translation.z));
@@ -1315,7 +1320,7 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
 
         if (rotationSampler >= 0) {
           AnimationSampler& sampler =
-              animation.samplers[static_cast<size_t>(rotationSampler)];
+              animation.getSamplers()[static_cast<size_t>(rotationSampler)];
           sampler.output.push_back(static_cast<f32>(transform.rotation.x));
           sampler.output.push_back(static_cast<f32>(transform.rotation.y));
           sampler.output.push_back(static_cast<f32>(transform.rotation.z));
@@ -1323,7 +1328,7 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         }
 
         if (scaleSampler >= 0) {
-          AnimationSampler& sampler = animation.samplers[static_cast<size_t>(scaleSampler)];
+          AnimationSampler& sampler = animation.getSamplers()[static_cast<size_t>(scaleSampler)];
           sampler.output.push_back(static_cast<f32>(transform.scale.x));
           sampler.output.push_back(static_cast<f32>(transform.scale.y));
           sampler.output.push_back(static_cast<f32>(transform.scale.z));
@@ -1340,7 +1345,7 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         channel.nodeName = nodeName;
         channel.path = AnimationPath::Translation;
         channel.sampler = translationSampler;
-        animation.channels.push_back(std::move(channel));
+        animation.getChannels().push_back(std::move(channel));
       }
       if (rotationSampler >= 0) {
         AnimationChannel channel;
@@ -1348,7 +1353,7 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         channel.nodeName = nodeName;
         channel.path = AnimationPath::Rotation;
         channel.sampler = rotationSampler;
-        animation.channels.push_back(std::move(channel));
+        animation.getChannels().push_back(std::move(channel));
       }
       if (scaleSampler >= 0) {
         AnimationChannel channel;
@@ -1356,11 +1361,11 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
         channel.nodeName = nodeName;
         channel.path = AnimationPath::Scale;
         channel.sampler = scaleSampler;
-        animation.channels.push_back(std::move(channel));
+        animation.getChannels().push_back(std::move(channel));
       }
     }
 
-    animation.duration = static_cast<f32>(std::max(0.0, end - begin));
+    animation.setDuration(static_cast<f32>(std::max(0.0, end - begin)));
 
     if (animation.isValid()) animations.push_back(std::move(animation));
   }
@@ -1374,19 +1379,19 @@ std::vector<ModelAnimation> BuildFbxAnimations(const ufbx_scene& scene) {
 // ─── Mesh / Model ────────────────────────────────────────────────────────────
 
 bool Mesh::isValid() const noexcept {
-  if (vertices.empty() || indices.empty() || material == nullptr) return false;
+  if (m_vertices.empty() || m_indices.empty() || m_material == nullptr) return false;
 
-  for (const u32 index : indices) {
-    if (index >= vertices.size()) return false;
+  for (const u32 index : m_indices) {
+    if (index >= m_vertices.size()) return false;
   }
 
   return true;
 }
 
 bool Model::isValid() const noexcept {
-  if (meshes.empty()) return false;
+  if (m_meshes.empty()) return false;
 
-  for (const Mesh& mesh : meshes) {
+  for (const Mesh& mesh : m_meshes) {
     if (!mesh.isValid()) return false;
   }
 
@@ -1395,28 +1400,28 @@ bool Model::isValid() const noexcept {
 
 // ─── AnimationSampler / ModelAnimation ───────────────────────────────────────
 
-u32 AnimationSampler::keyCount() const noexcept {
+u32 AnimationSampler::getKeyCount() const noexcept {
   return static_cast<u32>(input.size());
 }
 
-u32 AnimationSampler::valueCount() const noexcept {
+u32 AnimationSampler::getValueCount() const noexcept {
   if (valuesPerKey == 0) return 0;
   return (interpolation == AnimationInterpolation::CubicSpline) ? valuesPerKey / 3
                                                                 : valuesPerKey;
 }
 
-u32 AnimationSampler::keyStride() const noexcept {
+u32 AnimationSampler::getKeyStride() const noexcept {
   return components * valuesPerKey;
 }
 
 f32 AnimationSampler::getScalar(const u32 key, const u32 value, const u32 component) const noexcept {
-  if (key >= keyCount() || value >= valueCount() || component >= components) return 0.0f;
+  if (key >= getKeyCount() || value >= getValueCount() || component >= components) return 0.0f;
 
   const u32 mainOffset = (interpolation == AnimationInterpolation::CubicSpline)
-                             ? components * valueCount()
+                             ? components * getValueCount()
                              : 0;
 
-  const std::size_t index = static_cast<std::size_t>(key) * keyStride() + mainOffset +
+  const std::size_t index = static_cast<std::size_t>(key) * getKeyStride() + mainOffset +
                             static_cast<std::size_t>(value) * components + component;
 
   return index < output.size() ? output[index] : 0.0f;
@@ -1432,11 +1437,11 @@ quat AnimationSampler::getQuat(const u32 key) const noexcept {
 }
 
 bool ModelAnimation::isValid() const noexcept {
-  if (samplers.empty() || channels.empty()) return false;
+  if (m_samplers.empty() || m_channels.empty()) return false;
 
-  for (const AnimationChannel& channel : channels) {
+  for (const AnimationChannel& channel : m_channels) {
     if (channel.sampler < 0 ||
-        channel.sampler >= static_cast<i32>(samplers.size())) {
+        channel.sampler >= static_cast<i32>(m_samplers.size())) {
       return false;
     }
   }

@@ -13,31 +13,31 @@ namespace sgl {
 Rectangle::Rectangle(f32 positionX, f32 positionY, f32 rectangleWidth, f32 rectangleHeight)
     : x(positionX), y(positionY), width(rectangleWidth), height(rectangleHeight) {}
 
-vec2 Rectangle::position() const {
+vec2 Rectangle::getPosition() const {
     return {x, y};
 }
 
-vec2 Rectangle::size() const {
+vec2 Rectangle::getSize() const {
     return {width, height};
 }
 
-vec2 Rectangle::center() const {
+vec2 Rectangle::getCenter() const {
     return {x + (width * 0.5f), y + (height * 0.5f)};
 }
 
-f32 Rectangle::left() const {
+f32 Rectangle::getLeft() const {
     return x;
 }
 
-f32 Rectangle::top() const {
+f32 Rectangle::getTop() const {
     return y;
 }
 
-f32 Rectangle::right() const {
+f32 Rectangle::getRight() const {
     return x + width;
 }
 
-f32 Rectangle::bottom() const {
+f32 Rectangle::getBottom() const {
     return y + height;
 }
 
@@ -57,20 +57,20 @@ bool Rectangle::containsStrict(const vec2& point) const {
 }
 
 bool Rectangle::contains(const Rectangle& other) const {
-    return (other.x >= x) && (other.y >= y) && (other.right() <= right()) &&
-           (other.bottom() <= bottom());
+    return (other.x >= x) && (other.y >= y) && (other.getRight() <= getRight()) &&
+           (other.getBottom() <= getBottom());
 }
 
 bool Rectangle::overlaps(const Rectangle& other) const {
-    return (x < other.right()) && (other.x < right()) && (y < other.bottom()) &&
-           (other.y < bottom());
+    return (x < other.getRight()) && (other.x < getRight()) && (y < other.getBottom()) &&
+           (other.y < getBottom());
 }
 
 Rectangle Rectangle::intersection(const Rectangle& other) const {
     const f32 left = std::max(x, other.x);
     const f32 top = std::max(y, other.y);
-    const f32 right = std::min(this->right(), other.right());
-    const f32 bottom = std::min(this->bottom(), other.bottom());
+    const f32 right = std::min(this->getRight(), other.getRight());
+    const f32 bottom = std::min(this->getBottom(), other.getBottom());
 
     if ((right <= left) || (bottom <= top)) {
         return {left, top, 0.0f, 0.0f};
@@ -81,8 +81,8 @@ Rectangle Rectangle::intersection(const Rectangle& other) const {
 Rectangle Rectangle::united(const Rectangle& other) const {
     const f32 left = std::min(x, other.x);
     const f32 top = std::min(y, other.y);
-    const f32 right = std::max(this->right(), other.right());
-    const f32 bottom = std::max(this->bottom(), other.bottom());
+    const f32 right = std::max(this->getRight(), other.getRight());
+    const f32 bottom = std::max(this->getBottom(), other.getBottom());
 
     return {left, top, right - left, bottom - top};
 }

@@ -19,8 +19,12 @@ Keine externe GLFW-Abhängigkeit, moderne C++-API, Typen aus `include/sgl/Types.
 - Freie Funktionen und statische Methoden: `PascalCase` (`Init()`, `Window::Create()`).
 - Typen/Klassen: `PascalCase`; Namespaces: `lower_case`.
 - Membervariablen: `m_camelCase`.
-- Getter (nicht bool): `getX()`; Getter (bool): `isX()`; Setter: `setX()`.
-- Reine Datentypen (`WindowHints`, `VideoMode`, `GamepadState`, `Image`, `GammaRamp`): öffentliche Felder.
+- Getter (nicht bool): `getX()`; Getter (bool): `isX()`/`hasX()`; Setter: `setX()`.
+- Reine Datentypen und Aggregates (`WindowHints`, `VideoMode`, `GammaRamp`, `GamepadState`,
+  `Color`, `Rectangle`, `TextureOptions`, `FramebufferOptions`, `NoiseConfig`, `FontMetrics`,
+  `Glyph`, `ModelNode`, `ModelSkin`, `AnimationSampler`, `AnimationChannel`, `AnimationFrame`,
+  `Animation`, `GlyphMesh`): öffentliche Felder. Klassen mit eigenem Zustand (z. B. `Image`,
+  `Mesh`, `Model`) kapseln ihn hinter Getter/Settern.
 
 ## Architektur
 

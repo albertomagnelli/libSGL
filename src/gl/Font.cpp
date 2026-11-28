@@ -60,7 +60,7 @@ bool Font::isValid() const noexcept {
   return !m_atlas.isEmpty() && !m_glyphs.empty() && m_metrics.size > 0.0f;
 }
 
-const Glyph *Font::glyph(const u32 codepoint) const {
+const Glyph *Font::getGlyph(const u32 codepoint) const {
   if (const auto found = m_glyphIndex.find(codepoint);
       found != m_glyphIndex.end()) {
     return &m_glyphs[found->second];
@@ -78,7 +78,7 @@ bool Font::hasGlyph(const u32 codepoint) const {
   return m_glyphIndex.contains(codepoint);
 }
 
-f32 Font::missingAdvance() const noexcept {
+f32 Font::getMissingAdvance() const noexcept {
   return m_metrics.size * kMissingAdvanceRatio;
 }
 
@@ -129,7 +129,7 @@ f32 Font::measure(const std::string_view utf8, const f32 pixelSize) const {
       continue;
     }
     if (codepoint == '\t') {
-      const Glyph *space = glyph(' ');
+      const Glyph *space = getGlyph(' ');
       current +=
           (space != nullptr ? space->advance : missingAdvance) * 4.0f * scale;
       previous.reset();
@@ -138,7 +138,7 @@ f32 Font::measure(const std::string_view utf8, const f32 pixelSize) const {
     if (previous.has_value()) {
       current += kerning(*previous, codepoint) * scale;
     }
-    const Glyph *entry = glyph(codepoint);
+    const Glyph *entry = getGlyph(codepoint);
     current += (entry != nullptr ? entry->advance : missingAdvance) * scale;
     previous = codepoint;
   }
@@ -489,7 +489,7 @@ Font Font::LoadDefault() {
       const u8 *source =
           entry.bitmap.data() +
           static_cast<std::size_t>(row) * static_cast<std::size_t>(entry.width);
-      u8 *target = atlas.scanline(entry.y + row) + entry.x;
+      u8 *target = atlas.getScanline(entry.y + row) + entry.x;
       std::copy_n(source, entry.width, target);
     }
   }
@@ -520,7 +520,7 @@ Font Font::LoadDefault() {
     }
   }
 
-  SLOGD << "Standardschrift geladen: " << font.glyphs().size()
+  SLOGD << "Standardschrift geladen: " << font.getGlyphs().size()
        << " Glyphen, Atlas " << kDefaultAtlasWidth << 'x' << atlasHeight;
   return font;
 }

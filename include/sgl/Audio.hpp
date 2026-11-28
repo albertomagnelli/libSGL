@@ -44,20 +44,20 @@ public:
   bool setSamples(std::vector<f32> samples, i32 sampleRate, i32 channels);
 
   void unload();
-  bool isValid() const;
+  [[nodiscard]] bool isValid() const;
 
-  i32 frameCount() const;  // Anzahl Rahmen
-  i32 sampleRate() const;  // Rahmen pro Sekunde
-  i32 channels() const;    // 1 = mono, 2 = stereo
-  i32 sampleSize() const;  // Bytes je Sample (immer 4 bei 32 Bit float)
-  i32 sampleCount() const; // Rahmen * Kanaele
+  [[nodiscard]] i32 getFrameCount() const;  // Anzahl Rahmen
+  [[nodiscard]] i32 getSampleRate() const;  // Rahmen pro Sekunde
+  [[nodiscard]] i32 getChannels() const;    // 1 = mono, 2 = stereo
+  [[nodiscard]] i32 getSampleSize() const;  // Bytes je Sample (immer 4 bei 32 Bit float)
+  [[nodiscard]] i32 getSampleCount() const; // Rahmen * Kanaele
 
-  f32 duration() const; // Sekunden
+  [[nodiscard]] f32 getDuration() const; // Sekunden
 
-  const std::vector<f32> &samples() const;
-  std::vector<f32>       &samples();
+  [[nodiscard]] const std::vector<f32> &getSamples() const;
+  std::vector<f32>       &getSamples();
 
-  Wave copy() const;
+  [[nodiscard]] Wave copy() const;
 
   // Rahmenbereich behalten (initFrame..finalFrame, beide inklusive)
   bool crop(i32 firstFrame, i32 lastFrame);
@@ -66,10 +66,10 @@ public:
   bool convert(i32 sampleRate, i32 channels);
 
   // Als 16-Bit-PCM-WAV schreiben; bei der Endung .qoa als QOA
-  bool saveToFile(const std::string &path) const;
+  [[nodiscard]] bool saveToFile(const std::string &path) const;
 
   // Als C-Header mit float-Array schreiben
-  bool saveAsCode(const std::string &path, const std::string &variableName = "waveSamples") const;
+  [[nodiscard]] bool saveAsCode(const std::string &path, const std::string &variableName = "waveSamples") const;
 
 private:
   std::vector<f32> m_samples;
@@ -93,26 +93,26 @@ public:
   bool loadFromWave(const Wave &wave, i32 voices = 8);
 
   void unload();
-  bool isValid() const; // Daten dekodiert (Wiedergabe braucht zusaetzlich ein Geraet)
+  [[nodiscard]] bool isValid() const; // Daten dekodiert (Wiedergabe braucht zusaetzlich ein Geraet)
 
-  const Wave &data() const;
-  f32         duration() const;
-  i32         voiceCount() const;
+  [[nodiscard]] const Wave &getData() const;
+  [[nodiscard]] f32         getDuration() const;
+  [[nodiscard]] i32         getVoiceCount() const;
 
   void play();
   void stop();
   void pause();
   void resume();
-  bool isPlaying() const;
+  [[nodiscard]] bool isPlaying() const;
 
   void setVolume(f32 volume); // 1.0 = normal
-  f32  volume() const;
+  [[nodiscard]] f32  getVolume() const;
   void setPitch(f32 pitch); // 1.0 = Originaltonhoehe
-  f32  pitch() const;
+  [[nodiscard]] f32  getPitch() const;
   void setPan(f32 pan); // -1.0 links .. 1.0 rechts
-  f32  pan() const;
+  [[nodiscard]] f32  getPan() const;
   void setLooping(bool looping);
-  bool isLooping() const;
+  [[nodiscard]] bool isLooping() const;
 
   struct Impl; // intern (Definition in Audio.cpp)
 
@@ -137,27 +137,29 @@ public:
   bool loadFromMemory(const u8 *data, std::size_t size, const std::string &extension = std::string());
 
   void unload();
-  bool isValid() const;
-  bool isStreaming() const; // true = aus der Datei gestreamt
+  [[nodiscard]] bool isValid() const;
+  [[nodiscard]] bool isStreaming() const; // true = aus der Datei gestreamt
 
   void play();
   void stop();
   void pause();
   void resume();
-  bool isPlaying() const;
-  bool isPaused() const;
+  [[nodiscard]] bool isPlaying() const;
+  [[nodiscard]] bool isPaused() const;
   void update(); // nicht noetig (miniaudio streamt selbst), bleibt fuer raylib-Aufrufe
 
   void seek(f32 seconds);
-  f32  timeLength() const; // Sekunden
-  f32  timePlayed() const;
+  [[nodiscard]] f32  getTimeLength() const; // Sekunden
+  [[nodiscard]] f32  getTimePlayed() const;
 
   void setVolume(f32 volume);
-  f32  volume() const;
+  [[nodiscard]] f32  getVolume() const;
   void setPitch(f32 pitch);
+  [[nodiscard]] f32  getPitch() const;
   void setPan(f32 pan);
+  [[nodiscard]] f32  getPan() const;
   void setLooping(bool looping);
-  bool isLooping() const;
+  [[nodiscard]] bool isLooping() const;
 
   struct Impl; // intern (Definition in Audio.cpp)
 
@@ -181,26 +183,30 @@ public:
 
   bool load(u32 sampleRate, u32 channels = 2, u32 bufferFrames = 8192);
   void unload();
-  bool isValid() const;
+  [[nodiscard]] bool isValid() const;
 
   // Rahmen (interleaved) anhaengen; gibt false zurueck, wenn der Puffer voll ist
   bool push(const f32 *samples, i32 frameCount);
   void clear();
-  i32  queuedFrames() const;
-  i32  capacityFrames() const;
-  i32  sampleRate() const;
-  i32  channels() const;
+  [[nodiscard]] i32  getQueuedFrames() const;
+  [[nodiscard]] i32  getCapacityFrames() const;
+  [[nodiscard]] i32  getSampleRate() const;
+  [[nodiscard]] i32  getChannels() const;
 
   void play();
   void pause();
   void resume();
   void stop();
-  bool isPlaying() const;
+  [[nodiscard]] bool isPlaying() const;
 
   void setVolume(f32 volume);
+  [[nodiscard]] f32  getVolume() const;
   void setPitch(f32 pitch);
+  [[nodiscard]] f32  getPitch() const;
   void setPan(f32 pan);
+  [[nodiscard]] f32  getPan() const;
   void setLooping(bool looping);
+  [[nodiscard]] bool isLooping() const;
 
   struct Impl; // intern (Definition in Audio.cpp)
 

@@ -161,7 +161,7 @@ void Framebuffer::allocate() {
         if (isMultisampled()) {
             GLuint buffer = 0;
             glCreateRenderbuffers(1, &buffer);
-            glNamedRenderbufferStorageMultisample(buffer, sampleCount(), internalFormat, m_width,
+            glNamedRenderbufferStorageMultisample(buffer, getSampleCount(), internalFormat, m_width,
                                                   m_height);
             m_colorBuffers[static_cast<std::size_t>(index)] = buffer;
             glNamedFramebufferRenderbuffer(
@@ -178,7 +178,7 @@ void Framebuffer::allocate() {
             Texture2d texture =
                 Texture2d::CreateStorage(m_width, m_height, m_options.colorFormat, textureOptions);
             glNamedFramebufferTexture(m_id, static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index),
-                                      texture.id(), 0);
+                                      texture.getId(), 0);
             m_colorTextures[static_cast<std::size_t>(index)] = std::move(texture);
         }
         drawBuffers.push_back(static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index));
@@ -188,7 +188,7 @@ void Framebuffer::allocate() {
         glCreateRenderbuffers(1, &m_depthBuffer);
         const GLenum depthFormat = hasStencil() ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT24;
         if (isMultisampled()) {
-            glNamedRenderbufferStorageMultisample(m_depthBuffer, sampleCount(), depthFormat, m_width,
+            glNamedRenderbufferStorageMultisample(m_depthBuffer, getSampleCount(), depthFormat, m_width,
                                                   m_height);
         } else {
             glNamedRenderbufferStorage(m_depthBuffer, depthFormat, m_width, m_height);
@@ -237,7 +237,7 @@ bool Framebuffer::isComplete() const {
     return glCheckNamedFramebufferStatus(m_id, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
 
-Texture2d& Framebuffer::colorTexture(const i32 index) {
+Texture2d& Framebuffer::getColorTexture(const i32 index) {
     if (isMultisampled()) {
         throw FramebufferError(
             "Framebuffer: ein mehrfach abgetastetes Ziel hat Texturanhänge erst nach "
@@ -251,11 +251,11 @@ Texture2d& Framebuffer::colorTexture(const i32 index) {
     return m_colorTextures[static_cast<std::size_t>(index)];
 }
 
-const Texture2d& Framebuffer::colorTexture(const i32 index) const {
-    return const_cast<Framebuffer*>(this)->colorTexture(index);
+const Texture2d& Framebuffer::getColorTexture(const i32 index) const {
+    return const_cast<Framebuffer*>(this)->getColorTexture(index);
 }
 
-GLuint Framebuffer::colorRenderbuffer(const i32 index) const {
+GLuint Framebuffer::getColorRenderbuffer(const i32 index) const {
     if (index < 0 || index >= m_options.colorAttachments) {
         throw FramebufferError("Framebuffer: Farbanhang " + std::to_string(index) +
                                " liegt außerhalb 0.." +
@@ -339,7 +339,7 @@ void Framebuffer::resize(i32 width, i32 height) {
 }
 
 Image Framebuffer::readPixels(const i32 attachment) const {
-    const Texture2d& texture = colorTexture(attachment);
+    const Texture2d& texture = getColorTexture(attachment);
     return texture.readBack();
 }
 
@@ -356,7 +356,7 @@ bool Framebuffer::readPixel(const i32 x, const i32 y, u8* rgba) const {
     const i32 channels = ColorChannels(m_options.colorFormat);
     u8 pixel[16] = {};
     // DSA: direkt aus dem Texturanhang lesen, ohne Read-Framebuffer zu binden.
-    const GLuint texture = m_colorTextures[0].id();
+    const GLuint texture = m_colorTextures[0].getId();
     if (texture != 0) {
         glGetTextureSubImage(texture, 0, x, y, 0, 1, 1, 1, ColorPixelFormat(m_options.colorFormat),
                              GL_UNSIGNED_BYTE, sizeof(pixel), pixel);
@@ -383,10 +383,10 @@ bool CanBlitFramebuffer(const Framebuffer& src, const Framebuffer& dst) {
     if (!src.isValid() || !dst.isValid()) {
         return false;
     }
-    if (src.options().colorFormat != dst.options().colorFormat) {
+    if (src.getOptions().colorFormat != dst.getOptions().colorFormat) {
         return false;
     }
-    if (src.colorAttachmentCount() > dst.colorAttachmentCount()) {
+    if (src.getColorAttachmentCount() > dst.getColorAttachmentCount()) {
         return false;
     }
     // Tiefe/Stencil sind nur nötig, wenn sie auch kopiert werden – das prüft
@@ -431,10 +431,10 @@ void DoBlit(const Framebuffer& src, const Rectangle& srcRect, Framebuffer& dst,
     const bool isColorBlit = (mask & GL_COLOR_BUFFER_BIT) != 0;
     if (isColorBlit) {
         const GLenum onlyFirst = GL_COLOR_ATTACHMENT0;
-        glNamedFramebufferDrawBuffers(dst.id(), 1, &onlyFirst);
+        glNamedFramebufferDrawBuffers(dst.getId(), 1, &onlyFirst);
     }
 
-    glBlitNamedFramebuffer(src.id(), dst.id(), static_cast<GLint>(srcRect.x),
+    glBlitNamedFramebuffer(src.getId(), dst.getId(), static_cast<GLint>(srcRect.x),
                            static_cast<GLint>(srcRect.y),
                            static_cast<GLint>(srcRect.x + srcRect.width),
                            static_cast<GLint>(srcRect.y + srcRect.height),
@@ -451,8 +451,8 @@ void DoBlit(const Framebuffer& src, const Rectangle& srcRect, Framebuffer& dst,
 
 void BlitFramebuffer(const Framebuffer& src, Framebuffer& dst, const bool isColor, const bool isDepth,
                      GLenum filter) {
-    const Rectangle srcRect{0.0f, 0.0f, static_cast<f32>(src.width()), static_cast<f32>(src.height())};
-    const Rectangle dstRect{0.0f, 0.0f, static_cast<f32>(dst.width()), static_cast<f32>(dst.height())};
+    const Rectangle srcRect{0.0f, 0.0f, static_cast<f32>(src.getWidth()), static_cast<f32>(src.getHeight())};
+    const Rectangle dstRect{0.0f, 0.0f, static_cast<f32>(dst.getWidth()), static_cast<f32>(dst.getHeight())};
     DoBlit(src, srcRect, dst, dstRect, isColor, isDepth, filter);
 }
 
@@ -470,18 +470,18 @@ void ResolveFramebuffer(const Framebuffer& src, Framebuffer& dst) {
         throw FramebufferError("ResolveFramebuffer: Ziel darf nicht mehrfach abgetastet sein (" +
                                dst.describe() + ")");
     }
-    if (src.width() != dst.width() || src.height() != dst.height()) {
+    if (src.getWidth() != dst.getWidth() || src.getHeight() != dst.getHeight()) {
         throw FramebufferError("ResolveFramebuffer: Größen unterscheiden sich (" +
-                               std::to_string(src.width()) + "x" + std::to_string(src.height()) +
-                               " -> " + std::to_string(dst.width()) + "x" +
-                               std::to_string(dst.height()) + ")");
+                               std::to_string(src.getWidth()) + "x" + std::to_string(src.getHeight()) +
+                               " -> " + std::to_string(dst.getWidth()) + "x" +
+                               std::to_string(dst.getHeight()) + ")");
     }
     DoBlit(src,
-           Rectangle{0.0f, 0.0f, static_cast<f32>(src.width()), static_cast<f32>(src.height())}, dst,
-           Rectangle{0.0f, 0.0f, static_cast<f32>(dst.width()), static_cast<f32>(dst.height())},
+           Rectangle{0.0f, 0.0f, static_cast<f32>(src.getWidth()), static_cast<f32>(src.getHeight())}, dst,
+           Rectangle{0.0f, 0.0f, static_cast<f32>(dst.getWidth()), static_cast<f32>(dst.getHeight())},
            true, src.hasDepth() && dst.hasDepth(), GL_NEAREST);
-    SLOGD << "MSAA aufgelöst: " << ToString(src.samples()) << " -> 1x (" << src.width() << "x"
-         << src.height() << ")";
+    SLOGD << "MSAA aufgelöst: " << ToString(src.getSamples()) << " -> 1x (" << src.getWidth() << "x"
+         << src.getHeight() << ")";
 }
 
 }  // namespace sgl

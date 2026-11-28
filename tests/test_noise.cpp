@@ -47,15 +47,15 @@ TEST_CASE("Noise erzeugt eine Rauschtextur", "[noise][gl]") {
         Noise noise;
         REQUIRE(noise.create(config));
         REQUIRE(noise.isValid());
-        REQUIRE(noise.width() == 64);
-        REQUIRE(noise.height() == 64);
-        REQUIRE(noise.dimension() == 2);
+        REQUIRE(noise.getWidth() == 64);
+        REQUIRE(noise.getHeight() == 64);
+        REQUIRE(noise.getDimension() == 2);
         REQUIRE_FALSE(noise.is3D());
 
         const Image image = noise.toImage();
-        REQUIRE(image.width() == 64);
-        REQUIRE(image.height() == 64);
-        REQUIRE(image.format() == ImageFormat::Rgba);
+        REQUIRE(image.getWidth() == 64);
+        REQUIRE(image.getHeight() == 64);
+        REQUIRE(image.getFormat() == ImageFormat::Rgba);
         REQUIRE_FALSE(image.isEmpty());
     }
 

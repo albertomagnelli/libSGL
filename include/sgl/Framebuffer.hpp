@@ -8,8 +8,8 @@
 //   FramebufferOptions { width, height, colorFormat, samples, isDepth, isStencil,
 //                        isSrgb, colorAttachments }
 //   Framebuffer: Framebuffer(width, height, options), resize, bind, Unbind,
-//                clear, isComplete, colorTexture, colorRenderbuffer, readPixels,
-//                width, height, samples, isMultisampled, hasDepth, hasStencil
+//                clear, isComplete, getColorTexture, getColorRenderbuffer, readPixels,
+//                getWidth, getHeight, getSamples, isMultisampled, hasDepth, hasStencil
 //   Freie Funktionen: BlitFramebuffer(src, dst, ...), ResolveFramebuffer(src, dst)
 //
 // Einfach abgetastete Ziele legen ihre Farbanhänge als Texture2d an (direkt
@@ -22,7 +22,7 @@
 //   Framebuffer resolved(1280, 720);          // ein Abtastwert, Texture2d-Anhang
 //   msaa.bind(); /* ... zeichnen ... */
 //   ResolveFramebuffer(msaa, resolved);
-//   resolved.colorTexture(0).use(0);
+//   resolved.getColorTexture(0).use(0);
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include "Types.hpp"
@@ -93,27 +93,27 @@ public:
 
     // ── Zustand ─────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept { return m_id != 0; }
-    [[nodiscard]] GLuint id() const noexcept { return m_id; }
-    [[nodiscard]] i32 width() const noexcept { return m_width; }
-    [[nodiscard]] i32 height() const noexcept { return m_height; }
-    [[nodiscard]] const FramebufferOptions& options() const noexcept { return m_options; }
-    [[nodiscard]] SampleCount samples() const noexcept { return m_options.samples; }
+    [[nodiscard]] GLuint getId() const noexcept { return m_id; }
+    [[nodiscard]] i32 getWidth() const noexcept { return m_width; }
+    [[nodiscard]] i32 getHeight() const noexcept { return m_height; }
+    [[nodiscard]] const FramebufferOptions& getOptions() const noexcept { return m_options; }
+    [[nodiscard]] SampleCount getSamples() const noexcept { return m_options.samples; }
     [[nodiscard]] bool isMultisampled() const noexcept { return m_options.samples != SampleCount::One; }
     [[nodiscard]] bool hasDepth() const noexcept { return m_options.isDepth; }
     [[nodiscard]] bool hasStencil() const noexcept { return m_options.isStencil; }
-    [[nodiscard]] i32 colorAttachmentCount() const noexcept { return m_options.colorAttachments; }
-    [[nodiscard]] i32 sampleCount() const noexcept { return ToSamples(m_options.samples); }
+    [[nodiscard]] i32 getColorAttachmentCount() const noexcept { return m_options.colorAttachments; }
+    [[nodiscard]] i32 getSampleCount() const noexcept { return ToSamples(m_options.samples); }
     [[nodiscard]] bool isComplete() const;
 
     // ── Anhänge ─────────────────────────────────────────────────────────────
     // Nur bei einem Abtastwert: der Farbanhang als Textur (sampler-bar).
     // Bei MSAA wirft der Aufruf, dort gibt es Renderbuffer.
-    [[nodiscard]] Texture2d& colorTexture(i32 index = 0);
-    [[nodiscard]] const Texture2d& colorTexture(i32 index = 0) const;
+    [[nodiscard]] Texture2d& getColorTexture(i32 index = 0);
+    [[nodiscard]] const Texture2d& getColorTexture(i32 index = 0) const;
     // Renderbuffer-Kennung des Farbanhangs (nur bei MSAA gesetzt, sonst 0).
-    [[nodiscard]] GLuint colorRenderbuffer(i32 index = 0) const;
+    [[nodiscard]] GLuint getColorRenderbuffer(i32 index = 0) const;
     // Renderbuffer-Kennung des Tiefe-/Stencil-Anhangs (0, wenn nicht vorhanden).
-    [[nodiscard]] GLuint depthRenderbuffer() const noexcept { return m_depthBuffer; }
+    [[nodiscard]] GLuint getDepthRenderbuffer() const noexcept { return m_depthBuffer; }
 
     // ── Binden und Zeichnen ─────────────────────────────────────────────────
     void bind() const;

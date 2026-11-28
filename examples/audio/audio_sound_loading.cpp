@@ -32,9 +32,9 @@ int main() {
             continue;
         }
 
-        SLOGI << name << " (" << audiodemo::FormatTime(sound.duration()) << ")";
+        SLOGI << name << " (" << audiodemo::FormatTime(sound.getDuration()) << ")";
         sound.play();
-        audiodemo::SleepSeconds(sound.duration() + 0.1f);
+        audiodemo::SleepSeconds(sound.getDuration() + 0.1f);
         sound.stop();
     }
 
@@ -60,7 +60,7 @@ int main() {
             audiodemo::SleepSeconds(0.08f);
         }
 
-        audiodemo::SleepSeconds(chord[0].duration() + 0.2f);
+        audiodemo::SleepSeconds(chord[0].getDuration() + 0.2f);
 
         for (Sound& sound : chord) {
             sound.stop();

@@ -211,7 +211,7 @@ public:
   static void SetMaxLogLevel(LogLevel level) noexcept;
 
   /// @brief Returns the current maximum level (see @ref SetMaxLogLevel).
-  [[nodiscard]] static LogLevel MaxLogLevel() noexcept;
+  [[nodiscard]] static LogLevel GetMaxLogLevel() noexcept;
 
   /**
    * @brief Checks whether messages of @p level are currently emitted.
@@ -229,7 +229,7 @@ public:
   static void SetOutputStream(std::ostream *stream) noexcept;
 
   /// @brief Returns the current output stream (`std::cout` by default).
-  [[nodiscard]] static std::ostream *OutputStream() noexcept;
+  [[nodiscard]] static std::ostream *GetOutputStream() noexcept;
 
 private:
   /// @brief Appends text to the internal buffer.

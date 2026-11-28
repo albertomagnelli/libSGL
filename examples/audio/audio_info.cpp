@@ -39,9 +39,9 @@ int main() {
         }
 
         ++loaded;
-        SLOGI << name << ": " << wave.sampleRate() << " Hz, " << wave.channels()
-              << " Kanal/Kanaele, " << wave.frameCount() << " Rahmen, "
-              << audiodemo::FormatTime(wave.duration());
+        SLOGI << name << ": " << wave.getSampleRate() << " Hz, " << wave.getChannels()
+              << " Kanal/Kanaele, " << wave.getFrameCount() << " Rahmen, "
+              << audiodemo::FormatTime(wave.getDuration());
     }
 
     SLOGI << loaded << " von " << files.size()

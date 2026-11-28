@@ -329,34 +329,34 @@ void Wave::unload() {
 
 bool Wave::isValid() const { return !m_samples.empty() && (m_sampleRate > 0) && (m_channels > 0); }
 
-i32 Wave::frameCount() const {
+i32 Wave::getFrameCount() const {
   return (m_channels > 0) ? static_cast<i32>(m_samples.size() / static_cast<std::size_t>(m_channels)) : 0;
 }
 
-i32 Wave::sampleRate() const { return m_sampleRate; }
+i32 Wave::getSampleRate() const { return m_sampleRate; }
 
-i32 Wave::channels() const { return m_channels; }
+i32 Wave::getChannels() const { return m_channels; }
 
-i32 Wave::sampleSize() const { return static_cast<i32>(sizeof(f32)); }
+i32 Wave::getSampleSize() const { return static_cast<i32>(sizeof(f32)); }
 
-i32 Wave::sampleCount() const { return static_cast<i32>(m_samples.size()); }
+i32 Wave::getSampleCount() const { return static_cast<i32>(m_samples.size()); }
 
-f32 Wave::duration() const {
+f32 Wave::getDuration() const {
   if ((m_sampleRate <= 0) || (m_channels <= 0)) return 0.0f;
 
-  return static_cast<f32>(frameCount()) / static_cast<f32>(m_sampleRate);
+  return static_cast<f32>(getFrameCount()) / static_cast<f32>(m_sampleRate);
 }
 
-const std::vector<f32> &Wave::samples() const { return m_samples; }
+const std::vector<f32> &Wave::getSamples() const { return m_samples; }
 
-std::vector<f32> &Wave::samples() { return m_samples; }
+std::vector<f32> &Wave::getSamples() { return m_samples; }
 
 Wave Wave::copy() const { return *this; }
 
 bool Wave::crop(const i32 firstFrame, const i32 lastFrame) {
   if (!isValid()) return false;
 
-  const i32 frames = frameCount();
+  const i32 frames = getFrameCount();
   const i32 first  = std::clamp(firstFrame, 0, frames - 1);
   const i32 last   = std::clamp(lastFrame, first, frames - 1);
 
@@ -376,7 +376,7 @@ bool Wave::convert(const i32 sampleRate, const i32 channels) {
 
   if ((sampleRate == m_sampleRate) && (channels == m_channels)) return true;
 
-  const auto frames = static_cast<ma_uint64>(frameCount());
+  const auto frames = static_cast<ma_uint64>(getFrameCount());
 
   // Zielgroesse bestimmen (miniaudio rechnet linear um und mischt Kanaele)
   const auto needed = ma_convert_frames(nullptr, 0, ma_format_f32, static_cast<ma_uint32>(channels),
@@ -418,7 +418,7 @@ bool Wave::saveToFile(const std::string &path) const {
   }
 
   // 16-Bit-PCM-WAV schreiben
-  const auto frames      = static_cast<u32>(frameCount());
+  const auto frames      = static_cast<u32>(getFrameCount());
   const auto channels    = static_cast<u16>(m_channels);
   const auto sampleRate  = static_cast<u32>(m_sampleRate);
   const auto bits        = static_cast<u16>(16);
@@ -464,7 +464,7 @@ bool Wave::saveAsCode(const std::string &path, const std::string &variableName) 
 
   if (!stream) return false;
 
-  stream << "// erzeugt mit sgl -- " << frameCount() << " Rahmen, " << m_sampleRate << " Hz, " << m_channels
+  stream << "// erzeugt mit sgl -- " << getFrameCount() << " Rahmen, " << m_sampleRate << " Hz, " << m_channels
          << " Kanaele\n";
   stream << "static const float " << variableName << "[] = {\n";
 
@@ -478,7 +478,7 @@ bool Wave::saveAsCode(const std::string &path, const std::string &variableName) 
   }
 
   stream << "\n};\n";
-  stream << "static const int " << variableName << "FrameCount = " << frameCount() << ";\n";
+  stream << "static const int " << variableName << "FrameCount = " << getFrameCount() << ";\n";
   stream << "static const int " << variableName << "SampleRate = " << m_sampleRate << ";\n";
   stream << "static const int " << variableName << "Channels = " << m_channels << ";\n";
 
@@ -558,11 +558,11 @@ bool Sound::loadFromWave(const Wave &wave, const i32 voices) {
     return true; // Daten sind geladen; IsValid() meldet true, Wiedergabe bleibt stumm
   }
 
-  const auto frames = static_cast<ma_uint64>(m_wave.frameCount());
+  const auto frames = static_cast<ma_uint64>(m_wave.getFrameCount());
 
   ma_audio_buffer_config config = ma_audio_buffer_config_init(
-      ma_format_f32, static_cast<ma_uint32>(m_wave.channels()), frames, m_wave.samples().data(), nullptr);
-  config.sampleRate = static_cast<ma_uint32>(m_wave.sampleRate());
+      ma_format_f32, static_cast<ma_uint32>(m_wave.getChannels()), frames, m_wave.getSamples().data(), nullptr);
+  config.sampleRate = static_cast<ma_uint32>(m_wave.getSampleRate());
 
   if (ma_audio_buffer_init(&config, &m_impl->buffer) != MA_SUCCESS) {
     SLOGE << "Sound: Puffer laesst sich nicht anlegen";
@@ -611,11 +611,11 @@ void Sound::unload() {
 
 bool Sound::isValid() const { return m_wave.isValid() && (m_impl != nullptr); }
 
-const Wave &Sound::data() const { return m_wave; }
+const Wave &Sound::getData() const { return m_wave; }
 
-f32 Sound::duration() const { return m_wave.duration(); }
+f32 Sound::getDuration() const { return m_wave.getDuration(); }
 
-i32 Sound::voiceCount() const { return (m_impl != nullptr) ? static_cast<i32>(m_impl->voices.size()) : 0; }
+i32 Sound::getVoiceCount() const { return (m_impl != nullptr) ? static_cast<i32>(m_impl->voices.size()) : 0; }
 
 void Sound::play() {
   if ((m_impl == nullptr) || m_impl->voices.empty()) {
@@ -685,7 +685,7 @@ void Sound::setVolume(const f32 volume) {
   m_impl->applyParameters();
 }
 
-f32 Sound::volume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
+f32 Sound::getVolume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
 
 void Sound::setPitch(const f32 pitch) {
   if (m_impl == nullptr) return;
@@ -694,7 +694,7 @@ void Sound::setPitch(const f32 pitch) {
   m_impl->applyParameters();
 }
 
-f32 Sound::pitch() const { return (m_impl != nullptr) ? m_impl->pitch : 1.0f; }
+f32 Sound::getPitch() const { return (m_impl != nullptr) ? m_impl->pitch : 1.0f; }
 
 void Sound::setPan(const f32 pan) {
   if (m_impl == nullptr) return;
@@ -703,7 +703,7 @@ void Sound::setPan(const f32 pan) {
   m_impl->applyParameters();
 }
 
-f32 Sound::pan() const { return (m_impl != nullptr) ? m_impl->pan : 0.0f; }
+f32 Sound::getPan() const { return (m_impl != nullptr) ? m_impl->pan : 0.0f; }
 
 void Sound::setLooping(const bool looping) {
   if (m_impl == nullptr) return;
@@ -742,12 +742,12 @@ bool Music::InitBuffer(Impl &impl, Wave wave) {
 
   impl.decoded = std::move(wave);
 
-  const auto frames = static_cast<ma_uint64>(impl.decoded.frameCount());
+  const auto frames = static_cast<ma_uint64>(impl.decoded.getFrameCount());
 
   ma_audio_buffer_config config = ma_audio_buffer_config_init(
-      ma_format_f32, static_cast<ma_uint32>(impl.decoded.channels()), frames,
-      impl.decoded.samples().data(), nullptr);
-  config.sampleRate = static_cast<ma_uint32>(impl.decoded.sampleRate());
+      ma_format_f32, static_cast<ma_uint32>(impl.decoded.getChannels()), frames,
+      impl.decoded.getSamples().data(), nullptr);
+  config.sampleRate = static_cast<ma_uint32>(impl.decoded.getSampleRate());
 
   if (ma_audio_buffer_init(&config, &impl.buffer) != MA_SUCCESS) {
     SLOGE << "Music: Puffer laesst sich nicht anlegen";
@@ -981,7 +981,7 @@ void Music::seek(const f32 seconds) {
   ma_sound_seek_to_second(&m_impl->sound, std::max(0.0f, seconds));
 }
 
-f32 Music::timeLength() const {
+f32 Music::getTimeLength() const {
   if (!isValid()) return 0.0f;
 
   float length = 0.0f;
@@ -991,7 +991,7 @@ f32 Music::timeLength() const {
   return length;
 }
 
-f32 Music::timePlayed() const {
+f32 Music::getTimePlayed() const {
   if (!isValid()) return 0.0f;
 
   float cursor = 0.0f;
@@ -1008,7 +1008,9 @@ void Music::setVolume(const f32 volume) {
   ma_sound_set_volume(&m_impl->sound, m_impl->volume);
 }
 
-f32 Music::volume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
+f32 Music::getVolume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
+
+f32 Music::getPitch() const { return (m_impl != nullptr) ? m_impl->pitch : 1.0f; }
 
 void Music::setPitch(const f32 pitch) {
   if (!isValid()) return;
@@ -1016,6 +1018,8 @@ void Music::setPitch(const f32 pitch) {
   m_impl->pitch = std::clamp(pitch, 0.01f, 8.0f);
   ma_sound_set_pitch(&m_impl->sound, m_impl->pitch);
 }
+
+f32 Music::getPan() const { return (m_impl != nullptr) ? m_impl->pan : 0.0f; }
 
 void Music::setPan(const f32 pan) {
   if (!isValid()) return;
@@ -1054,6 +1058,7 @@ struct AudioStream::Impl {
   Source   source;
   ma_sound sound{};
   bool     soundReady{false};
+  bool     looping{false};
   f32      volume{1.0f};
   f32      pitch{1.0f};
   f32      pan{0.0f};
@@ -1243,7 +1248,7 @@ void AudioStream::clear() {
   m_impl->source.writeFrame = 0;
 }
 
-i32 AudioStream::queuedFrames() const {
+i32 AudioStream::getQueuedFrames() const {
   if (!isValid()) return 0;
 
   std::lock_guard<std::mutex> lock(m_impl->source.mutex);
@@ -1251,11 +1256,11 @@ i32 AudioStream::queuedFrames() const {
   return static_cast<i32>(m_impl->source.writeFrame - m_impl->source.readFrame);
 }
 
-i32 AudioStream::capacityFrames() const { return isValid() ? static_cast<i32>(m_impl->source.capacityFrames) : 0; }
+i32 AudioStream::getCapacityFrames() const { return isValid() ? static_cast<i32>(m_impl->source.capacityFrames) : 0; }
 
-i32 AudioStream::sampleRate() const { return isValid() ? static_cast<i32>(m_impl->source.sampleRate) : 0; }
+i32 AudioStream::getSampleRate() const { return isValid() ? static_cast<i32>(m_impl->source.sampleRate) : 0; }
 
-i32 AudioStream::channels() const { return isValid() ? static_cast<i32>(m_impl->source.channels) : 0; }
+i32 AudioStream::getChannels() const { return isValid() ? static_cast<i32>(m_impl->source.channels) : 0; }
 
 void AudioStream::play() {
   if (!isValid() || !m_impl->soundReady) return;
@@ -1300,8 +1305,17 @@ void AudioStream::setPan(const f32 pan) {
 }
 
 void AudioStream::setLooping(const bool looping) {
+  m_impl->looping = looping;
   if (isValid() && m_impl->soundReady) ma_sound_set_looping(&m_impl->sound, looping ? MA_TRUE : MA_FALSE);
 }
+
+f32 AudioStream::getVolume() const { return (m_impl != nullptr) ? m_impl->volume : 0.0f; }
+
+f32 AudioStream::getPitch() const { return (m_impl != nullptr) ? m_impl->pitch : 1.0f; }
+
+f32 AudioStream::getPan() const { return (m_impl != nullptr) ? m_impl->pan : 0.0f; }
+
+bool AudioStream::isLooping() const { return (m_impl != nullptr) && m_impl->looping; }
 
 // =============================================================================
 // Freie Funktionen
@@ -1373,9 +1387,9 @@ bool WaveFormat(Wave &wave, const i32 sampleRate, const i32 sampleSize, const i3
 f32 *LoadWaveSamples(const Wave &wave) {
   if (!wave.isValid()) return nullptr;
 
-  auto *copy = new f32[wave.samples().size()];
+  auto *copy = new f32[wave.getSamples().size()];
 
-  std::memcpy(copy, wave.samples().data(), wave.samples().size() * sizeof(f32));
+  std::memcpy(copy, wave.getSamples().data(), wave.getSamples().size() * sizeof(f32));
 
   return copy;
 }
@@ -1416,7 +1430,7 @@ Sound LoadSoundFromWave(const Wave &wave, const i32 voices) {
 
 Sound LoadSoundAlias(const Sound &source) {
   // eigene Kopie der Daten (kein geteilter Puffer -- dokumentiert)
-  return LoadSoundFromWave(source.data());
+  return LoadSoundFromWave(source.getData());
 }
 
 bool IsSoundValid(const Sound &sound) { return sound.isValid(); }
@@ -1480,9 +1494,9 @@ void SetMusicPitch(Music &music, const f32 pitch) { music.setPitch(pitch); }
 
 void SetMusicPan(Music &music, const f32 pan) { music.setPan(pan); }
 
-f32 GetMusicTimeLength(const Music &music) { return music.timeLength(); }
+f32 GetMusicTimeLength(const Music &music) { return music.getTimeLength(); }
 
-f32 GetMusicTimePlayed(const Music &music) { return music.timePlayed(); }
+f32 GetMusicTimePlayed(const Music &music) { return music.getTimePlayed(); }
 
 AudioStream LoadAudioStream(const u32 sampleRate, const u32 sampleSize, const u32 channels) {
   AudioStream stream;
@@ -1509,7 +1523,7 @@ void UpdateAudioStream(AudioStream &stream, const void *data, const i32 frameCou
 }
 
 bool IsAudioStreamProcessed(const AudioStream &stream) {
-  return stream.isValid() && (stream.queuedFrames() == 0);
+  return stream.isValid() && (stream.getQueuedFrames() == 0);
 }
 
 void PlayAudioStream(AudioStream &stream) { stream.play(); }

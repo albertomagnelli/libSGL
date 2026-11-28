@@ -159,19 +159,19 @@ Font2d Font2d::FromMemory(std::span<const u8> data) {
     return font;
 }
 
-u32 Font2d::glyphCount() const noexcept {
+u32 Font2d::getGlyphCount() const noexcept {
     return m_font == nullptr ? 0 : static_cast<u32>(m_font->nglyphs);
 }
 
-f32 Font2d::ascent() const noexcept {
+f32 Font2d::getAscent() const noexcept {
     return m_font == nullptr ? 0.0f : m_font->hhea.ascender;
 }
 
-f32 Font2d::descent() const noexcept {
+f32 Font2d::getDescent() const noexcept {
     return m_font == nullptr ? 0.0f : -m_font->hhea.descender;
 }
 
-f32 Font2d::lineHeight() const noexcept {
+f32 Font2d::getLineHeight() const noexcept {
     if (m_font == nullptr) {
         return 0.0f;
     }
@@ -310,19 +310,19 @@ Font3d Font3d::FromMemory(std::span<const u8> data) {
     return font;
 }
 
-u32 Font3d::glyphCount() const noexcept {
+u32 Font3d::getGlyphCount() const noexcept {
     return m_font == nullptr ? 0 : static_cast<u32>(m_font->nglyphs);
 }
 
-f32 Font3d::ascent() const noexcept {
+f32 Font3d::getAscent() const noexcept {
     return m_font == nullptr ? 0.0f : m_font->hhea.ascender;
 }
 
-f32 Font3d::descent() const noexcept {
+f32 Font3d::getDescent() const noexcept {
     return m_font == nullptr ? 0.0f : -m_font->hhea.descender;
 }
 
-f32 Font3d::lineHeight() const noexcept {
+f32 Font3d::getLineHeight() const noexcept {
     if (m_font == nullptr) {
         return 0.0f;
     }

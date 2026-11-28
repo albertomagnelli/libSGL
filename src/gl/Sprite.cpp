@@ -128,7 +128,7 @@ void main() {
     renderer->shader = Shader::FromSources(std::move(stages));
 
     if (!renderer->shader.isValid()) {
-      SLOGE << "DrawSprite: Sprite-Shader laesst sich nicht bauen: " << renderer->shader.lastError();
+      SLOGE << "DrawSprite: Sprite-Shader laesst sich nicht bauen: " << renderer->shader.getLastError();
 
       return nullptr;
     }
@@ -214,8 +214,8 @@ bool Sprite::loadFromImage(const Image &image, const bool smooth, const u8 colli
 
   m_sourceX      = 0;
   m_sourceY      = 0;
-  m_sourceWidth  = image.width();
-  m_sourceHeight = image.height();
+  m_sourceWidth  = image.getWidth();
+  m_sourceHeight = image.getHeight();
 
   if (HasCurrentContext()) {
     try {
@@ -283,8 +283,8 @@ bool Sprite::loadFromTexture(const Texture2d &texture, const bool smooth, const 
 
   m_sourceX      = 0;
   m_sourceY      = 0;
-  m_sourceWidth  = texture.width();
-  m_sourceHeight = texture.height();
+  m_sourceWidth  = texture.getWidth();
+  m_sourceHeight = texture.getHeight();
 
   rebuildShape();
 
@@ -303,16 +303,16 @@ bool Sprite::loadFromTexture(Texture2d &&texture, const i32 width, const i32 hei
   m_texture      = std::move(texture);
   m_sourceX      = 0;
   m_sourceY      = 0;
-  m_sourceWidth  = (width > 0) ? width : m_texture.width();
-  m_sourceHeight = (height > 0) ? height : m_texture.height();
+  m_sourceWidth  = (width > 0) ? width : m_texture.getWidth();
+  m_sourceHeight = (height > 0) ? height : m_texture.getHeight();
 
   // keine Pixel, keine Deckungsform: der Aufrufer liefert die Form selbst
   return true;
 }
 
 bool Sprite::setSourceRect(const i32 x, const i32 y, const i32 width, const i32 height, const bool rebuild) {
-  const i32 textureWidth  = !m_pixels.isEmpty() ? m_pixels.width() : m_texture.width();
-  const i32 textureHeight = !m_pixels.isEmpty() ? m_pixels.height() : m_texture.height();
+  const i32 textureWidth  = !m_pixels.isEmpty() ? m_pixels.getWidth() : m_texture.getWidth();
+  const i32 textureHeight = !m_pixels.isEmpty() ? m_pixels.getHeight() : m_texture.getHeight();
 
   // ohne Textur und ohne Pixel (kein GL-Kontext) ist keine Referenzgroesse
   // bekannt -- dann entscheidet der Aufrufer ueber die Gueltigkeit
@@ -338,15 +338,20 @@ bool Sprite::setSourceRect(const i32 x, const i32 y, const i32 width, const i32 
 void Sprite::resetSourceRect() {
   m_sourceX      = 0;
   m_sourceY      = 0;
-  m_sourceWidth  = !m_pixels.isEmpty() ? m_pixels.width() : m_texture.width();
-  m_sourceHeight = !m_pixels.isEmpty() ? m_pixels.height() : m_texture.height();
+  m_sourceWidth  = !m_pixels.isEmpty() ? m_pixels.getWidth() : m_texture.getWidth();
+  m_sourceHeight = !m_pixels.isEmpty() ? m_pixels.getHeight() : m_texture.getHeight();
 
   rebuildShape();
 }
 
-i32 Sprite::sourceX() const { return m_sourceX; }
+i32 Sprite::getSourceX() const { return m_sourceX; }
 
-i32 Sprite::sourceY() const { return m_sourceY; }
+i32 Sprite::getSourceY() const { return m_sourceY; }
+
+Rectangle Sprite::getSourceRect() const {
+  return Rectangle{static_cast<f32>(m_sourceX), static_cast<f32>(m_sourceY), static_cast<f32>(m_sourceWidth),
+                   static_cast<f32>(m_sourceHeight)};
+}
 
 // -----------------------------------------------------------------------------
 // Deckungsform
@@ -359,7 +364,7 @@ void Sprite::rebuildShape() {
   const Image &image = m_pixels;
 
   // Ausschnitt als eigenes Bild herausschneiden (nur wenn noetig)
-  if ((m_sourceX == 0) && (m_sourceY == 0) && (m_sourceWidth == image.width()) && (m_sourceHeight == image.height())) {
+  if ((m_sourceX == 0) && (m_sourceY == 0) && (m_sourceWidth == image.getWidth()) && (m_sourceHeight == image.getHeight())) {
     m_shape = CollisionShape::FromImage(image, m_threshold);
   } else {
     const Image cropped = image.cropped(m_sourceX, m_sourceY, m_sourceWidth, m_sourceHeight);
@@ -383,20 +388,26 @@ void Sprite::setOrigin(const vec2 &normalized) {
   }
 }
 
-vec2 Sprite::origin() const { return m_origin; }
+vec2 Sprite::getOrigin() const { return m_origin; }
 
 void Sprite::setTint(const Color &tint) { m_tint = tint; }
 
-const Color &Sprite::tint() const { return m_tint; }
+const Color &Sprite::getTint() const { return m_tint; }
 
 void Sprite::setFlip(const bool flipX, const bool flipY) {
   m_flipX = flipX;
   m_flipY = flipY;
 }
 
-bool Sprite::flipX() const { return m_flipX; }
+void Sprite::setFlippedX(const bool flipX) { m_flipX = flipX; }
 
-bool Sprite::flipY() const { return m_flipY; }
+void Sprite::setFlippedY(const bool flipY) { m_flipY = flipY; }
+
+bool Sprite::isFlippedX() const { return m_flipX; }
+
+bool Sprite::isFlippedY() const { return m_flipY; }
+
+bool Sprite::isSmooth() const { return m_smooth; }
 
 void Sprite::setSmooth(const bool smooth) {
   m_smooth = smooth;
@@ -414,17 +425,17 @@ bool Sprite::isValid() const { return m_texture.isValid() && (m_sourceWidth > 0)
 
 bool Sprite::hasShape() const { return m_shape.isValid(); }
 
-i32 Sprite::width() const { return m_sourceWidth; }
+i32 Sprite::getWidth() const { return m_sourceWidth; }
 
-i32 Sprite::height() const { return m_sourceHeight; }
+i32 Sprite::getHeight() const { return m_sourceHeight; }
 
-vec2 Sprite::size() const { return vec2(static_cast<f32>(m_sourceWidth), static_cast<f32>(m_sourceHeight)); }
+vec2 Sprite::getSize() const { return vec2(static_cast<f32>(m_sourceWidth), static_cast<f32>(m_sourceHeight)); }
 
-const Texture2d &Sprite::texture() const { return m_texture; }
+const Texture2d &Sprite::getTexture() const { return m_texture; }
 
-const CollisionShape &Sprite::shape() const { return m_shape; }
+const CollisionShape &Sprite::getShape() const { return m_shape; }
 
-const Image &Sprite::pixels() const { return m_pixels; }
+const Image &Sprite::getPixels() const { return m_pixels; }
 
 // -----------------------------------------------------------------------------
 // Kollision
@@ -448,9 +459,9 @@ void DrawSprite(const Sprite &sprite, const vec2 position, const f32 rotationAng
 
   if (renderer == nullptr) return;
 
-  const Texture2d &texture = sprite.texture();
+  const Texture2d &texture = sprite.getTexture();
 
-  if ((texture.width() <= 0) || (texture.height() <= 0)) return;
+  if ((texture.getWidth() <= 0) || (texture.getHeight() <= 0)) return;
 
   GLint viewport[4] = {};
   glGetIntegerv(GL_VIEWPORT, viewport);
@@ -463,21 +474,21 @@ void DrawSprite(const Sprite &sprite, const vec2 position, const f32 rotationAng
   shader.use();
   shader.setUniform("uViewport", vec2(screenWidth, screenHeight));
   shader.setUniform("uPosition", position);
-  shader.setUniform("uSize", sprite.size());
+  shader.setUniform("uSize", sprite.getSize());
   shader.setUniform("uOrigin",
-                    vec2(sprite.origin().x * static_cast<f32>(sprite.width()),
-                         sprite.origin().y * static_cast<f32>(sprite.height())));
+                    vec2(sprite.getOrigin().x * static_cast<f32>(sprite.getWidth()),
+                         sprite.getOrigin().y * static_cast<f32>(sprite.getHeight())));
   shader.setUniform("uRotation", rotationAngle * DegreesToRadians);
-  shader.setUniform("uFlip", vec2(sprite.flipX() ? -1.0f : 1.0f, sprite.flipY() ? -1.0f : 1.0f));
-  shader.setUniform("uTint", sprite.tint().toVec4());
+  shader.setUniform("uFlip", vec2(sprite.isFlippedX() ? -1.0f : 1.0f, sprite.isFlippedY() ? -1.0f : 1.0f));
+  shader.setUniform("uTint", sprite.getTint().toVec4());
 
-  const f32 textureWidth  = static_cast<f32>(texture.width());
-  const f32 textureHeight = static_cast<f32>(texture.height());
+  const f32 textureWidth  = static_cast<f32>(texture.getWidth());
+  const f32 textureHeight = static_cast<f32>(texture.getHeight());
 
-  shader.setUniform("uUvMin", vec2(static_cast<f32>(sprite.sourceX()) / textureWidth,
-                                   static_cast<f32>(sprite.sourceY()) / textureHeight));
-  shader.setUniform("uUvMax", vec2(static_cast<f32>(sprite.sourceX() + sprite.width()) / textureWidth,
-                                   static_cast<f32>(sprite.sourceY() + sprite.height()) / textureHeight));
+  shader.setUniform("uUvMin", vec2(static_cast<f32>(sprite.getSourceX()) / textureWidth,
+                                   static_cast<f32>(sprite.getSourceY()) / textureHeight));
+  shader.setUniform("uUvMax", vec2(static_cast<f32>(sprite.getSourceX() + sprite.getWidth()) / textureWidth,
+                                   static_cast<f32>(sprite.getSourceY() + sprite.getHeight()) / textureHeight));
   shader.setUniform("uTexture", 0);
 
   glDisable(GL_DEPTH_TEST);

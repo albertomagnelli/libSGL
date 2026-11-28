@@ -128,7 +128,7 @@ void Logger::SetMaxLogLevel(const LogLevel level) noexcept {
   sMaxLevel.store(level, std::memory_order_relaxed);
 }
 
-Logger::LogLevel Logger::MaxLogLevel() noexcept {
+Logger::LogLevel Logger::GetMaxLogLevel() noexcept {
   return sMaxLevel.load(std::memory_order_relaxed);
 }
 
@@ -142,7 +142,7 @@ void Logger::SetOutputStream(std::ostream *stream) noexcept {
   sOutput.store(stream, std::memory_order_relaxed);
 }
 
-std::ostream *Logger::OutputStream() noexcept {
+std::ostream *Logger::GetOutputStream() noexcept {
   std::ostream *stream = sOutput.load(std::memory_order_relaxed);
   return stream != nullptr ? stream : &std::cout;
 }
@@ -190,7 +190,7 @@ void Logger::flush() {
 
   try {
     std::lock_guard lock(sMutex);
-    std::ostream *out = OutputStream();
+    std::ostream *out = GetOutputStream();
     EnableAnsiColors();
 
     *out << prefix;

@@ -29,9 +29,9 @@ TEST_CASE("Material hat PBR-Standardwerte als 1x1-Bilder", "[material]") {
     REQUIRE(material.getAmbientOcclusionValue() == Catch::Approx(1.0f));
     REQUIRE(material.getHeightValue() == Catch::Approx(0.0f));
 
-    REQUIRE(material.getAlbedoMap().pixelAt(0, 0) == std::array<u8, 4>{255, 255, 255, 0});
-    REQUIRE(material.getNormalMap().pixelAt(0, 0) == std::array<u8, 4>{128, 128, 255, 0});
-    REQUIRE(material.getEmissiveMap().pixelAt(0, 0) == std::array<u8, 4>{0, 0, 0, 0});
+    REQUIRE(material.getAlbedoMap().getPixel(0, 0) == std::array<u8, 4>{255, 255, 255, 0});
+    REQUIRE(material.getNormalMap().getPixel(0, 0) == std::array<u8, 4>{128, 128, 255, 0});
+    REQUIRE(material.getEmissiveMap().getPixel(0, 0) == std::array<u8, 4>{0, 0, 0, 0});
 
     REQUIRE(material.getAlphaMode() == MaterialAlphaMode::Opaque);
     REQUIRE(material.getAlphaCutoff() == Catch::Approx(0.5f));
@@ -67,9 +67,9 @@ TEST_CASE("Material erzeugt fuer Einzelwerte 1x1-Bilder", "[material]") {
     material.setAmbientOcclusion(0.75f);
     material.setHeight(0.4f);
 
-    REQUIRE(material.getMetallicMap().width() == 1);
-    REQUIRE(material.getMetallicMap().height() == 1);
-    REQUIRE(material.getMetallicMap().format() == ImageFormat::Gray);
+    REQUIRE(material.getMetallicMap().getWidth() == 1);
+    REQUIRE(material.getMetallicMap().getHeight() == 1);
+    REQUIRE(material.getMetallicMap().getFormat() == ImageFormat::Gray);
     REQUIRE(material.getMetallicValue() == Catch::Approx(1.0f));
 
     REQUIRE(material.getRoughnessValue() == Catch::Approx(0.25f).margin(0.01f));
@@ -80,13 +80,13 @@ TEST_CASE("Material erzeugt fuer Einzelwerte 1x1-Bilder", "[material]") {
     material.setEmissive(BLUE);
     material.setNormal(vec3(0.0f, 0.0f, 1.0f));
 
-    REQUIRE(material.getAlbedoMap().width() == 1);
-    REQUIRE(material.getAlbedoMap().height() == 1);
-    REQUIRE(material.getAlbedoMap().format() == ImageFormat::Rgb);
-    REQUIRE(material.getAlbedoMap().pixelAt(0, 0) == std::array<u8, 4>{255, 128, 0, 0});
+    REQUIRE(material.getAlbedoMap().getWidth() == 1);
+    REQUIRE(material.getAlbedoMap().getHeight() == 1);
+    REQUIRE(material.getAlbedoMap().getFormat() == ImageFormat::Rgb);
+    REQUIRE(material.getAlbedoMap().getPixel(0, 0) == std::array<u8, 4>{255, 128, 0, 0});
 
-    REQUIRE(material.getEmissiveMap().pixelAt(0, 0) == std::array<u8, 4>{0, 121, 241, 0});
-    REQUIRE(material.getNormalMap().pixelAt(0, 0) == std::array<u8, 4>{128, 128, 255, 0});
+    REQUIRE(material.getEmissiveMap().getPixel(0, 0) == std::array<u8, 4>{0, 121, 241, 0});
+    REQUIRE(material.getNormalMap().getPixel(0, 0) == std::array<u8, 4>{128, 128, 255, 0});
 }
 
 TEST_CASE("Material extrahiert Kanaele aus gepackten Maps", "[material]") {
@@ -99,13 +99,13 @@ TEST_CASE("Material extrahiert Kanaele aus gepackten Maps", "[material]") {
     material.setAmbientOcclusion(packed, 2);
     material.setHeight(packed, 3);
 
-    REQUIRE(material.getMetallicMap().format() == ImageFormat::Gray);
-    REQUIRE(material.getMetallicMap().width() == 2);
-    REQUIRE(material.getMetallicMap().height() == 2);
-    REQUIRE(material.getMetallicMap().pixelAt(1, 1) == std::array<u8, 4>{10, 0, 0, 0});
-    REQUIRE(material.getRoughnessMap().pixelAt(0, 0) == std::array<u8, 4>{20, 0, 0, 0});
-    REQUIRE(material.getAmbientOcclusionMap().pixelAt(0, 0) == std::array<u8, 4>{30, 0, 0, 0});
-    REQUIRE(material.getHeightMap().pixelAt(0, 0) == std::array<u8, 4>{40, 0, 0, 0});
+    REQUIRE(material.getMetallicMap().getFormat() == ImageFormat::Gray);
+    REQUIRE(material.getMetallicMap().getWidth() == 2);
+    REQUIRE(material.getMetallicMap().getHeight() == 2);
+    REQUIRE(material.getMetallicMap().getPixel(1, 1) == std::array<u8, 4>{10, 0, 0, 0});
+    REQUIRE(material.getRoughnessMap().getPixel(0, 0) == std::array<u8, 4>{20, 0, 0, 0});
+    REQUIRE(material.getAmbientOcclusionMap().getPixel(0, 0) == std::array<u8, 4>{30, 0, 0, 0});
+    REQUIRE(material.getHeightMap().getPixel(0, 0) == std::array<u8, 4>{40, 0, 0, 0});
 }
 
 TEST_CASE("Material prueft Map-Groessen", "[material]") {

@@ -5,7 +5,7 @@
 //
 //   ImageError, ChannelCount, HasAlpha, ToString, FileExtension
 //   FileFormatFromPath, Image, ImageIO
-//   Image: scanline, at, setAt, pixelAt, fill, flip..., rotate..., scale...
+//   Image: getScanline, getChannel, setChannel, getPixel, fill, flip..., rotate..., scale...
 //   ImageIO: Load, LoadFromMemory, Save, Encode, SaveToMemory sowie die
 //            nicht werfenden Varianten TryLoad, TryLoadFromMemory, TrySave,
 //            TryEncode und TrySaveToMemory
@@ -150,29 +150,27 @@ public:
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isEmpty() const noexcept { return m_pixels.empty(); }
     [[nodiscard]] bool isPowerOfTwo() const noexcept;
-    [[nodiscard]] i32 width() const noexcept { return m_width; }
-    [[nodiscard]] i32 height() const noexcept { return m_height; }
-    [[nodiscard]] ImageFormat format() const noexcept { return m_format; }
-    [[nodiscard]] i32 channelCount() const noexcept { return sgl::ChannelCount(m_format); }
-    // Kurzform für channelCount()
-    [[nodiscard]] i32 channels() const noexcept { return sgl::ChannelCount(m_format); }
+    [[nodiscard]] i32 getWidth() const noexcept { return m_width; }
+    [[nodiscard]] i32 getHeight() const noexcept { return m_height; }
+    [[nodiscard]] ImageFormat getFormat() const noexcept { return m_format; }
+    [[nodiscard]] i32 getChannelCount() const noexcept { return sgl::ChannelCount(m_format); }
     [[nodiscard]] bool hasAlpha() const noexcept { return sgl::HasAlpha(m_format); }
-    [[nodiscard]] std::size_t byteSize() const noexcept { return m_pixels.size(); }
-    [[nodiscard]] std::size_t rowStride() const noexcept {
-        return static_cast<std::size_t>(m_width) * static_cast<std::size_t>(channelCount());
+    [[nodiscard]] std::size_t getByteSize() const noexcept { return m_pixels.size(); }
+    [[nodiscard]] std::size_t getRowStride() const noexcept {
+        return static_cast<std::size_t>(m_width) * static_cast<std::size_t>(getChannelCount());
     }
 
-    u8* data() noexcept { return m_pixels.data(); }
-    [[nodiscard]] const u8* data() const noexcept { return m_pixels.data(); }
+    u8* getData() noexcept { return m_pixels.data(); }
+    [[nodiscard]] const u8* getData() const noexcept { return m_pixels.data(); }
     // Zeiger auf den Zeilenanfang; Zeile 0 ist oben.
-    u8* scanline(i32 y);
-    [[nodiscard]] const u8* scanline(i32 y) const;
+    u8* getScanline(i32 y);
+    [[nodiscard]] const u8* getScanline(i32 y) const;
 
     // Geprüfte Zugriffe (werfen ImageError außerhalb des Bildes).
-    [[nodiscard]] u8 at(i32 x, i32 y, i32 channel) const;
-    void setAt(i32 x, i32 y, i32 channel, u8 value) const;
+    [[nodiscard]] u8 getChannel(i32 x, i32 y, i32 channel) const;
+    void setChannel(i32 x, i32 y, i32 channel, u8 value);
     // Kanäle als {R,G,B,A} bzw. {Grau,0,0,0}; fehlende Kanäle sind 0.
-    [[nodiscard]] std::array<u8, 4> pixelAt(i32 x, i32 y) const;
+    [[nodiscard]] std::array<u8, 4> getPixel(i32 x, i32 y) const;
     void fill(std::array<u8, 4> color);
     void fill(u8 value);
 
@@ -209,7 +207,7 @@ public:
     void swap(Image& other) noexcept;
 
 private:
-    u8* mutablePixel(i32 x, i32 y) const;
+    [[nodiscard]] u8* pixel(i32 x, i32 y);
     [[nodiscard]] const u8* pixel(i32 x, i32 y) const;
 
     i32 m_width{0};

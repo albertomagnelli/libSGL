@@ -507,7 +507,7 @@ Image Noise::toImage() const {
         return {};
     }
 
-    u8* pixels = image.data();
+    u8* pixels = image.getData();
     for (std::size_t index = 0; index < texels.size(); ++index) {
         const f32 clamped = std::clamp(texels[index], 0.0f, 1.0f);
         pixels[index] = static_cast<u8>(std::lround(clamped * 255.0f));

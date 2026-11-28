@@ -81,25 +81,25 @@ void main() {
         REQUIRE(shader.hasUniform("uColor"));
         shader.use();
         shader.setUniform("uColor", vec4(0.25f, 0.5f, 0.75f, 1.0f));
-        REQUIRE(shader.uniformType("uColor") == GL_FLOAT_VEC4);
+        REQUIRE(shader.getUniformType("uColor") == GL_FLOAT_VEC4);
     }
 
     SECTION("Texture2d aus Image hochladen und zurücklesen") {
         Image image(2, 2, ImageFormat::Rgba);
         image.fill(std::array<u8, 4>{10, 20, 30, 255});
-        image.setAt(1, 1, 0, 200);
+        image.setChannel(1, 1, 0, 200);
 
         TextureOptions options;
         options.mipmaps = MipmapMode::None;
         Texture2d texture = Texture2d::FromImage(image, options);
         REQUIRE(texture.isValid());
-        REQUIRE(texture.width() == 2);
-        REQUIRE(texture.height() == 2);
+        REQUIRE(texture.getWidth() == 2);
+        REQUIRE(texture.getHeight() == 2);
 
         const Image read = texture.readBack();
-        REQUIRE(read.width() == 2);
-        REQUIRE(read.height() == 2);
-        REQUIRE(read.at(0, 0, 0) == 10);
-        REQUIRE(read.at(1, 1, 0) == 200);
+        REQUIRE(read.getWidth() == 2);
+        REQUIRE(read.getHeight() == 2);
+        REQUIRE(read.getChannel(0, 0, 0) == 10);
+        REQUIRE(read.getChannel(1, 1, 0) == 200);
     }
 }

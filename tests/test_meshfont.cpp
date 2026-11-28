@@ -14,15 +14,15 @@ TEST_CASE("Font2d tesselliert Glyphen aus einer Systemschrift", "[meshfont]") {
 
     const Font2d font = Font2d::FromFile(path);
     REQUIRE(font.isValid());
-    REQUIRE(font.glyphCount() > 0);
-    REQUIRE(font.ascent() > 0.0f);
-    REQUIRE(font.lineHeight() > 0.0f);
+    REQUIRE(font.getGlyphCount() > 0);
+    REQUIRE(font.getAscent() > 0.0f);
+    REQUIRE(font.getLineHeight() > 0.0f);
     REQUIRE(font.hasGlyph(U'A'));
     REQUIRE(font.measure("Hallo", 32.0f) > 0.0f);
 
     const GlyphMesh mesh = font.glyphMesh(U'A', MeshQuality::Normal);
     REQUIRE_FALSE(mesh.isEmpty());
-    REQUIRE(mesh.triangleCount() > 0);
+    REQUIRE(mesh.getTriangleCount() > 0);
     REQUIRE_FALSE(mesh.positions.empty());
     REQUIRE(mesh.indices.size() % 3 == 0);
 }

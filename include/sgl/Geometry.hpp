@@ -3,8 +3,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Rectangle mit Kollision und Drehung. Öffentliche Schnittstelle dieses Headers:
 //
-//   Rectangle, position, size, center, left
-//   top, right, bottom, isEmpty, contains
+//   Rectangle, getPosition, getSize, getCenter, getLeft
+//   getTop, getRight, getBottom, isEmpty, contains
 //   containsStrict, overlaps, intersection, united, overlapArea
 //   equals, containsRotated, OverlapsRotated, cornerRotated, rotate
 //   RectangleFromCorners, RectangleFromSize
@@ -50,14 +50,14 @@ struct Rectangle {
     // nicht constexpr, weil die Definition in Geometry.cpp liegt
     Rectangle(f32 positionX, f32 positionY, f32 rectangleWidth, f32 rectangleHeight);
 
-    [[nodiscard]] vec2 position() const;
-    [[nodiscard]] vec2 size() const;
-    [[nodiscard]] vec2 center() const;
+    [[nodiscard]] vec2 getPosition() const;
+    [[nodiscard]] vec2 getSize() const;
+    [[nodiscard]] vec2 getCenter() const;
 
-    [[nodiscard]] f32 left() const;
-    [[nodiscard]] f32 top() const;
-    [[nodiscard]] f32 right() const;
-    [[nodiscard]] f32 bottom() const;
+    [[nodiscard]] f32 getLeft() const;
+    [[nodiscard]] f32 getTop() const;
+    [[nodiscard]] f32 getRight() const;
+    [[nodiscard]] f32 getBottom() const;
 
     // kein Inhalt (Breite oder Höhe null/negativ)
     [[nodiscard]] bool isEmpty() const;

@@ -75,14 +75,14 @@ std::string FailureReason() {
 // Liest einen Texel als RGBA mit Werten 0..1; außerhalb wird an den Rand
 // geklemmt.
 std::array<f32, 4> ReadTexel(const Image &image, i32 x, i32 y) {
-  x = std::clamp(x, 0, image.width() - 1);
-  y = std::clamp(y, 0, image.height() - 1);
+  x = std::clamp(x, 0, image.getWidth() - 1);
+  y = std::clamp(y, 0, image.getHeight() - 1);
   const u8 *texel =
-      image.scanline(y) + static_cast<std::size_t>(x) *
-                              static_cast<std::size_t>(image.channelCount());
+      image.getScanline(y) + static_cast<std::size_t>(x) *
+                              static_cast<std::size_t>(image.getChannelCount());
   constexpr f32 kScale = 1.0f / 255.0f;
   std::array<f32, 4> rgba{0.0f, 0.0f, 0.0f, 1.0f};
-  switch (image.format()) {
+  switch (image.getFormat()) {
   case ImageFormat::Gray:
     rgba[0] = rgba[1] = rgba[2] = static_cast<f32>(texel[0]) * kScale;
     break;
@@ -124,9 +124,9 @@ void StoreRgba(Image &image, const i32 x, const i32 y,
   const u8 alpha = ToByte(a);
 
   u8 *texel =
-      image.scanline(y) + static_cast<std::size_t>(x) *
-                              static_cast<std::size_t>(image.channelCount());
-  switch (image.format()) {
+      image.getScanline(y) + static_cast<std::size_t>(x) *
+                              static_cast<std::size_t>(image.getChannelCount());
+  switch (image.getFormat()) {
   case ImageFormat::Gray:
     texel[0] = Luma(red, green, blue);
     break;
@@ -248,19 +248,19 @@ Image PrepareForEncoding(const Image &image, ImageFileFormat format) {
   switch (format) {
   case ImageFileFormat::Jpeg:
     // JPEG kennt kein Alpha; Graustufen bleiben ein Kanal.
-    if (image.format() == ImageFormat::GrayAlpha) {
+    if (image.getFormat() == ImageFormat::GrayAlpha) {
       return image.converted(ImageFormat::Gray);
     }
-    if (image.format() == ImageFormat::Rgba) {
+    if (image.getFormat() == ImageFormat::Rgba) {
       return image.converted(ImageFormat::Rgb);
     }
     return image;
   case ImageFileFormat::Bmp:
     // BMP kann Graustufen nur als RGB ablegen.
-    if (image.format() == ImageFormat::Gray) {
+    if (image.getFormat() == ImageFormat::Gray) {
       return image.converted(ImageFormat::Rgb);
     }
-    if (image.format() == ImageFormat::GrayAlpha) {
+    if (image.getFormat() == ImageFormat::GrayAlpha) {
       return image.converted(ImageFormat::Rgba);
     }
     return image;
@@ -364,7 +364,7 @@ Image::Image(const i32 width, const i32 height, const ImageFormat format,
   }
   m_pixels.assign(static_cast<std::size_t>(width) *
                       static_cast<std::size_t>(height) *
-                      static_cast<std::size_t>(channelCount()),
+                      static_cast<std::size_t>(getChannelCount()),
                   fillValue);
 }
 
@@ -377,30 +377,40 @@ Image::Image(const i32 width, const i32 height, const ImageFormat format,
   }
   const std::size_t expected = static_cast<std::size_t>(width) *
                                static_cast<std::size_t>(height) *
-                               static_cast<std::size_t>(channelCount());
+                               static_cast<std::size_t>(getChannelCount());
   if (pixels.size() != expected) {
     throw ImageError("Pixelpuffer hat " + std::to_string(pixels.size()) +
                      " Bytes, erwartet " + std::to_string(expected) + " (" +
                      std::to_string(width) + "x" + std::to_string(height) +
-                     "x" + std::to_string(channelCount()) + ")");
+                     "x" + std::to_string(getChannelCount()) + ")");
   }
   m_pixels.assign(pixels.begin(), pixels.end());
 }
 
-u8 *Image::scanline(const i32 y) {
+u8 *Image::getScanline(const i32 y) {
   if (y < 0 || y >= m_height) {
-    throw ImageError("scanline(" + std::to_string(y) + ") außerhalb von 0.." +
+    throw ImageError("getScanline(" + std::to_string(y) + ") außerhalb von 0.." +
                      std::to_string(m_height - 1));
   }
-  return m_pixels.data() + static_cast<std::size_t>(y) * rowStride();
+  return m_pixels.data() + static_cast<std::size_t>(y) * getRowStride();
 }
 
-const u8 *Image::scanline(const i32 y) const {
+const u8 *Image::getScanline(const i32 y) const {
   if (y < 0 || y >= m_height) {
-    throw ImageError("scanline(" + std::to_string(y) + ") außerhalb von 0.." +
+    throw ImageError("getScanline(" + std::to_string(y) + ") außerhalb von 0.." +
                      std::to_string(m_height - 1));
   }
-  return m_pixels.data() + static_cast<std::size_t>(y) * rowStride();
+  return m_pixels.data() + static_cast<std::size_t>(y) * getRowStride();
+}
+
+u8 *Image::pixel(const i32 x, const i32 y) {
+  if (x < 0 || x >= m_width || y < 0 || y >= m_height) {
+    throw ImageError("Pixel (" + std::to_string(x) + ", " + std::to_string(y) +
+                     ") liegt außerhalb von " + std::to_string(m_width) + "x" +
+                     std::to_string(m_height));
+  }
+  return getScanline(y) +
+         static_cast<std::size_t>(x) * static_cast<std::size_t>(getChannelCount());
 }
 
 const u8 *Image::pixel(const i32 x, const i32 y) const {
@@ -409,16 +419,12 @@ const u8 *Image::pixel(const i32 x, const i32 y) const {
                      ") liegt außerhalb von " + std::to_string(m_width) + "x" +
                      std::to_string(m_height));
   }
-  return scanline(y) +
-         static_cast<std::size_t>(x) * static_cast<std::size_t>(channelCount());
+  return getScanline(y) +
+         static_cast<std::size_t>(x) * static_cast<std::size_t>(getChannelCount());
 }
 
-u8 *Image::mutablePixel(const i32 x, const i32 y) const {
-  return const_cast<u8 *>(pixel(x, y));
-}
-
-u8 Image::at(const i32 x, const i32 y, const i32 channel) const {
-  if (channel < 0 || channel >= channelCount()) {
+u8 Image::getChannel(const i32 x, const i32 y, const i32 channel) const {
+  if (channel < 0 || channel >= getChannelCount()) {
     throw ImageError("Kanal " + std::to_string(channel) +
                      " existiert nicht (Format " +
                      std::string(ToString(m_format)) + ")");
@@ -426,17 +432,17 @@ u8 Image::at(const i32 x, const i32 y, const i32 channel) const {
   return pixel(x, y)[channel];
 }
 
-void Image::setAt(const i32 x, const i32 y, const i32 channel,
-                  const u8 value) const {
-  if (channel < 0 || channel >= channelCount()) {
+void Image::setChannel(const i32 x, const i32 y, const i32 channel,
+                       const u8 value) {
+  if (channel < 0 || channel >= getChannelCount()) {
     throw ImageError("Kanal " + std::to_string(channel) +
                      " existiert nicht (Format " +
                      std::string(ToString(m_format)) + ")");
   }
-  mutablePixel(x, y)[channel] = value;
+  pixel(x, y)[channel] = value;
 }
 
-std::array<u8, 4> Image::pixelAt(const i32 x, const i32 y) const {
+std::array<u8, 4> Image::getPixel(const i32 x, const i32 y) const {
   const u8 *texel = pixel(x, y);
   std::array<u8, 4> result{0, 0, 0, 0};
   switch (m_format) {
@@ -551,8 +557,8 @@ std::expected<Image, ImageError> ImageIO::TryLoadFromMemory(
   if (options.flipVertically) {
     image.flipVertically();
   }
-  SLOGD << "Bild geladen: " << image.width() << "x" << image.height() << " "
-       << ToString(image.format());
+  SLOGD << "Bild geladen: " << image.getWidth() << "x" << image.getHeight() << " "
+       << ToString(image.getFormat());
   return image;
 }
 
@@ -564,33 +570,33 @@ ImageIO::TryEncode(const Image &source, const ImageFileFormat format,
       return std::unexpected(ImageError("Encode: Bild ist leer"));
     }
     const Image prepared = PrepareForEncoding(source, format);
-    const i32 components = prepared.channelCount();
+    const i32 components = prepared.getChannelCount();
     std::vector<u8> bytes;
-    bytes.reserve(prepared.byteSize() / 2 + 64);
+    bytes.reserve(prepared.getByteSize() / 2 + 64);
 
     i32 written = 0;
     switch (format) {
     case ImageFileFormat::Png:
       written = stbi_write_png_to_func(
-          AppendToVector, &bytes, prepared.width(), prepared.height(),
-          components, prepared.data(),
-          static_cast<i32>(prepared.rowStride()));
+          AppendToVector, &bytes, prepared.getWidth(), prepared.getHeight(),
+          components, prepared.getData(),
+          static_cast<i32>(prepared.getRowStride()));
       break;
     case ImageFileFormat::Jpeg:
       written = stbi_write_jpg_to_func(
-          AppendToVector, &bytes, prepared.width(), prepared.height(),
-          components, prepared.data(),
+          AppendToVector, &bytes, prepared.getWidth(), prepared.getHeight(),
+          components, prepared.getData(),
           std::clamp(options.jpegQuality, 1, 100));
       break;
     case ImageFileFormat::Bmp:
       written =
-          stbi_write_bmp_to_func(AppendToVector, &bytes, prepared.width(),
-                                 prepared.height(), components, prepared.data());
+          stbi_write_bmp_to_func(AppendToVector, &bytes, prepared.getWidth(),
+                                 prepared.getHeight(), components, prepared.getData());
       break;
     case ImageFileFormat::Tga:
       written =
-          stbi_write_tga_to_func(AppendToVector, &bytes, prepared.width(),
-                                 prepared.height(), components, prepared.data());
+          stbi_write_tga_to_func(AppendToVector, &bytes, prepared.getWidth(),
+                                 prepared.getHeight(), components, prepared.getData());
       break;
     }
     if (written == 0 || bytes.empty()) {
@@ -722,7 +728,7 @@ Image Image::converted(ImageFormat format) const {
         alpha = texel[3];
         break;
       }
-      u8 *target = result.mutablePixel(x, y);
+      u8 *target = result.pixel(x, y);
       switch (format) {
       case ImageFormat::Gray:
         target[0] = Luma(red, green, blue);
@@ -765,12 +771,12 @@ Image Image::cropped(const i32 x, const i32 y, const i32 width,
   }
   Image result(width, height, m_format);
   for (i32 row = 0; row < height; ++row) {
-    std::memcpy(result.scanline(row),
-                scanline(y + row) +
+    std::memcpy(result.getScanline(row),
+                getScanline(y + row) +
                     static_cast<std::size_t>(x) *
-                        static_cast<std::size_t>(channelCount()),
+                        static_cast<std::size_t>(getChannelCount()),
                 static_cast<std::size_t>(width) *
-                    static_cast<std::size_t>(channelCount()));
+                    static_cast<std::size_t>(getChannelCount()));
   }
   return result;
 }
@@ -781,9 +787,9 @@ void Image::flipHorizontally() {
   if (isEmpty()) {
     return;
   }
-  const i32 channels = channelCount();
+  const i32 channels = getChannelCount();
   for (i32 y = 0; y < m_height; ++y) {
-    u8 *row = scanline(y);
+    u8 *row = getScanline(y);
     for (i32 x = 0; x < m_width / 2; ++x) {
       u8 *left = row + static_cast<std::size_t>(x) * channels;
       u8 *right = row + static_cast<std::size_t>(m_width - 1 - x) * channels;
@@ -798,7 +804,7 @@ void Image::flipVertically() {
   if (isEmpty()) {
     return;
   }
-  const std::size_t stride = rowStride();
+  const std::size_t stride = getRowStride();
   for (i32 y = 0; y < m_height / 2; ++y) {
     u8 *top = m_pixels.data() + static_cast<std::size_t>(y) * stride;
     u8 *bottom =
@@ -825,10 +831,10 @@ void Image::rotate90Clockwise() {
   if (isEmpty()) {
     return;
   }
-  const i32 channels = channelCount();
+  const i32 channels = getChannelCount();
   const i32 newWidth = m_height;
   const i32 newHeight = m_width;
-  std::vector<u8> rotated(byteSize());
+  std::vector<u8> rotated(getByteSize());
   for (i32 y = 0; y < newHeight; ++y) {
     for (i32 x = 0; x < newWidth; ++x) {
       // Ziel (x, y) stammt aus Quelle (y, Höhe-1-x)
@@ -857,10 +863,10 @@ void Image::rotate270Clockwise() {
   if (isEmpty()) {
     return;
   }
-  const i32 channels = channelCount();
+  const i32 channels = getChannelCount();
   const i32 newWidth = m_height;
   const i32 newHeight = m_width;
-  std::vector<u8> rotated(byteSize());
+  std::vector<u8> rotated(getByteSize());
   for (i32 y = 0; y < newHeight; ++y) {
     for (i32 x = 0; x < newWidth; ++x) {
       // Ziel (x, y) stammt aus Quelle (Breite-1-y, x)

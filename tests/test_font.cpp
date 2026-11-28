@@ -25,11 +25,11 @@ TEST_CASE("UTF-8 wird korrekt dekodiert und kodiert", "[font]") {
 TEST_CASE("Eingebettete Standardschrift ist verfügbar", "[font]") {
     const Font font = Font::LoadDefault();
     REQUIRE(font.isValid());
-    REQUIRE_FALSE(font.atlas().isEmpty());
+    REQUIRE_FALSE(font.getAtlas().isEmpty());
     REQUIRE(font.hasGlyph(U'A'));
     REQUIRE(font.hasGlyph(U'Ä'));
     REQUIRE(font.hasGlyph(U'?'));
-    REQUIRE(font.glyph(U'A') != nullptr);
+    REQUIRE(font.getGlyph(U'A') != nullptr);
     REQUIRE(font.measure("Hallo", 16.0f) > 0.0f);
     REQUIRE(font.bounds("Hallo", vec2(10.0f, 20.0f), 16.0f).width > 0.0f);
     REQUIRE(Font::LineCount("a\nb\nc") == 3);
@@ -51,7 +51,7 @@ TEST_CASE("Font lässt sich speichern und wieder laden", "[font]") {
 
     const Font loaded = Font::Load(file);
     REQUIRE(loaded.isValid());
-    REQUIRE(loaded.glyphs().size() == font.glyphs().size());
+    REQUIRE(loaded.getGlyphs().size() == font.getGlyphs().size());
     REQUIRE(loaded.hasGlyph(U'A'));
     REQUIRE(loaded.measure("Hallo", 16.0f) ==
             Catch::Approx(font.measure("Hallo", 16.0f)));

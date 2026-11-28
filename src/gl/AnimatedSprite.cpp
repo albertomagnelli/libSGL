@@ -172,8 +172,8 @@ bool AnimatedSprite::loadFromFile(const std::string &imagePath, const std::strin
     AnimationFrame frame;
     frame.x        = 0;
     frame.y        = 0;
-    frame.width    = sheet.width();
-    frame.height   = sheet.height();
+    frame.width    = sheet.getWidth();
+    frame.height   = sheet.getHeight();
     frame.duration = DefaultDuration;
 
     animation.frames.push_back(frame);
@@ -274,8 +274,8 @@ bool AnimatedSprite::loadFromGrid(const Image &sheet, const i32 frameWidth, cons
   Animation animation;
   animation.name = "default";
 
-  for (i32 y = 0; (y + frameHeight) <= sheet.height(); y += frameHeight) {
-    for (i32 x = 0; (x + frameWidth) <= sheet.width(); x += frameWidth) {
+  for (i32 y = 0; (y + frameHeight) <= sheet.getHeight(); y += frameHeight) {
+    for (i32 x = 0; (x + frameWidth) <= sheet.getWidth(); x += frameWidth) {
       AnimationFrame frame;
       frame.x        = x;
       frame.y        = y;
@@ -307,8 +307,8 @@ bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations
 
   // Textur aus dem Blatt; ohne GL-Kontext bleiben nur die Deckungsformen
   // (Kollision ja, Zeichnen nein -- wie bei Sprite)
-  m_sheetWidth  = sheet.width();
-  m_sheetHeight = sheet.height();
+  m_sheetWidth  = sheet.getWidth();
+  m_sheetHeight = sheet.getHeight();
 
   if ((GetCurrentWindow() != nullptr) && (gl::glCreateTextures != nullptr)) {
     try {
@@ -321,7 +321,7 @@ bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations
       options.magFilter = options.minFilter;
 
       Texture2d texture = Texture2d::FromImage(sheet, options);
-      m_sprite.loadFromTexture(std::move(texture), sheet.width(), sheet.height());
+      m_sprite.loadFromTexture(std::move(texture), sheet.getWidth(), sheet.getHeight());
       m_sprite.setOrigin(m_origin);
       m_sprite.setSmooth(m_smooth);
     } catch (const std::exception &error) {
@@ -336,9 +336,9 @@ bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations
   for (const Animation &animation : m_animations) {
     for (const AnimationFrame &frame : animation.frames) {
       if ((frame.width <= 0) || (frame.height <= 0) || (frame.x < 0) || (frame.y < 0) ||
-          ((frame.x + frame.width) > sheet.width()) || ((frame.y + frame.height) > sheet.height())) {
+          ((frame.x + frame.width) > sheet.getWidth()) || ((frame.y + frame.height) > sheet.getHeight())) {
         SLOGE << "AnimatedSprite: Rahmen " << frame.width << "x" << frame.height << " bei " << frame.x << "," << frame.y
-              << " passt nicht ins Blatt " << sheet.width() << "x" << sheet.height();
+              << " passt nicht ins Blatt " << sheet.getWidth() << "x" << sheet.getHeight();
         m_animations.clear();
 
         return false;
@@ -403,8 +403,8 @@ bool AnimatedSprite::build(const Image &sheet, std::vector<Animation> animations
   applyOriginToShapes();
   applyFrame();
 
-  SLOGD << "AnimatedSprite: " << m_animations.size() << " Animation(en), " << totalFrameCount()
-        << " Rahmen, Blatt " << sheet.width() << "x" << sheet.height();
+  SLOGD << "AnimatedSprite: " << m_animations.size() << " Animation(en), " << getTotalFrameCount()
+        << " Rahmen, Blatt " << sheet.getWidth() << "x" << sheet.getHeight();
 
   return true;
 }
@@ -422,9 +422,9 @@ bool AnimatedSprite::hasShape() const {
   return shape.isValid();
 }
 
-i32 AnimatedSprite::animationCount() const { return static_cast<i32>(m_animations.size()); }
+i32 AnimatedSprite::getAnimationCount() const { return static_cast<i32>(m_animations.size()); }
 
-const std::string &AnimatedSprite::animationName(const i32 index) const {
+const std::string &AnimatedSprite::getAnimationName(const i32 index) const {
   static const std::string empty;
 
   if ((index < 0) || (index >= static_cast<i32>(m_animations.size()))) return empty;
@@ -442,13 +442,13 @@ i32 AnimatedSprite::findAnimation(const std::string &name) const {
   return -1;
 }
 
-const Animation *AnimatedSprite::animationAt(const i32 index) const {
+const Animation *AnimatedSprite::getAnimationAt(const i32 index) const {
   if ((index < 0) || (index >= static_cast<i32>(m_animations.size()))) return nullptr;
 
   return &m_animations[static_cast<std::size_t>(index)];
 }
 
-const Animation *AnimatedSprite::current() const { return animationAt(m_animationIndex); }
+const Animation *AnimatedSprite::current() const { return getAnimationAt(m_animationIndex); }
 
 const std::vector<AnimatedSprite::Step> &AnimatedSprite::currentSteps() const {
   static const std::vector<Step> empty;
@@ -495,7 +495,7 @@ bool AnimatedSprite::isPaused() const { return m_paused; }
 
 void AnimatedSprite::setSpeed(const f32 multiplier) { m_speed = std::max(0.0f, multiplier); }
 
-f32 AnimatedSprite::speed() const { return m_speed; }
+f32 AnimatedSprite::getSpeed() const { return m_speed; }
 
 void AnimatedSprite::setAnimationSpeed(const std::string &name, const f32 multiplier) {
   const i32 index = findAnimation(name);
@@ -509,7 +509,7 @@ void AnimatedSprite::setAnimationSpeed(const std::string &name, const f32 multip
   m_animationSpeeds[static_cast<std::size_t>(index)] = std::max(0.0f, multiplier);
 }
 
-f32 AnimatedSprite::animationSpeed(const std::string &name) const {
+f32 AnimatedSprite::getAnimationSpeed(const std::string &name) const {
   const i32 index = findAnimation(name);
 
   if ((index < 0) || (index >= static_cast<i32>(m_animationSpeeds.size()))) return 1.0f;
@@ -517,7 +517,7 @@ f32 AnimatedSprite::animationSpeed(const std::string &name) const {
   return m_animationSpeeds[static_cast<std::size_t>(index)];
 }
 
-f32 AnimatedSprite::effectiveSpeed() const {
+f32 AnimatedSprite::getEffectiveSpeed() const {
   if (m_paused) return 0.0f;
 
   const f32 animationSpeed = ((m_animationIndex >= 0) && (m_animationIndex < static_cast<i32>(m_animationSpeeds.size())))
@@ -527,11 +527,11 @@ f32 AnimatedSprite::effectiveSpeed() const {
   return m_speed * animationSpeed;
 }
 
-void AnimatedSprite::setFrameDuration(const f32 seconds) {
+void AnimatedSprite::setFrameDurationOverride(const f32 seconds) {
   m_frameDuration = (seconds > 0.0f) ? seconds : 0.0f;
 }
 
-f32 AnimatedSprite::frameDurationOverride() const { return m_frameDuration; }
+f32 AnimatedSprite::getFrameDurationOverride() const { return m_frameDuration; }
 
 void AnimatedSprite::setLooping(const bool loop) {
   if (m_animationIndex < 0) return;
@@ -547,7 +547,7 @@ bool AnimatedSprite::isLooping() const {
   return (animation != nullptr) && animation->loop;
 }
 
-void AnimatedSprite::setFrame(const i32 index) {
+void AnimatedSprite::setFrameIndex(const i32 index) {
   const std::vector<Step> &steps = currentSteps();
 
   if (steps.empty()) return;
@@ -569,7 +569,7 @@ void AnimatedSprite::setFrame(const i32 index) {
 void AnimatedSprite::update(const f32 deltaTime) {
   if (!isValid()) return;
 
-  const f32 speed = effectiveSpeed();
+  const f32 speed = getEffectiveSpeed();
 
   if (speed <= 0.0f) return;
 
@@ -581,7 +581,7 @@ void AnimatedSprite::update(const f32 deltaTime) {
 
   // mehrere Rahmen pro Bild durchlaufen (hohes Tempo, grosse deltaTime)
   for (i32 guard = 0; guard < 4096; ++guard) {
-    const f32 duration = currentFrameDuration();
+    const f32 duration = getCurrentFrameDuration();
 
     if (m_stepTime < duration) break;
 
@@ -618,7 +618,7 @@ void AnimatedSprite::update(const f32 deltaTime) {
 // -----------------------------------------------------------------------------
 // Zustand
 // -----------------------------------------------------------------------------
-const std::string &AnimatedSprite::currentAnimation() const {
+const std::string &AnimatedSprite::getCurrentAnimation() const {
   static const std::string empty;
 
   const Animation *animation = current();
@@ -626,9 +626,9 @@ const std::string &AnimatedSprite::currentAnimation() const {
   return (animation != nullptr) ? animation->name : empty;
 }
 
-i32 AnimatedSprite::currentAnimationIndex() const { return m_animationIndex; }
+i32 AnimatedSprite::getCurrentAnimationIndex() const { return m_animationIndex; }
 
-i32 AnimatedSprite::frameIndex() const {
+i32 AnimatedSprite::getFrameIndex() const {
   const std::vector<Step> &steps = currentSteps();
 
   if (steps.empty()) return 0;
@@ -636,15 +636,15 @@ i32 AnimatedSprite::frameIndex() const {
   return steps[static_cast<std::size_t>(std::clamp(m_stepIndex, 0, static_cast<i32>(steps.size()) - 1))].frame;
 }
 
-i32 AnimatedSprite::stepIndex() const { return m_stepIndex; }
+i32 AnimatedSprite::getStepIndex() const { return m_stepIndex; }
 
-i32 AnimatedSprite::frameCount() const {
+i32 AnimatedSprite::getFrameCount() const {
   const Animation *animation = current();
 
   return (animation != nullptr) ? static_cast<i32>(animation->frames.size()) : 0;
 }
 
-i32 AnimatedSprite::totalFrameCount() const {
+i32 AnimatedSprite::getTotalFrameCount() const {
   i32 total = 0;
 
   for (const Animation &animation : m_animations) total += static_cast<i32>(animation.frames.size());
@@ -652,9 +652,9 @@ i32 AnimatedSprite::totalFrameCount() const {
   return total;
 }
 
-f32 AnimatedSprite::frameTime() const { return m_stepTime; }
+f32 AnimatedSprite::getFrameTime() const { return m_stepTime; }
 
-f32 AnimatedSprite::currentFrameDuration() const {
+f32 AnimatedSprite::getCurrentFrameDuration() const {
   if (m_frameDuration > 0.0f) return m_frameDuration;
 
   const std::vector<Step> &steps = currentSteps();
@@ -664,7 +664,7 @@ f32 AnimatedSprite::currentFrameDuration() const {
   return steps[static_cast<std::size_t>(std::clamp(m_stepIndex, 0, static_cast<i32>(steps.size()) - 1))].duration;
 }
 
-f32 AnimatedSprite::duration() const {
+f32 AnimatedSprite::getDuration() const {
   f32 total = 0.0f;
 
   for (const Step &step : currentSteps()) total += (m_frameDuration > 0.0f) ? m_frameDuration : step.duration;
@@ -672,8 +672,8 @@ f32 AnimatedSprite::duration() const {
   return total;
 }
 
-f32 AnimatedSprite::progress() const {
-  const f32 totalDuration = duration();
+f32 AnimatedSprite::getProgress() const {
+  const f32 totalDuration = getDuration();
 
   if (totalDuration <= 0.0f) return 0.0f;
 
@@ -690,9 +690,9 @@ f32 AnimatedSprite::progress() const {
 
 bool AnimatedSprite::isFinished() const { return m_finished; }
 
-Sprite &AnimatedSprite::frame() { return m_sprite; }
+Sprite &AnimatedSprite::getFrame() { return m_sprite; }
 
-const Sprite &AnimatedSprite::frame() const { return m_sprite; }
+const Sprite &AnimatedSprite::getFrame() const { return m_sprite; }
 
 const CollisionShape &AnimatedSprite::currentShape() const {
   static const CollisionShape empty;
@@ -703,15 +703,15 @@ const CollisionShape &AnimatedSprite::currentShape() const {
 
   if (shapes.empty()) return empty;
 
-  const i32 index = std::clamp(frameIndex(), 0, static_cast<i32>(shapes.size()) - 1);
+  const i32 index = std::clamp(getFrameIndex(), 0, static_cast<i32>(shapes.size()) - 1);
 
   return shapes[static_cast<std::size_t>(index)];
 }
 
-const CollisionShape &AnimatedSprite::shape() const { return currentShape(); }
+const CollisionShape &AnimatedSprite::getShape() const { return currentShape(); }
 
-vec2 AnimatedSprite::size() const {
-  return vec2(static_cast<f32>(m_sprite.width()), static_cast<f32>(m_sprite.height()));
+vec2 AnimatedSprite::getSize() const {
+  return vec2(static_cast<f32>(m_sprite.getWidth()), static_cast<f32>(m_sprite.getHeight()));
 }
 
 void AnimatedSprite::applyFrame() {
@@ -719,7 +719,7 @@ void AnimatedSprite::applyFrame() {
 
   if (animation == nullptr) return;
 
-  const i32 index = frameIndex();
+  const i32 index = getFrameIndex();
 
   if ((index < 0) || (index >= static_cast<i32>(animation->frames.size()))) return;
 
@@ -734,7 +734,7 @@ void AnimatedSprite::applyOriginToShapes() {
     for (CollisionShape &shape : shapes) {
       if (!shape.isValid()) continue;
 
-      shape.setPivot(vec2(m_origin.x * static_cast<f32>(shape.width()), m_origin.y * static_cast<f32>(shape.height())));
+      shape.setPivot(vec2(m_origin.x * static_cast<f32>(shape.getWidth()), m_origin.y * static_cast<f32>(shape.getHeight())));
     }
   }
 
@@ -750,17 +750,19 @@ void AnimatedSprite::setOrigin(const vec2 &normalized) {
   applyOriginToShapes();
 }
 
-vec2 AnimatedSprite::origin() const { return m_origin; }
+vec2 AnimatedSprite::getOrigin() const { return m_origin; }
 
 void AnimatedSprite::setTint(const Color &tint) { m_sprite.setTint(tint); }
 
-const Color &AnimatedSprite::tint() const { return m_sprite.tint(); }
+const Color &AnimatedSprite::getTint() const { return m_sprite.getTint(); }
 
 void AnimatedSprite::setSmooth(const bool smooth) {
   m_smooth = smooth;
 
   m_sprite.setSmooth(smooth);
 }
+
+bool AnimatedSprite::isSmooth() const { return m_smooth; }
 
 // -----------------------------------------------------------------------------
 // Kollision (ueber die vorberechneten Formen des jeweils aktuellen Rahmens)
@@ -777,7 +779,7 @@ bool AnimatedSprite::collidesWith(const AnimatedSprite &other, const vec2 &posit
 
 bool AnimatedSprite::collidesWith(const Sprite &other, const vec2 &position, const f32 rotationDegrees,
                                   const vec2 &otherPosition, const f32 otherRotationDegrees) const {
-  return currentShape().overlaps(other.shape(), position, rotationDegrees, otherPosition, otherRotationDegrees);
+  return currentShape().overlaps(other.getShape(), position, rotationDegrees, otherPosition, otherRotationDegrees);
 }
 
 // -----------------------------------------------------------------------------
@@ -794,7 +796,7 @@ AnimatedSprite LoadAnimatedSprite(const std::string_view imagePath, const std::s
 void DrawAnimatedSprite(const AnimatedSprite &sprite, const vec2 position, const f32 rotationAngle) {
   if (!sprite.isValid() || !sprite.hasTexture()) return;
 
-  DrawSprite(sprite.frame(), position, rotationAngle);
+  DrawSprite(sprite.getFrame(), position, rotationAngle);
 }
 
 }  // namespace sgl

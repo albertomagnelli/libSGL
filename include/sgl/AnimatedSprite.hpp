@@ -4,9 +4,9 @@
 // einstellbares Tempo und pixelgenaue Kollision pro Rahmen.
 //
 //   AnimatedSprite walker = LoadAnimatedSprite("crimson-robe.png");  // JSON daneben
-//   walker.Play("laufen");
-//   walker.SetSpeed(0.5f);        // halbe Geschwindigkeit
-//   walker.Update(GetFrameTime());
+//   walker.play("laufen");
+//   walker.setSpeed(0.5f);        // halbe Geschwindigkeit
+//   walker.update(GetFrameTime());
 //   DrawAnimatedSprite(walker, {x, y}, winkel);
 //
 // Metadaten: Aseprite-Export (frames als Objekt oder Array, frameTags mit
@@ -15,8 +15,8 @@
 //
 // Die Deckungsform wird beim Laden fuer JEDEN Rahmen einmal gebaut (aus dem
 // Alphakanal des Blattes) und beim Abspielen nur ausgewaehlt -- ein Rahmenwechsel
-// kostet daher nichts. Kollisionen laufen ueber AnimatedSprite::CollidesWith();
-// Frame() liefert das Sprite nur zum Zeichnen.
+// kostet daher nichts. Kollisionen laufen ueber AnimatedSprite::collidesWith();
+// getFrame() liefert das Sprite nur zum Zeichnen.
 
 #include <string>
 #include <string_view>
@@ -74,70 +74,71 @@ public:
 
   void unload();
 
-  bool isValid() const;   // Animationen vorhanden (auch ohne GL-Kontext)
-  bool hasTexture() const; // Textur vorhanden (Zeichnen moeglich)
-  bool hasShape() const;   // Deckungsformen vorhanden
+  [[nodiscard]] bool isValid() const;   // Animationen vorhanden (auch ohne GL-Kontext)
+  [[nodiscard]] bool hasTexture() const; // Textur vorhanden (Zeichnen moeglich)
+  [[nodiscard]] bool hasShape() const;   // Deckungsformen vorhanden
 
   // ----- Animationen ------------------------------------------------------
-  i32                animationCount() const;
-  const std::string &animationName(i32 index) const;
-  bool               hasAnimation(const std::string &name) const;
-  i32                findAnimation(const std::string &name) const; // -1 = unbekannt
-  const Animation   *animationAt(i32 index) const;
+  [[nodiscard]] i32                getAnimationCount() const;
+  [[nodiscard]] const std::string &getAnimationName(i32 index) const;
+  [[nodiscard]] bool               hasAnimation(const std::string &name) const;
+  [[nodiscard]] i32                findAnimation(const std::string &name) const; // -1 = unbekannt
+  [[nodiscard]] const Animation   *getAnimationAt(i32 index) const;
 
   // ----- Wiedergabe -------------------------------------------------------
   bool play(const std::string &name, bool restart = false);
   void restart();
   void pause();
   void resume();
-  bool isPaused() const;
+  [[nodiscard]] bool isPaused() const;
 
   // Tempo als Faktor auf die Dauer aus den Metadaten (1.0 = Originalzeit,
   // 0 = angehalten). Gilt fuer alle Animationen ...
   void setSpeed(f32 multiplier);
-  f32  speed() const;
+  [[nodiscard]] f32  getSpeed() const;
 
   // ... oder nur fuer eine einzelne
   void setAnimationSpeed(const std::string &name, f32 multiplier);
-  f32  animationSpeed(const std::string &name) const;
-  f32  effectiveSpeed() const; // Speed * AnimationSpeed * (Pause ? 0 : 1)
+  [[nodiscard]] f32  getAnimationSpeed(const std::string &name) const;
+  [[nodiscard]] f32  getEffectiveSpeed() const; // Speed * AnimationSpeed * (Pause ? 0 : 1)
 
   // Alle Rahmen gleich schnell (ueberschreibt die Dauer aus den Metadaten)
-  void setFrameDuration(f32 seconds);
-  f32  frameDurationOverride() const;
+  void setFrameDurationOverride(f32 seconds);
+  [[nodiscard]] f32  getFrameDurationOverride() const;
 
   void setLooping(bool loop);
-  bool isLooping() const;
+  [[nodiscard]] bool isLooping() const;
 
   // Direkt auf einen Rahmen der aktuellen Animation springen
-  void setFrame(i32 index);
+  void setFrameIndex(i32 index);
 
   void update(f32 deltaTime);
 
   // ----- Zustand ----------------------------------------------------------
-  const std::string &currentAnimation() const;
-  i32                currentAnimationIndex() const;
-  i32                frameIndex() const; // Rahmen innerhalb der Animation
-  i32                stepIndex() const;  // Schritt der Abspielreihenfolge
-  i32                frameCount() const;
-  i32                totalFrameCount() const;
-  f32                frameTime() const;     // Zeit im aktuellen Rahmen (s)
-  f32                currentFrameDuration() const; // Dauer dieses Rahmens (s, Speed 1)
-  f32                duration() const;      // Gesamtdauer der Animation (s, Speed 1)
-  f32                progress() const;      // 0..1
-  bool               isFinished() const;    // nicht schleifende Animation durch
+  [[nodiscard]] const std::string &getCurrentAnimation() const;
+  [[nodiscard]] i32                getCurrentAnimationIndex() const;
+  [[nodiscard]] i32                getFrameIndex() const; // Rahmen innerhalb der Animation
+  [[nodiscard]] i32                getStepIndex() const;  // Schritt der Abspielreihenfolge
+  [[nodiscard]] i32                getFrameCount() const;
+  [[nodiscard]] i32                getTotalFrameCount() const;
+  [[nodiscard]] f32                getFrameTime() const;     // Zeit im aktuellen Rahmen (s)
+  [[nodiscard]] f32                getCurrentFrameDuration() const; // Dauer dieses Rahmens (s, Speed 1)
+  [[nodiscard]] f32                getDuration() const;      // Gesamtdauer der Animation (s, Speed 1)
+  [[nodiscard]] f32                getProgress() const;      // 0..1
+  [[nodiscard]] bool               isFinished() const;    // nicht schleifende Animation durch
 
-  Sprite              &frame();       // nur zum Zeichnen
-  const Sprite        &frame() const; // nur zum Zeichnen
-  const CollisionShape &shape() const; // Deckungsform des aktuellen Rahmens
-  vec2                 size() const;   // Groesse des aktuellen Rahmens
+  [[nodiscard]] Sprite              &getFrame();       // nur zum Zeichnen
+  [[nodiscard]] const Sprite        &getFrame() const; // nur zum Zeichnen
+  [[nodiscard]] const CollisionShape &getShape() const; // Deckungsform des aktuellen Rahmens
+  [[nodiscard]] vec2                 getSize() const;   // Groesse des aktuellen Rahmens
 
   // ----- Darstellung ------------------------------------------------------
   void         setOrigin(const vec2 &normalized); // 0..1, Standard Mitte
-  vec2         origin() const;
+  [[nodiscard]] vec2         getOrigin() const;
   void         setTint(const Color &tint);
-  const Color &tint() const;
+  [[nodiscard]] const Color &getTint() const;
   void         setSmooth(bool smooth);
+  [[nodiscard]] bool         isSmooth() const;
 
   // ----- Kollision --------------------------------------------------------
   bool containsPoint(const vec2 &worldPoint, const vec2 &position, f32 rotationDegrees) const;

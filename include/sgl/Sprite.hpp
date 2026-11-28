@@ -48,28 +48,32 @@ class Sprite {
     // (fuer Animationsrahmen, deren Form vorberechnet ist)
     bool              setSourceRect(i32 x, i32 y, i32 width, i32 height, bool rebuild = true);
     void              resetSourceRect();
-    [[nodiscard]] i32 sourceX() const;
-    [[nodiscard]] i32 sourceY() const;
+    [[nodiscard]] i32       getSourceX() const;
+    [[nodiscard]] i32       getSourceY() const;
+    [[nodiscard]] Rectangle getSourceRect() const;
 
     // ----- Darstellung ------------------------------------------------------
     void                       setOrigin(const vec2& normalized); // 0..1, Standard (0.5, 0.5)
-    [[nodiscard]] vec2         origin() const;
+    [[nodiscard]] vec2         getOrigin() const;
     void                       setTint(const Color& tint);
-    [[nodiscard]] const Color& tint() const;
+    [[nodiscard]] const Color& getTint() const;
     void                       setFlip(bool flipX, bool flipY);
-    [[nodiscard]] bool         flipX() const;
-    [[nodiscard]] bool         flipY() const;
+    void                       setFlippedX(bool flipX);
+    void                       setFlippedY(bool flipY);
+    [[nodiscard]] bool         isFlippedX() const;
+    [[nodiscard]] bool         isFlippedY() const;
     void                       setSmooth(bool smooth);
+    [[nodiscard]] bool         isSmooth() const;
 
     // ----- Abfragen ---------------------------------------------------------
     [[nodiscard]] bool                  isValid() const;  // zeichenbar (Textur vorhanden)
     [[nodiscard]] bool                  hasShape() const; // Deckungsform vorhanden (auch ohne Kontext)
-    [[nodiscard]] i32                   width() const;    // Breite in Pixeln
-    [[nodiscard]] i32                   height() const;
-    [[nodiscard]] vec2                  size() const;
-    [[nodiscard]] const Texture2d&      texture() const;
-    [[nodiscard]] const CollisionShape& shape() const;
-    [[nodiscard]] const Image&          pixels() const; // Quellpixel (kann leer sein)
+    [[nodiscard]] i32                   getWidth() const;    // Breite in Pixeln
+    [[nodiscard]] i32                   getHeight() const;
+    [[nodiscard]] vec2                  getSize() const;
+    [[nodiscard]] const Texture2d&      getTexture() const;
+    [[nodiscard]] const CollisionShape& getShape() const;
+    [[nodiscard]] const Image&          getPixels() const; // Quellpixel (kann leer sein)
 
     // ----- Kollision --------------------------------------------------------
     // Punkt (Welt) liegt im deckenden Bereich

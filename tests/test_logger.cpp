@@ -12,7 +12,7 @@ namespace {
 
 struct LoggerGuard {
     LoggerGuard()
-        : output(Logger::OutputStream()), level(Logger::MaxLogLevel()) {}
+        : output(Logger::GetOutputStream()), level(Logger::GetMaxLogLevel()) {}
 
     ~LoggerGuard() {
         Logger::SetOutputStream(output);

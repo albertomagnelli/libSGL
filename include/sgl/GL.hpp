@@ -4213,7 +4213,7 @@ struct LoadReport {
     std::size_t total = 0;   // Anzahl der Entry-Points, die geladen werden sollten
     std::size_t loaded = 0;  // davon erfolgreich über sgl::GetProcAddress geladen
 
-    bool complete() const { return loaded == total; }
+    [[nodiscard]] bool isComplete() const { return loaded == total; }
 };
 
 /**

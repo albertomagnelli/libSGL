@@ -10,44 +10,44 @@ using namespace sgl;
 
 TEST_CASE("Image erzeugen, füllen und lesen", "[image]") {
     Image image(4, 3, ImageFormat::Rgba, 0);
-    REQUIRE(image.width() == 4);
-    REQUIRE(image.height() == 3);
-    REQUIRE(image.channelCount() == 4);
+    REQUIRE(image.getWidth() == 4);
+    REQUIRE(image.getHeight() == 3);
+    REQUIRE(image.getChannelCount() == 4);
     REQUIRE_FALSE(image.isEmpty());
 
     image.fill(std::array<u8, 4>{1, 2, 3, 4});
-    REQUIRE(image.pixelAt(0, 0) == std::array<u8, 4>{1, 2, 3, 4});
-    REQUIRE(image.pixelAt(3, 2) == std::array<u8, 4>{1, 2, 3, 4});
+    REQUIRE(image.getPixel(0, 0) == std::array<u8, 4>{1, 2, 3, 4});
+    REQUIRE(image.getPixel(3, 2) == std::array<u8, 4>{1, 2, 3, 4});
 
-    image.setAt(1, 1, 0, 200);
-    REQUIRE(image.at(1, 1, 0) == 200);
+    image.setChannel(1, 1, 0, 200);
+    REQUIRE(image.getChannel(1, 1, 0) == 200);
 
     image.fill(static_cast<u8>(7));
-    REQUIRE(image.at(0, 0, 0) == 7);
+    REQUIRE(image.getChannel(0, 0, 0) == 7);
 }
 
 TEST_CASE("Image spiegeln, drehen und skalieren", "[image]") {
     Image image(2, 2, ImageFormat::Gray);
-    image.setAt(0, 0, 0, 1);
-    image.setAt(1, 0, 0, 2);
-    image.setAt(0, 1, 0, 3);
-    image.setAt(1, 1, 0, 4);
+    image.setChannel(0, 0, 0, 1);
+    image.setChannel(1, 0, 0, 2);
+    image.setChannel(0, 1, 0, 3);
+    image.setChannel(1, 1, 0, 4);
 
     const Image flipped = image.flippedHorizontally();
-    REQUIRE(flipped.at(0, 0, 0) == 2);
-    REQUIRE(flipped.at(1, 0, 0) == 1);
+    REQUIRE(flipped.getChannel(0, 0, 0) == 2);
+    REQUIRE(flipped.getChannel(1, 0, 0) == 1);
 
     const Image rotated = image.rotated(90);
-    REQUIRE(rotated.width() == 2);
-    REQUIRE(rotated.height() == 2);
-    REQUIRE(rotated.at(0, 0, 0) == 3);
+    REQUIRE(rotated.getWidth() == 2);
+    REQUIRE(rotated.getHeight() == 2);
+    REQUIRE(rotated.getChannel(0, 0, 0) == 3);
 
     const Image scaled = image.scaled(1, 1, Interpolation::Nearest);
-    REQUIRE(scaled.width() == 1);
-    REQUIRE(scaled.height() == 1);
+    REQUIRE(scaled.getWidth() == 1);
+    REQUIRE(scaled.getHeight() == 1);
 
     const Image rgb = image.converted(ImageFormat::Rgb);
-    REQUIRE(rgb.channelCount() == 3);
+    REQUIRE(rgb.getChannelCount() == 3);
 }
 
 TEST_CASE("Image als PNG kodieren und wieder laden", "[image]") {
@@ -58,10 +58,10 @@ TEST_CASE("Image als PNG kodieren und wieder laden", "[image]") {
     REQUIRE_FALSE(encoded.empty());
 
     const Image loaded = ImageIO::LoadFromMemory(encoded);
-    REQUIRE(loaded.width() == 3);
-    REQUIRE(loaded.height() == 2);
-    REQUIRE(loaded.channelCount() == 4);
-    REQUIRE(loaded.pixelAt(0, 0) == std::array<u8, 4>{10, 20, 30, 255});
+    REQUIRE(loaded.getWidth() == 3);
+    REQUIRE(loaded.getHeight() == 2);
+    REQUIRE(loaded.getChannelCount() == 4);
+    REQUIRE(loaded.getPixel(0, 0) == std::array<u8, 4>{10, 20, 30, 255});
 }
 
 TEST_CASE("ImageIO speichert und lädt Dateien", "[image][io]") {
@@ -76,9 +76,9 @@ TEST_CASE("ImageIO speichert und lädt Dateien", "[image][io]") {
     REQUIRE(std::filesystem::exists(file));
 
     const Image loaded = ImageIO::Load(file);
-    REQUIRE(loaded.width() == 3);
-    REQUIRE(loaded.height() == 2);
-    REQUIRE(loaded.pixelAt(0, 0) == std::array<u8, 4>{10, 20, 30, 255});
+    REQUIRE(loaded.getWidth() == 3);
+    REQUIRE(loaded.getHeight() == 2);
+    REQUIRE(loaded.getPixel(0, 0) == std::array<u8, 4>{10, 20, 30, 255});
 
     std::filesystem::remove(file);
 }
@@ -116,9 +116,9 @@ TEST_CASE("ImageIO Try-Varianten runden PNG im Speicher", "[image][io]") {
 
     const auto decoded = ImageIO::TryLoadFromMemory(*encoded);
     REQUIRE(decoded.has_value());
-    REQUIRE(decoded->width() == 2);
-    REQUIRE(decoded->height() == 2);
-    REQUIRE(decoded->pixelAt(0, 0) == std::array<u8, 4>{1, 2, 3, 255});
+    REQUIRE(decoded->getWidth() == 2);
+    REQUIRE(decoded->getHeight() == 2);
+    REQUIRE(decoded->getPixel(0, 0) == std::array<u8, 4>{1, 2, 3, 255});
 
     const std::filesystem::path file =
         std::filesystem::temp_directory_path() / "sgl-imageio-try-test.png";
@@ -130,7 +130,7 @@ TEST_CASE("ImageIO Try-Varianten runden PNG im Speicher", "[image][io]") {
 
     const auto loaded = ImageIO::TryLoad(file);
     REQUIRE(loaded.has_value());
-    REQUIRE(loaded->width() == 2);
+    REQUIRE(loaded->getWidth() == 2);
 
     std::filesystem::remove(file);
 }

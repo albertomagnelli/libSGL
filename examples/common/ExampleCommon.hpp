@@ -72,7 +72,7 @@ inline std::unique_ptr<sgl::Window> CreateWindow(std::string_view title, int wid
     window->setSwapInterval(1);
 
     const gl::LoadReport report = gl::Load();
-    if (!report.complete()) {
+    if (!report.isComplete()) {
         SLOGE("%zu/%zu OpenGL-Funktionen geladen.\n", report.loaded, report.total);
     }
 

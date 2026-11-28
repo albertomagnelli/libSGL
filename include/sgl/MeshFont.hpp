@@ -5,8 +5,8 @@
 //
 // Schriften als Dreiecksnetze (Font2d, Font3d). Öffentliche Schnittstelle dieses Headers:
 //
-//   MeshFontError, Font2d, FromFile, FromMemory, ascent
-//   descent, lineHeight, advance, kerning, measure
+//   MeshFontError, Font2d, FromFile, FromMemory, getAscent
+//   getDescent, getLineHeight, advance, kerning, measure
 //   LineCount, Font3d, FindSystemFont
 //
 // Beispiel:
@@ -85,7 +85,7 @@ struct GlyphMesh {
     std::vector<u32> indices;
 
     [[nodiscard]] bool isEmpty() const noexcept { return indices.empty(); }
-    [[nodiscard]] u32 triangleCount() const noexcept { return static_cast<u32>(indices.size() / 3); }
+    [[nodiscard]] u32 getTriangleCount() const noexcept { return static_cast<u32>(indices.size() / 3); }
 };
 
 // Extrudiertes Netz: Vorder- und Rückseite plus Wand, Normalen je Eckpunkt.
@@ -95,7 +95,7 @@ struct GlyphMesh3d {
     std::vector<u32> indices;
 
     [[nodiscard]] bool isEmpty() const noexcept { return indices.empty(); }
-    [[nodiscard]] u32 triangleCount() const noexcept { return static_cast<u32>(indices.size() / 3); }
+    [[nodiscard]] u32 getTriangleCount() const noexcept { return static_cast<u32>(indices.size() / 3); }
 };
 
 // ─── Font2d ─────────────────────────────────────────────────────────────────
@@ -115,12 +115,12 @@ public:
 
     // ── Zustand ──────────────────────────────────────────────────────────────
     [[nodiscard]] bool isValid() const noexcept { return m_font != nullptr; }
-    [[nodiscard]] u32 glyphCount() const noexcept;
+    [[nodiscard]] u32 getGlyphCount() const noexcept;
     // Maße in EM-Einheiten
-    [[nodiscard]] f32 ascent() const noexcept;
-    [[nodiscard]] f32 descent() const noexcept;
-    [[nodiscard]] f32 lineHeight() const noexcept;
-    [[nodiscard]] const std::string& familyName() const noexcept { return m_family; }
+    [[nodiscard]] f32 getAscent() const noexcept;
+    [[nodiscard]] f32 getDescent() const noexcept;
+    [[nodiscard]] f32 getLineHeight() const noexcept;
+    [[nodiscard]] const std::string& getFamilyName() const noexcept { return m_family; }
 
     [[nodiscard]] bool hasGlyph(u32 codepoint) const;
 
@@ -160,11 +160,11 @@ public:
     [[nodiscard]] static Font3d FromMemory(std::span<const u8> data);
 
     [[nodiscard]] bool isValid() const noexcept { return m_font != nullptr; }
-    [[nodiscard]] u32 glyphCount() const noexcept;
-    [[nodiscard]] f32 ascent() const noexcept;
-    [[nodiscard]] f32 descent() const noexcept;
-    [[nodiscard]] f32 lineHeight() const noexcept;
-    [[nodiscard]] const std::string& familyName() const noexcept { return m_family; }
+    [[nodiscard]] u32 getGlyphCount() const noexcept;
+    [[nodiscard]] f32 getAscent() const noexcept;
+    [[nodiscard]] f32 getDescent() const noexcept;
+    [[nodiscard]] f32 getLineHeight() const noexcept;
+    [[nodiscard]] const std::string& getFamilyName() const noexcept { return m_family; }
 
     [[nodiscard]] bool hasGlyph(u32 codepoint) const;
     [[nodiscard]] f32 advance(u32 codepoint) const;

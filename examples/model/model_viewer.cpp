@@ -273,59 +273,59 @@ bool UploadMaterial(const Material& source, GpuMaterial& target) {
 }
 
 bool UploadMesh(const Mesh& source, GpuMesh& target) {
-    if (source.material == nullptr || source.vertices.empty() || source.indices.empty()) {
+    if (source.getMaterial() == nullptr || source.getVertices().empty() || source.getIndices().empty()) {
         return false;
     }
 
-    if (!UploadMaterial(*source.material, target.material)) return false;
+    if (!UploadMaterial(*source.getMaterial(), target.material)) return false;
 
     glCreateVertexArrays(1, &target.vao);
     glCreateBuffers(1, &target.vbo);
     glCreateBuffers(1, &target.ebo);
 
     glNamedBufferData(target.vbo,
-                      static_cast<GLsizeiptr>(source.vertices.size() * sizeof(MeshVertex)),
-                      source.vertices.data(), GL_STATIC_DRAW);
+                      static_cast<GLsizeiptr>(source.getVertices().size() * sizeof(MeshVertex)),
+                      source.getVertices().data(), GL_STATIC_DRAW);
     glNamedBufferData(target.ebo,
-                      static_cast<GLsizeiptr>(source.indices.size() * sizeof(u32)),
-                      source.indices.data(), GL_STATIC_DRAW);
+                      static_cast<GLsizeiptr>(source.getIndices().size() * sizeof(u32)),
+                      source.getIndices().data(), GL_STATIC_DRAW);
 
     const GLsizei stride = static_cast<GLsizei>(sizeof(MeshVertex));
 
     glVertexArrayVertexBuffer(target.vao, 0, target.vbo, 0, stride);
     glVertexArrayAttribFormat(target.vao, 0, 3, GL_FLOAT, GL_FALSE,
-                              static_cast<GLuint>(offsetof(MeshVertex, position)));
+                              static_cast<GLuint>(MeshVertex::PositionOffset()));
     glVertexArrayAttribBinding(target.vao, 0, 0);
     glEnableVertexArrayAttrib(target.vao, 0);
 
     glVertexArrayAttribFormat(target.vao, 1, 3, GL_FLOAT, GL_FALSE,
-                              static_cast<GLuint>(offsetof(MeshVertex, normal)));
+                              static_cast<GLuint>(MeshVertex::NormalOffset()));
     glVertexArrayAttribBinding(target.vao, 1, 0);
     glEnableVertexArrayAttrib(target.vao, 1);
 
     glVertexArrayAttribFormat(target.vao, 2, 2, GL_FLOAT, GL_FALSE,
-                              static_cast<GLuint>(offsetof(MeshVertex, uv)));
+                              static_cast<GLuint>(MeshVertex::UvOffset()));
     glVertexArrayAttribBinding(target.vao, 2, 0);
     glEnableVertexArrayAttrib(target.vao, 2);
 
     glVertexArrayAttribFormat(target.vao, 3, 4, GL_FLOAT, GL_FALSE,
-                              static_cast<GLuint>(offsetof(MeshVertex, tangent)));
+                              static_cast<GLuint>(MeshVertex::TangentOffset()));
     glVertexArrayAttribBinding(target.vao, 3, 0);
     glEnableVertexArrayAttrib(target.vao, 3);
 
     glVertexArrayAttribIFormat(target.vao, 4, 4, GL_UNSIGNED_INT,
-                               static_cast<GLuint>(offsetof(MeshVertex, boneIds)));
+                               static_cast<GLuint>(MeshVertex::BoneIdsOffset()));
     glVertexArrayAttribBinding(target.vao, 4, 0);
     glEnableVertexArrayAttrib(target.vao, 4);
 
     glVertexArrayAttribFormat(target.vao, 5, 4, GL_FLOAT, GL_FALSE,
-                              static_cast<GLuint>(offsetof(MeshVertex, boneWeights)));
+                              static_cast<GLuint>(MeshVertex::BoneWeightsOffset()));
     glVertexArrayAttribBinding(target.vao, 5, 0);
     glEnableVertexArrayAttrib(target.vao, 5);
 
     glVertexArrayElementBuffer(target.vao, target.ebo);
 
-    target.indexCount = static_cast<GLsizei>(source.indices.size());
+    target.indexCount = static_cast<GLsizei>(source.getIndices().size());
     return true;
 }
 
@@ -333,17 +333,17 @@ mat4 NodeWorldTransform(const Model& model, const i32 nodeIndex) {
     mat4 result(1.0f);
 
     i32 current = nodeIndex;
-    while (current >= 0 && current < static_cast<i32>(model.nodes.size())) {
-        result = model.nodes[static_cast<std::size_t>(current)].localTransform * result;
-        current = model.nodes[static_cast<std::size_t>(current)].parent;
+    while (current >= 0 && current < static_cast<i32>(model.getNodes().size())) {
+        result = model.getNodes()[static_cast<std::size_t>(current)].localTransform * result;
+        current = model.getNodes()[static_cast<std::size_t>(current)].parent;
     }
 
     return result;
 }
 
 i32 FindMeshNode(const Model& model, const i32 meshIndex) {
-    for (std::size_t i = 0; i < model.nodes.size(); ++i) {
-        if (model.nodes[i].mesh == meshIndex) return static_cast<i32>(i);
+    for (std::size_t i = 0; i < model.getNodes().size(); ++i) {
+        if (model.getNodes()[i].mesh == meshIndex) return static_cast<i32>(i);
     }
     return -1;
 }
@@ -355,7 +355,7 @@ const ModelAnimation* PickAnimation(const std::vector<ModelAnimation>& animation
     if (name.empty()) return &animations.front();
 
     for (const ModelAnimation& animation : animations) {
-        if (animation.name == name) return &animation;
+        if (animation.getName() == name) return &animation;
     }
 
     return nullptr;
@@ -363,36 +363,36 @@ const ModelAnimation* PickAnimation(const std::vector<ModelAnimation>& animation
 
 void RetargetAnimation(ModelAnimation& animation, const Model& model) {
     std::unordered_map<std::string, i32> nodes;
-    nodes.reserve(model.nodes.size());
+    nodes.reserve(model.getNodes().size());
 
-    for (std::size_t i = 0; i < model.nodes.size(); ++i) {
-        nodes.emplace(model.nodes[i].name, static_cast<i32>(i));
+    for (std::size_t i = 0; i < model.getNodes().size(); ++i) {
+        nodes.emplace(model.getNodes()[i].name, static_cast<i32>(i));
     }
 
     std::vector<AnimationChannel> channels;
-    channels.reserve(animation.channels.size());
+    channels.reserve(animation.getChannels().size());
 
-    for (AnimationChannel channel : animation.channels) {
+    for (AnimationChannel channel : animation.getChannels()) {
         const auto found = nodes.find(channel.nodeName);
 
         if (found != nodes.end()) {
             channel.node = found->second;
         } else if (!channel.nodeName.empty() || channel.node < 0 ||
-                   channel.node >= static_cast<i32>(model.nodes.size())) {
+                   channel.node >= static_cast<i32>(model.getNodes().size())) {
             continue;
         }
 
         channels.push_back(std::move(channel));
     }
 
-    animation.channels = std::move(channels);
+    animation.setChannels(std::move(channels));
 }
 
 f32 SampleScalar(const AnimationSampler& sampler, const f32 time, const u32 component) {
-    if (sampler.keyCount() == 0) return 0.0f;
+    if (sampler.getKeyCount() == 0) return 0.0f;
 
     if (time <= sampler.input.front()) return sampler.getScalar(0, 0, component);
-    if (time >= sampler.input.back()) return sampler.getScalar(sampler.keyCount() - 1, 0, component);
+    if (time >= sampler.input.back()) return sampler.getScalar(sampler.getKeyCount() - 1, 0, component);
 
     const auto upper = std::upper_bound(sampler.input.begin(), sampler.input.end(), time);
     const auto next = static_cast<u32>(std::distance(sampler.input.begin(), upper));
@@ -426,26 +426,26 @@ quat SampleQuat(const AnimationSampler& sampler, const f32 time) {
 
 std::vector<mat4> BuildLocalTransforms(const Model& model, const ModelAnimation& animation,
                                        const f32 time) {
-    std::vector<mat4> local(model.nodes.size(), mat4(1.0f));
+    std::vector<mat4> local(model.getNodes().size(), mat4(1.0f));
 
-    for (std::size_t i = 0; i < model.nodes.size(); ++i) {
+    for (std::size_t i = 0; i < model.getNodes().size(); ++i) {
         vec3 nodeScale(1.0f);
         quat nodeRotation(1.0f, 0.0f, 0.0f, 0.0f);
         vec3 nodeTranslation(0.0f);
         vec3 skew(0.0f);
         vec4 perspective(0.0f);
 
-        glm::decompose(model.nodes[i].localTransform, nodeScale, nodeRotation, nodeTranslation,
+        glm::decompose(model.getNodes()[i].localTransform, nodeScale, nodeRotation, nodeTranslation,
                        skew, perspective);
 
-        for (const AnimationChannel& channel : animation.channels) {
+        for (const AnimationChannel& channel : animation.getChannels()) {
             if (channel.node != static_cast<i32>(i) || channel.sampler < 0 ||
-                channel.sampler >= static_cast<i32>(animation.samplers.size())) {
+                channel.sampler >= static_cast<i32>(animation.getSamplers().size())) {
                 continue;
             }
 
             const AnimationSampler& sampler =
-                animation.samplers[static_cast<std::size_t>(channel.sampler)];
+                animation.getSamplers()[static_cast<std::size_t>(channel.sampler)];
 
             switch (channel.path) {
             case AnimationPath::Translation:
@@ -470,14 +470,14 @@ std::vector<mat4> BuildLocalTransforms(const Model& model, const ModelAnimation&
 }
 
 std::vector<mat4> BuildWorldTransforms(const Model& model, const std::vector<mat4>& local) {
-    std::vector<mat4> world(model.nodes.size(), mat4(1.0f));
-    std::vector<bool> done(model.nodes.size(), false);
+    std::vector<mat4> world(model.getNodes().size(), mat4(1.0f));
+    std::vector<bool> done(model.getNodes().size(), false);
 
     std::function<mat4(i32)> resolve = [&](const i32 index) -> mat4 {
-        if (index < 0 || index >= static_cast<i32>(model.nodes.size())) return mat4(1.0f);
+        if (index < 0 || index >= static_cast<i32>(model.getNodes().size())) return mat4(1.0f);
         if (done[static_cast<std::size_t>(index)]) return world[static_cast<std::size_t>(index)];
 
-        const ModelNode& node = model.nodes[static_cast<std::size_t>(index)];
+        const ModelNode& node = model.getNodes()[static_cast<std::size_t>(index)];
         const mat4 parent = resolve(node.parent);
         world[static_cast<std::size_t>(index)] = parent * local[static_cast<std::size_t>(index)];
         done[static_cast<std::size_t>(index)] = true;
@@ -485,7 +485,7 @@ std::vector<mat4> BuildWorldTransforms(const Model& model, const std::vector<mat
         return world[static_cast<std::size_t>(index)];
     };
 
-    for (std::size_t i = 0; i < model.nodes.size(); ++i) {
+    for (std::size_t i = 0; i < model.getNodes().size(); ++i) {
         resolve(static_cast<i32>(i));
     }
 
@@ -496,9 +496,9 @@ std::vector<mat4> BuildBoneMatrices(const Model& model, const i32 skinIndex,
                                     const std::vector<mat4>& world) {
     std::vector<mat4> bones(128, mat4(1.0f));
 
-    if (skinIndex < 0 || skinIndex >= static_cast<i32>(model.skins.size())) return bones;
+    if (skinIndex < 0 || skinIndex >= static_cast<i32>(model.getSkins().size())) return bones;
 
-    const ModelSkin& skin = model.skins[static_cast<std::size_t>(skinIndex)];
+    const ModelSkin& skin = model.getSkins()[static_cast<std::size_t>(skinIndex)];
     const std::size_t count = std::min({skin.joints.size(), skin.inverseBindMatrices.size(),
                                         bones.size()});
 
@@ -524,23 +524,23 @@ std::optional<ModelInstance> LoadInstance(const std::filesystem::path& path,
     instance.model = std::move(*result);
     instance.rotationOffset = rotationOffset;
 
-    instance.meshes.resize(instance.model.meshes.size());
+    instance.meshes.resize(instance.model.getMeshes().size());
 
-    for (std::size_t i = 0; i < instance.model.meshes.size(); ++i) {
+    for (std::size_t i = 0; i < instance.model.getMeshes().size(); ++i) {
         GpuMesh& gpu = instance.meshes[i];
-        const Mesh& mesh = instance.model.meshes[i];
-        const i32 node = mesh.nodeIndex >= 0
-                             ? mesh.nodeIndex
+        const Mesh& mesh = instance.model.getMeshes()[i];
+        const i32 node = mesh.getNodeIndex() >= 0
+                             ? mesh.getNodeIndex()
                              : FindMeshNode(instance.model, static_cast<i32>(i));
         gpu.nodeTransform = NodeWorldTransform(instance.model, node);
         gpu.skinIndex =
-            node >= 0 ? instance.model.nodes[static_cast<std::size_t>(node)].skin : -1;
+            node >= 0 ? instance.model.getNodes()[static_cast<std::size_t>(node)].skin : -1;
         gpu.isSkinned =
             gpu.skinIndex >= 0 &&
-            gpu.skinIndex < static_cast<i32>(instance.model.skins.size()) &&
-            !instance.model.skins[static_cast<std::size_t>(gpu.skinIndex)].joints.empty();
+            gpu.skinIndex < static_cast<i32>(instance.model.getSkins().size()) &&
+            !instance.model.getSkins()[static_cast<std::size_t>(gpu.skinIndex)].joints.empty();
 
-        if (!UploadMesh(instance.model.meshes[i], gpu)) {
+        if (!UploadMesh(instance.model.getMeshes()[i], gpu)) {
             SLOGE("%s: Mesh konnte nicht hochgeladen werden\n", path.string().c_str());
             return std::nullopt;
         }
@@ -550,12 +550,12 @@ std::optional<ModelInstance> LoadInstance(const std::filesystem::path& path,
     vec3 maximum(-std::numeric_limits<f32>::max());
     bool hasBounds = false;
 
-    for (std::size_t i = 0; i < instance.model.meshes.size(); ++i) {
-        const Mesh& mesh = instance.model.meshes[i];
+    for (std::size_t i = 0; i < instance.model.getMeshes().size(); ++i) {
+        const Mesh& mesh = instance.model.getMeshes()[i];
         const mat4 transform = instance.meshes[i].nodeTransform;
 
-        for (const MeshVertex& vertex : mesh.vertices) {
-            const vec3 point = vec3(transform * vec4(vertex.position, 1.0f));
+        for (const MeshVertex& vertex : mesh.getVertices()) {
+            const vec3 point = vec3(transform * vec4(vertex.getPosition(), 1.0f));
             minimum = glm::min(minimum, point);
             maximum = glm::max(maximum, point);
             hasBounds = true;
@@ -569,7 +569,7 @@ std::optional<ModelInstance> LoadInstance(const std::filesystem::path& path,
     instance.scale = height > 0.0001f ? kTargetHeight / height : 1.0f;
 
     SLOGI("%s: %zu Mesh(es), %zu Nodes, %zu Skins\n", path.filename().string().c_str(),
-          instance.model.meshes.size(), instance.model.nodes.size(), instance.model.skins.size());
+          instance.model.getMeshes().size(), instance.model.getNodes().size(), instance.model.getSkins().size());
 
     return instance;
 }
@@ -585,8 +585,8 @@ void DrawInstance(const ModelInstance& instance, const Shader& shader, const f32
         glm::translate(mat4(1.0f), -instance.center);
 
     const f32 animationTime =
-        instance.animation.duration > 0.0f
-            ? std::fmod(time, instance.animation.duration)
+        instance.animation.getDuration() > 0.0f
+            ? std::fmod(time, instance.animation.getDuration())
             : 0.0f;
 
     const std::vector<mat4> local =
@@ -734,7 +734,7 @@ int main(int argc, char** argv) {
     shaderOptions.version = 330;
     Shader shader = Shader::FromSource(kModelShader, shaderOptions);
     if (!shader.isValid()) {
-        SLOGE("Modelshader: %s\n", shader.lastError().c_str());
+        SLOGE("Modelshader: %s\n", shader.getLastError().c_str());
         window.reset();
         sgl::Terminate();
         return 1;
@@ -756,8 +756,8 @@ int main(int argc, char** argv) {
     if (characterAnimations) {
         if (const ModelAnimation* animation = PickAnimation(*characterAnimations)) {
             left->animation = *animation;
-            SLOGI("character.glb: Animation \"%s\" (%.2f s)\n", animation->name.c_str(),
-                  animation->duration);
+            SLOGI("character.glb: Animation \"%s\" (%.2f s)\n", animation->getName().c_str(),
+                  animation->getDuration());
         }
     } else {
         SLOGW("character.glb: Animationen nicht ladbar: %s\n",
@@ -768,8 +768,8 @@ int main(int argc, char** argv) {
     if (turricanAnimations) {
         if (const ModelAnimation* animation = PickAnimation(*turricanAnimations, "Walking")) {
             middle->animation = *animation;
-            SLOGI("turrican.glb: Animation \"%s\" (%.2f s)\n", animation->name.c_str(),
-                  animation->duration);
+            SLOGI("turrican.glb: Animation \"%s\" (%.2f s)\n", animation->getName().c_str(),
+                  animation->getDuration());
         }
     } else {
         SLOGW("turrican.glb: Animationen nicht ladbar: %s\n", turricanAnimations.error().what());
@@ -781,7 +781,7 @@ int main(int argc, char** argv) {
             right->animation = *animation;
             RetargetAnimation(right->animation, right->model);
             SLOGI("zombie.fbx: Animation \"%s\" aus walk.fbx (%.2f s)\n",
-                  right->animation.name.c_str(), right->animation.duration);
+                  right->animation.getName().c_str(), right->animation.getDuration());
         }
     } else {
         SLOGW("walk.fbx: Animationen nicht ladbar: %s\n", walkAnimations.error().what());

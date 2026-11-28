@@ -24,7 +24,7 @@
 //   auto animations = ModelAnimationIO::Load("character.glb");
 //   if (animations) {
 //       for (const ModelAnimation& animation : *animations) {
-//           /* Animation auf model.nodes anwenden */
+//           /* Animation auf model.getNodes() anwenden */
 //       }
 //   }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,6 +40,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace sgl {
@@ -65,15 +66,37 @@ enum class MeshPrimitiveMode : u8 {
 
 class Mesh {
 public:
-    std::string name;
-    std::vector<MeshVertex> vertices;
-    std::vector<u32> indices;
-    std::shared_ptr<Material> material;
-    MeshPrimitiveMode primitiveMode{MeshPrimitiveMode::Triangles};
+    [[nodiscard]] const std::string& getName() const noexcept { return m_name; }
+    void setName(std::string name) { m_name = std::move(name); }
+
+    [[nodiscard]] const std::vector<MeshVertex>& getVertices() const noexcept { return m_vertices; }
+    [[nodiscard]] std::vector<MeshVertex>&       getVertices() noexcept { return m_vertices; }
+    void setVertices(std::vector<MeshVertex> vertices) { m_vertices = std::move(vertices); }
+
+    [[nodiscard]] const std::vector<u32>& getIndices() const noexcept { return m_indices; }
+    [[nodiscard]] std::vector<u32>&       getIndices() noexcept { return m_indices; }
+    void setIndices(std::vector<u32> indices) { m_indices = std::move(indices); }
+
+    [[nodiscard]] const std::shared_ptr<Material>& getMaterial() const noexcept { return m_material; }
+    [[nodiscard]] std::shared_ptr<Material>&       getMaterial() noexcept { return m_material; }
+    void setMaterial(std::shared_ptr<Material> material) { m_material = std::move(material); }
+
+    [[nodiscard]] MeshPrimitiveMode getPrimitiveMode() const noexcept { return m_primitiveMode; }
+    void setPrimitiveMode(MeshPrimitiveMode mode) noexcept { m_primitiveMode = mode; }
+
     // Node, der dieses Mesh instanziiert (-1 = unbekannt).
-    i32 nodeIndex{-1};
+    [[nodiscard]] i32 getNodeIndex() const noexcept { return m_nodeIndex; }
+    void setNodeIndex(i32 index) noexcept { m_nodeIndex = index; }
 
     [[nodiscard]] bool isValid() const noexcept;
+
+private:
+    std::string               m_name;
+    std::vector<MeshVertex>   m_vertices;
+    std::vector<u32>          m_indices;
+    std::shared_ptr<Material> m_material;
+    MeshPrimitiveMode         m_primitiveMode{MeshPrimitiveMode::Triangles};
+    i32                       m_nodeIndex{-1};
 };
 
 // ─── Nodes und Skins ─────────────────────────────────────────────────────────
@@ -98,12 +121,28 @@ struct ModelSkin {
 
 class Model {
 public:
-    std::string name;
-    std::vector<Mesh> meshes;
-    std::vector<ModelNode> nodes;
-    std::vector<ModelSkin> skins;
+    [[nodiscard]] const std::string& getName() const noexcept { return m_name; }
+    void setName(std::string name) { m_name = std::move(name); }
+
+    [[nodiscard]] const std::vector<Mesh>& getMeshes() const noexcept { return m_meshes; }
+    [[nodiscard]] std::vector<Mesh>&       getMeshes() noexcept { return m_meshes; }
+    void setMeshes(std::vector<Mesh> meshes) { m_meshes = std::move(meshes); }
+
+    [[nodiscard]] const std::vector<ModelNode>& getNodes() const noexcept { return m_nodes; }
+    [[nodiscard]] std::vector<ModelNode>&       getNodes() noexcept { return m_nodes; }
+    void setNodes(std::vector<ModelNode> nodes) { m_nodes = std::move(nodes); }
+
+    [[nodiscard]] const std::vector<ModelSkin>& getSkins() const noexcept { return m_skins; }
+    [[nodiscard]] std::vector<ModelSkin>&       getSkins() noexcept { return m_skins; }
+    void setSkins(std::vector<ModelSkin> skins) { m_skins = std::move(skins); }
 
     [[nodiscard]] bool isValid() const noexcept;
+
+private:
+    std::string            m_name;
+    std::vector<Mesh>      m_meshes;
+    std::vector<ModelNode> m_nodes;
+    std::vector<ModelSkin> m_skins;
 };
 
 // ─── Modell laden ────────────────────────────────────────────────────────────
@@ -150,9 +189,9 @@ struct AnimationSampler {
     u32 valuesPerKey{1};      // Werte pro Key; bei Cubic-Spline inkl. Tangenten
     AnimationInterpolation interpolation{AnimationInterpolation::Linear};
 
-    [[nodiscard]] u32 keyCount() const noexcept;
-    [[nodiscard]] u32 valueCount() const noexcept;
-    [[nodiscard]] u32 keyStride() const noexcept;
+    [[nodiscard]] u32 getKeyCount() const noexcept;
+    [[nodiscard]] u32 getValueCount() const noexcept;
+    [[nodiscard]] u32 getKeyStride() const noexcept;
 
     // value = Index innerhalb der Hauptwerte eines Keys, component = Kanal.
     // Bei Cubic-Spline werden die In-/Out-Tangenten übersprungen.
@@ -173,12 +212,27 @@ struct AnimationChannel {
 
 class ModelAnimation {
 public:
-    std::string name;
-    f32 duration{0.0f};
-    std::vector<AnimationSampler> samplers;
-    std::vector<AnimationChannel> channels;
+    [[nodiscard]] const std::string& getName() const noexcept { return m_name; }
+    void setName(std::string name) { m_name = std::move(name); }
+
+    [[nodiscard]] f32 getDuration() const noexcept { return m_duration; }
+    void setDuration(f32 duration) noexcept { m_duration = duration; }
+
+    [[nodiscard]] const std::vector<AnimationSampler>& getSamplers() const noexcept { return m_samplers; }
+    [[nodiscard]] std::vector<AnimationSampler>&       getSamplers() noexcept { return m_samplers; }
+    void setSamplers(std::vector<AnimationSampler> samplers) { m_samplers = std::move(samplers); }
+
+    [[nodiscard]] const std::vector<AnimationChannel>& getChannels() const noexcept { return m_channels; }
+    [[nodiscard]] std::vector<AnimationChannel>&       getChannels() noexcept { return m_channels; }
+    void setChannels(std::vector<AnimationChannel> channels) { m_channels = std::move(channels); }
 
     [[nodiscard]] bool isValid() const noexcept;
+
+private:
+    std::string                   m_name;
+    f32                           m_duration{0.0f};
+    std::vector<AnimationSampler> m_samplers;
+    std::vector<AnimationChannel> m_channels;
 };
 
 class ModelAnimationIO {

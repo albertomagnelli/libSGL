@@ -19,9 +19,13 @@ lädt einen OpenGL-4.6-Core-Kontext.
 - Typen und Klassen: `PascalCase`, z. B. `Window`, `ImageFormat`
 - Namespaces: `lower_case`, z. B. `sgl`, `sgl::gl`
 - Membervariablen: `m_camelCase`
-- Getter: `getX()` bzw. `isX()`/`hasX()`
-- Reine Datentypen (`WindowHints`, `VideoMode`, `GamepadState`, `Image`,
-  `GammaRamp`) haben öffentliche Felder ohne Präfix.
+- Getter: `getX()` bzw. `isX()`/`hasX()`; Setter: `setX()`
+- Reine Datentypen und Aggregates (`WindowHints`, `VideoMode`, `GammaRamp`,
+  `GamepadState`, `Color`, `Rectangle`, `TextureOptions`, `FramebufferOptions`,
+  `NoiseConfig`, `FontMetrics`, `Glyph`, `ModelNode`, `ModelSkin`,
+  `AnimationSampler`, `AnimationChannel`, `AnimationFrame`, `Animation`,
+  `GlyphMesh`) haben öffentliche Felder ohne Präfix. Klassen mit eigenem
+  Zustand (z. B. `Image`, `Mesh`, `Model`) kapseln ihn hinter Getter/Settern.
 
 Die Regeln sind in `.clang-tidy` hinterlegt (`readability-identifier-naming`)
 und lassen sich damit prüfen. `.clang-format` beschreibt den Formatierstil.
